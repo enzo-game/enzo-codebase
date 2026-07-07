@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CARDS, Card, RARITY_COLOR, THEME_EMOJI } from "@/data/cards";
 import { questionFor } from "@/data/questions";
@@ -445,6 +446,14 @@ export default function PlayPage() {
         {/* 標題列 */}
         <header className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
+            <div className="flex items-center gap-2">
+              <Link href="/" className="text-xs text-slate-400 hover:text-slate-200">
+                ◀ 模式選擇
+              </Link>
+              <span className="text-[10px] rounded-full bg-sky-500/80 text-black px-2 py-0.5">
+                模式 B
+              </span>
+            </div>
             <h1 className="text-xl sm:text-2xl font-bold">Enzo · 山林試煉（vs 系統）</h1>
             <p className="text-[11px] text-slate-400">
               出牌答對太魯閣族語題觸發加成。示範題庫為佔位資料，正式族語內容待語言部填入。
