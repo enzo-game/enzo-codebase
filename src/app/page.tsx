@@ -1,65 +1,48 @@
-import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100 flex flex-col items-center justify-center px-6 py-16">
+      <div className="max-w-2xl text-center">
+        <div className="text-5xl mb-4">🏹🌈</div>
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-3">Enzo</h1>
+        <p className="text-lg text-slate-300 mb-2">原民 Truku 爐石式卡牌遊戲 · 族語教學</p>
+        <p className="text-sm text-slate-500 mb-8">
+          出牌時答對太魯閣族語題目，即可觸發卡牌的族語加成。學得越好，打得越強。
+        </p>
+
+        <Link
+          href="/play"
+          className="inline-block rounded-full bg-emerald-600 hover:bg-emerald-500 px-8 py-3 font-semibold transition-colors"
+        >
+          進入練習模式 ▶
+        </Link>
+
+        <div className="mt-12 grid sm:grid-cols-3 gap-4 text-left">
+          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+            <div className="text-2xl mb-1">🃏</div>
+            <div className="font-semibold text-sm">爐石式對戰</div>
+            <div className="text-xs text-slate-400">法力曲線、隨從與法術、戰場出牌。</div>
+          </div>
+          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+            <div className="text-2xl mb-1">📚</div>
+            <div className="font-semibold text-sm">族語答題加成</div>
+            <div className="text-xs text-slate-400">答對得加成，答錯揭示正解，正向學習。</div>
+          </div>
+          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+            <div className="text-2xl mb-1">⛰️</div>
+            <div className="font-semibold text-sm">Truku 文化主題</div>
+            <div className="text-xs text-slate-400">動物、植物、器物、人物與自然。</div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        <p className="mt-10 text-xs text-slate-600">
+          MVP 開發中。目前族語題庫為示範佔位資料，正式太魯閣族語內容由語言部審核 hunter.db 後填入。
+        </p>
+        <p className="mt-2 text-xs text-slate-700">
+          <a href="/api/health" className="underline">/api/health</a> · enzo-game
+        </p>
+      </div>
+    </main>
   );
 }
