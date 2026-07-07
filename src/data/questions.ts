@@ -35,6 +35,16 @@ export const QUESTIONS: Question[] = [
   { vocabId: "enzo-018", prompt: "「火塘」的太魯閣族語是？", options: OPTS, answer: 1, explanation: EXP, difficulty: 2 },
   { vocabId: "enzo-019", prompt: "「號令」的太魯閣族語是？", options: OPTS, answer: 2, explanation: EXP, difficulty: 2 },
   { vocabId: "enzo-020", prompt: "「彩虹橋」的太魯閣族語是？", options: OPTS, answer: 3, explanation: EXP, difficulty: 3 },
+  { vocabId: "enzo-021", prompt: "「飛鼠」的太魯閣族語是？", options: OPTS, answer: 0, explanation: EXP, difficulty: 1 },
+  { vocabId: "enzo-022", prompt: "「水鹿」的太魯閣族語是？", options: OPTS, answer: 1, explanation: EXP, difficulty: 2 },
+  { vocabId: "enzo-023", prompt: "「百步蛇」的太魯閣族語是？", options: OPTS, answer: 2, explanation: EXP, difficulty: 3 },
+  { vocabId: "enzo-024", prompt: "「香菇」的太魯閣族語是？", options: OPTS, answer: 3, explanation: EXP, difficulty: 1 },
+  { vocabId: "enzo-025", prompt: "「藤蔓」的太魯閣族語是？", options: OPTS, answer: 0, explanation: EXP, difficulty: 2 },
+  { vocabId: "enzo-026", prompt: "「月光」的太魯閣族語是？", options: OPTS, answer: 1, explanation: EXP, difficulty: 2 },
+  { vocabId: "enzo-027", prompt: "「烈日」的太魯閣族語是？", options: OPTS, answer: 2, explanation: EXP, difficulty: 3 },
+  { vocabId: "enzo-028", prompt: "「巫醫」的太魯閣族語是？", options: OPTS, answer: 3, explanation: EXP, difficulty: 2 },
+  { vocabId: "enzo-029", prompt: "「勇士」的太魯閣族語是？", options: OPTS, answer: 0, explanation: EXP, difficulty: 1 },
+  { vocabId: "enzo-030", prompt: "「織布機」的太魯閣族語是？", options: OPTS, answer: 1, explanation: EXP, difficulty: 2 },
 ];
 
 export function questionFor(cardId: string): Question | undefined {

@@ -40,6 +40,17 @@ export const CARDS: Card[] = [
   { id: "enzo-018", nameZh: "火塘", type: "spell", cost: 3, rarity: "rare", theme: "tool", difficulty: 2, baseEffect: "回復英雄 5 點", trukuBonus: "額外回復 3 點" },
   { id: "enzo-019", nameZh: "出草號令", type: "spell", cost: 4, rarity: "rare", theme: "nature", difficulty: 2, baseEffect: "所有友軍 +1/+0", trukuBonus: "改為 +1/+1" },
   { id: "enzo-020", nameZh: "彩虹橋 Hakaw Utux", type: "spell", cost: 6, rarity: "epic", theme: "nature", difficulty: 3, baseEffect: "對所有敵方隨從造成 3 傷害", trukuBonus: "英雄回復 5 點" },
+  // v1.1 補充第 21–30 張（依 enzo-game-design/docs/card-design-v1.1-extra10.md）
+  { id: "enzo-021", nameZh: "飛鼠", type: "minion", cost: 2, attack: 2, health: 2, rarity: "common", theme: "animal", difficulty: 1, baseEffect: "無", trukuBonus: "戰吼：抽 1 張牌" },
+  { id: "enzo-022", nameZh: "水鹿", type: "minion", cost: 5, attack: 5, health: 5, rarity: "rare", theme: "animal", difficulty: 2, baseEffect: "無", trukuBonus: "+1/+1" },
+  { id: "enzo-023", nameZh: "百步蛇", type: "minion", cost: 4, attack: 4, health: 2, rarity: "epic", theme: "animal", difficulty: 3, baseEffect: "無", trukuBonus: "劇毒（造成傷害即摧毀隨從）" },
+  { id: "enzo-024", nameZh: "香菇", type: "minion", cost: 2, attack: 1, health: 4, rarity: "common", theme: "plant", difficulty: 1, baseEffect: "無", trukuBonus: "獲得嘲諷" },
+  { id: "enzo-025", nameZh: "藤蔓", type: "spell", cost: 2, rarity: "common", theme: "plant", difficulty: 2, baseEffect: "使一個敵方隨從本回合無法攻擊", trukuBonus: "額外 -2 攻擊" },
+  { id: "enzo-026", nameZh: "月光", type: "spell", cost: 3, rarity: "rare", theme: "nature", difficulty: 2, baseEffect: "抽 2 張牌", trukuBonus: "這些牌本回合費用 -1" },
+  { id: "enzo-027", nameZh: "烈日", type: "spell", cost: 5, rarity: "epic", theme: "nature", difficulty: 3, baseEffect: "對敵方英雄造成 4 傷害", trukuBonus: "改為 6 傷害" },
+  { id: "enzo-028", nameZh: "巫醫", type: "minion", cost: 4, attack: 3, health: 4, rarity: "rare", theme: "person", difficulty: 2, baseEffect: "無", trukuBonus: "戰吼：回復所有友軍 2 點" },
+  { id: "enzo-029", nameZh: "勇士", type: "minion", cost: 3, attack: 4, health: 2, rarity: "rare", theme: "person", difficulty: 1, baseEffect: "無", trukuBonus: "衝鋒（當回合可攻擊）" },
+  { id: "enzo-030", nameZh: "織布機", type: "minion", cost: 3, attack: 2, health: 5, rarity: "rare", theme: "tool", difficulty: 2, baseEffect: "無", trukuBonus: "回合結束給隨機友軍 +1/+1" },
 ];
 
 export const RARITY_COLOR: Record<Rarity, string> = {
