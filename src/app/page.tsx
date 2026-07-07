@@ -19,15 +19,18 @@ export default function Home() {
             href="/journey"
             className="group relative rounded-2xl border border-emerald-800/60 bg-emerald-950/30 p-5 transition-colors hover:border-emerald-600 hover:bg-emerald-900/30"
           >
-            <span className="absolute top-3 right-3 text-[10px] rounded-full bg-amber-500/90 text-black px-2 py-0.5">
-              開發中
+            <span className="absolute top-3 right-3 text-[10px] rounded-full bg-lime-500/90 text-black px-2 py-0.5">
+              灰盒可玩
             </span>
             <div className="text-3xl mb-2">⛰️</div>
             <div className="font-semibold">模式 A · 山徑劇情</div>
             <div className="text-xs text-emerald-300/80 mb-2">教育 / 文化主線 · 非戰鬥</div>
             <p className="text-xs text-slate-400">
-              沿山徑推進，完成部落任務與故事，學習太魯閣族文化與族語。適合課堂與初學者。
+              沿山徑推進、清障搭橋、管理補給與壓力，答對族語題讓行動全額生效，帶隊伍安全返家。
             </p>
+            <span className="mt-3 inline-block text-sm font-semibold text-emerald-300 group-hover:text-emerald-200">
+              走上山徑 ▶
+            </span>
           </Link>
 
           {/* 模式 B：競技對戰 */}
