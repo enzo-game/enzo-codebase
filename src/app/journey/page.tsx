@@ -101,6 +101,43 @@ const NODE_IMG: Record<NodeType, string> = {
 };
 const MAP_BASE = "/images/journey/board-journey-map-base-v1.jpg";
 
+// 場景水彩底圖（ORDER-017，已過 enzo-culture 複核）：依節點型別給不同場景氛圍
+const SCENE_IMG: Record<NodeType, string> = {
+  start: "/images/journey/scene/scene-start-v1.png",
+  obstacle: "/images/journey/scene/scene-rockfall-v1.png",
+  bridge: "/images/journey/scene/scene-bridge-v1.png",
+  event: "/images/journey/scene/scene-forest-v1.png",
+  supply: "/images/journey/scene/scene-camp-v1.png",
+  destination: "/images/journey/scene/scene-village-v1.png",
+};
+
+// 行動籤卡面（ORDER-017）：以效果 id 對應（weaveMark 織圖無專屬卡面，維持純文字）
+const CARD_ART: Partial<Record<EffectId, string>> = {
+  scout: "/images/journey/cards/card-art-patrol-v1.png",
+  clearStone: "/images/journey/cards/card-art-stone-v1.png",
+  buildBridge: "/images/journey/cards/card-art-bridge-v1.png",
+  coopClear: "/images/journey/cards/card-art-carry-v1.png",
+  gatherFood: "/images/journey/cards/card-art-supply-v1.png",
+  reduceStress: "/images/journey/cards/card-art-watch-v1.png",
+};
+
+// 量表 / 頂欄小圖示（ORDER-017）
+const METER_PRESSURE = "/images/journey/meter-pressure-v1.png";
+const METER_STAMINA = "/images/journey/meter-stamina-v1.png";
+const ICON_DAY = "/images/journey/icon-day-v1.png";
+const ICON_ACTION = "/images/journey/icon-action-v1.png";
+const ICON_HIT = "/images/journey/icon-hit-v1.png";
+
+// 側邊導覽（ORDER-017 nav 圖示）：山徑（本頁）與對戰為實連結，其餘功能敬請期待
+const NAV_ITEMS: { key: string; label: string; img: string; href?: string }[] = [
+  { key: "journey", label: "山徑", img: "/images/journey/nav/nav-journey-v1.png", href: "/journey" },
+  { key: "battle", label: "對戰", img: "/images/journey/nav/nav-battle-v1.png", href: "/play" },
+  { key: "collection", label: "收藏", img: "/images/journey/nav/nav-collection-v1.png" },
+  { key: "tribe", label: "部落", img: "/images/journey/nav/nav-tribe-v1.png" },
+  { key: "achievement", label: "成就", img: "/images/journey/nav/nav-achievement-v1.png" },
+  { key: "settings", label: "設定", img: "/images/journey/nav/nav-settings-v1.png" },
+];
+
 const uid = () => Math.random().toString(36).slice(2);
 
 function shuffle<T>(arr: T[]): T[] {
@@ -470,8 +507,10 @@ export default function JourneyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-emerald-950 via-slate-950 to-slate-950 text-slate-100 px-4 sm:px-6 py-6">
-      <div className="max-w-5xl mx-auto">
+    <main className="min-h-screen bg-gradient-to-b from-emerald-950 via-slate-950 to-slate-950 text-slate-100 flex">
+      <SideRail active="journey" />
+      <div className="flex-1 min-w-0 px-4 sm:px-6 py-6">
+        <div className="max-w-5xl mx-auto">
         {/* 標題列 */}
         <header className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
@@ -487,14 +526,20 @@ export default function JourneyPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs">
-            <span className="rounded bg-slate-800 px-2 py-1">
-              第 {game.day}/{MAX_DAY} 日
+            <span className="rounded bg-slate-800 px-2 py-1 inline-flex items-center gap-1">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={ICON_DAY} width={14} height={14} alt="" />第 {game.day}/{MAX_DAY} 日
             </span>
-            <span className="rounded bg-sky-900/60 px-2 py-1">
-              行動點 {game.ap}/{game.maxAp}
+            <span className="rounded bg-sky-900/60 px-2 py-1 inline-flex items-center gap-1">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={ICON_ACTION} width={14} height={14} alt="" />行動點 {game.ap}/{game.maxAp}
             </span>
-            <span className="rounded bg-emerald-900/60 px-2 py-1" title="答對題數 ÷ 已答題數">
-              答題正確率 {rateLabel}
+            <span
+              className="rounded bg-emerald-900/60 px-2 py-1 inline-flex items-center gap-1"
+              title="答對題數 ÷ 已答題數"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={ICON_HIT} width={14} height={14} alt="" />答題正確率 {rateLabel}
             </span>
             <button
               onClick={() => setShowRules(true)}
@@ -514,8 +559,8 @@ export default function JourneyPage() {
 
         {/* 頂部數值列 */}
         <section className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-          <StatBar label="壓力" value={game.pressure} max={game.maxPressure} color="bg-rose-500" invert />
-          <StatBar label="隊伍體力" value={game.teamHp} max={game.maxTeamHp} color="bg-emerald-500" />
+          <StatBar label="壓力" value={game.pressure} max={game.maxPressure} color="bg-rose-500" invert icon={METER_PRESSURE} />
+          <StatBar label="隊伍體力" value={game.teamHp} max={game.maxTeamHp} color="bg-emerald-500" icon={METER_STAMINA} />
           <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-2 flex items-center justify-around gap-2 text-sm col-span-2">
             {(Object.keys(game.res) as Resource[]).map((r) => (
               <span key={r} className="flex items-center gap-1" title={RES_NAME[r]}>
@@ -573,19 +618,28 @@ export default function JourneyPage() {
                         className="absolute -top-6 left-1/2 -translate-x-1/2 drop-shadow-lg"
                       />
                     )}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={NODE_IMG[n.type]} width={48} height={48} alt={n.name} className="mx-auto mt-1" />
-                    <div className="text-xs font-semibold truncate">{n.name}</div>
-                  <div className="flex justify-center">
-                    <WordChip vocabId={n.vocabId} />
-                  </div>
-                  {n.type === "obstacle" || n.type === "bridge" ? (
-                    <div className={`text-[11px] mt-1 ${n.cleared ? "text-emerald-400" : "text-rose-300"}`}>
-                      {n.cleared ? "已通行" : n.type === "bridge" ? "待搭橋" : `阻礙 ${n.obstacle}`}
+                    {/* 場景水彩底（ORDER-017，已過文化複核）＋深色 overlay 保文字可讀 */}
+                    <span
+                      className="absolute inset-0 rounded-lg bg-cover bg-center opacity-35"
+                      style={{ backgroundImage: `url(${SCENE_IMG[n.type]})` }}
+                      aria-hidden
+                    />
+                    <span className="absolute inset-0 rounded-lg bg-slate-950/45" aria-hidden />
+                    <div className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={NODE_IMG[n.type]} width={48} height={48} alt={n.name} className="mx-auto mt-1" />
+                      <div className="text-xs font-semibold truncate">{n.name}</div>
+                      <div className="flex justify-center">
+                        <WordChip vocabId={n.vocabId} />
+                      </div>
+                      {n.type === "obstacle" || n.type === "bridge" ? (
+                        <div className={`text-[11px] mt-1 ${n.cleared ? "text-emerald-400" : "text-rose-300"}`}>
+                          {n.cleared ? "已通行" : n.type === "bridge" ? "待搭橋" : `阻礙 ${n.obstacle}`}
+                        </div>
+                      ) : (
+                        <div className="text-[11px] mt-1 text-slate-500">{n.cleared ? "可通行" : here ? "在此" : "？未探索"}</div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="text-[11px] mt-1 text-slate-500">{n.cleared ? "可通行" : here ? "在此" : "？未探索"}</div>
-                  )}
                 </div>
                 );
               })}
@@ -634,6 +688,7 @@ export default function JourneyPage() {
             {game.hand.map((c) => {
               const playable = canAfford(game, c);
               const eff = apCost(game, c);
+              const art = CARD_ART[c.effect];
               return (
                 <button
                   key={c.key}
@@ -645,6 +700,10 @@ export default function JourneyPage() {
                       : "border-slate-800 bg-slate-900 opacity-40 cursor-not-allowed"
                   }`}
                 >
+                  {art && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={art} alt={c.name} className="w-full h-16 object-cover rounded-lg mb-2" />
+                  )}
                   <div className="flex justify-between items-center">
                     <span className="text-sky-300 font-bold text-sm">
                       🎯{eff}
@@ -683,6 +742,7 @@ export default function JourneyPage() {
           </a>
           ）· 太魯閣語 trv。正式對外發布之授權洽談中；族語於遊戲中之用法文化複核進行中。
         </footer>
+        </div>
       </div>
 
       {/* 族語答題彈窗 */}
@@ -817,6 +877,44 @@ function cardTypeLabel(t: CardType): string {
   return { action: "行動", coop: "協作", supply: "補給", watch: "守望", weave: "織圖" }[t];
 }
 
+// 側邊導覽（ORDER-017 nav 圖示）；桌機顯示，手機隱藏。僅實作頁面為連結，其餘標「敬請期待」。
+function SideRail({ active }: { active: string }) {
+  return (
+    <nav className="hidden sm:flex flex-col items-center gap-1 w-16 shrink-0 border-r border-slate-800/80 bg-slate-950/60 py-4 sticky top-0 h-screen">
+      {NAV_ITEMS.map((it) => {
+        const isActive = it.key === active;
+        const inner = (
+          <span
+            className={`flex flex-col items-center gap-1 w-full rounded-lg py-2 transition ${
+              isActive
+                ? "bg-emerald-900/50 ring-1 ring-emerald-500/60"
+                : it.href
+                  ? "hover:bg-slate-800/70"
+                  : "opacity-35"
+            }`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={it.img} width={28} height={28} alt={it.label} />
+            <span className="text-[9px] text-slate-300">{it.label}</span>
+          </span>
+        );
+        if (it.href && !isActive) {
+          return (
+            <Link key={it.key} href={it.href} className="w-12" title={it.label}>
+              {inner}
+            </Link>
+          );
+        }
+        return (
+          <div key={it.key} className="w-12" title={it.href ? it.label : `${it.label}（敬請期待）`}>
+            {inner}
+          </div>
+        );
+      })}
+    </nav>
+  );
+}
+
 // 顯示真實太魯閣語詞 + 發音（放在卡片按鈕內，故用 span 避免 button 巢狀；點擊不觸發卡片）
 function WordChip({ vocabId }: { vocabId: string }) {
   const e = vocab(vocabId);
@@ -856,18 +954,26 @@ function StatBar({
   max,
   color,
   invert,
+  icon,
 }: {
   label: string;
   value: number;
   max: number;
   color: string;
   invert?: boolean;
+  icon?: string;
 }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-2">
       <div className="flex justify-between text-[11px] mb-1">
-        <span className="text-slate-400">{label}</span>
+        <span className="text-slate-400 flex items-center gap-1">
+          {icon && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={icon} width={14} height={14} alt="" />
+          )}
+          {label}
+        </span>
         <span className={invert ? "text-rose-300" : "text-emerald-300"}>
           {value}/{max}
         </span>
