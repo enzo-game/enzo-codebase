@@ -16,22 +16,23 @@ const ACCENT: Record<
     hover: "hover:border-emerald-500/80",
     text: "text-emerald-300",
     chip: "bg-lime-400/90 text-black",
-    bg: "from-emerald-950/60 to-slate-950/40",
-    cta: "bg-emerald-800/70 hover:bg-emerald-700 text-emerald-50",
+    bg: "from-emerald-950/90 via-slate-950/75 to-slate-950/55",
+    cta: "bg-emerald-800/80 hover:bg-emerald-700 text-emerald-50",
   },
   sky: {
     ring: "border-sky-800/50",
     hover: "hover:border-sky-500/80",
     text: "text-sky-300",
     chip: "bg-sky-400/90 text-black",
-    bg: "from-sky-950/60 to-slate-950/40",
-    cta: "bg-sky-800/70 hover:bg-sky-700 text-sky-50",
+    bg: "from-sky-950/90 via-slate-950/75 to-slate-950/55",
+    cta: "bg-sky-800/80 hover:bg-sky-700 text-sky-50",
   },
 };
 
 function ModeCard({
   href,
-  emblem,
+  emblemSrc,
+  bgSrc,
   chip,
   title,
   kicker,
@@ -40,7 +41,8 @@ function ModeCard({
   accent,
 }: {
   href: string;
-  emblem: string;
+  emblemSrc: string;
+  bgSrc: string;
   chip: string;
   title: string;
   kicker: string;
@@ -52,49 +54,70 @@ function ModeCard({
   return (
     <Link
       href={href}
-      className={`group relative flex flex-col overflow-hidden rounded-2xl border ${a.ring} ${a.hover} bg-gradient-to-b ${a.bg} p-6 transition-colors`}
+      className={`group relative flex min-h-[320px] flex-col overflow-hidden rounded-2xl border ${a.ring} ${a.hover} transition-colors`}
     >
-      {/* ORDER-016: 換入 home-mode-{a|b}-*-v1.png 作卡底（此處為中性漸層佔位） */}
-      <span
-        className={`absolute right-4 top-4 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${a.chip}`}
-      >
-        {chip}
-      </span>
+      {/* 卡底插畫（ORDER-016）＋深色漸層 overlay 確保可讀 */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={bgSrc}
+        alt=""
+        aria-hidden
+        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      />
+      <div className={`absolute inset-0 bg-gradient-to-t ${a.bg}`} />
 
-      {/* ORDER-016: 換入 emblem-mode-{a|b}-*-v1.png（此處中性圓徽佔位） */}
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-white/5 text-3xl">
-        {emblem}
+      <div className="relative flex flex-1 flex-col p-6">
+        <span
+          className={`absolute right-4 top-4 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${a.chip}`}
+        >
+          {chip}
+        </span>
+
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={emblemSrc}
+          alt=""
+          aria-hidden
+          width={64}
+          height={64}
+          className="mb-4 h-16 w-16 drop-shadow"
+        />
+
+        <div className="text-2xl font-bold tracking-tight">{title}</div>
+        <div className={`mt-1 text-xs ${a.text}`}>{kicker}</div>
+        <p className="mt-3 text-sm leading-relaxed text-slate-200/90">{desc}</p>
+
+        <span
+          className={`mt-auto inline-flex w-fit items-center gap-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${a.cta}`}
+        >
+          {cta}
+          <span className="transition-transform group-hover:translate-x-0.5">▸</span>
+        </span>
       </div>
-
-      <div className="text-2xl font-bold tracking-tight">{title}</div>
-      <div className={`mt-1 text-xs ${a.text}`}>{kicker}</div>
-      <p className="mt-3 text-sm leading-relaxed text-slate-300/90">{desc}</p>
-
-      <span
-        className={`mt-6 inline-flex w-fit items-center gap-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${a.cta}`}
-      >
-        {cta}
-        <span className="transition-transform group-hover:translate-x-0.5">▸</span>
-      </span>
     </Link>
   );
 }
 
 function FeatureCard({
-  emblem,
+  emblemSrc,
   title,
   desc,
 }: {
-  emblem: string;
+  emblemSrc: string;
   title: string;
   desc: string;
 }) {
   return (
     <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4">
-      {/* ORDER-016: 換入 feature-*-v1.png（中性徽章佔位） */}
-      <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xl">
-        {emblem}
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={emblemSrc}
+        alt=""
+        aria-hidden
+        width={40}
+        height={40}
+        className="mb-2 h-10 w-10"
+      />
       <div className="text-sm font-semibold">{title}</div>
       <p className="mt-1 text-xs leading-relaxed text-slate-400">{desc}</p>
     </div>
@@ -104,9 +127,16 @@ function FeatureCard({
 export default function Home() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
-      {/* 背景層（中性）：深色漸層 + 底部暖光（營火感）。ORDER-016 生圖後換 home-bg-night-mountains-v1.png */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-[radial-gradient(ellipse_at_bottom,_rgba(217,119,6,0.18),_transparent_70%)]" />
+      {/* 背景層：夜山插畫（ORDER-016）＋深色漸層可讀性 overlay＋底部暖光（營火感） */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/images/home/home-bg-night-mountains-v1.jpg"
+        alt=""
+        aria-hidden
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-slate-950/85 via-slate-950/75 to-slate-950/90" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-[radial-gradient(ellipse_at_bottom,_rgba(217,119,6,0.22),_transparent_70%)]" />
 
       {/* 中性外框（非織紋/菱形；ORDER-016 §4 織紋四角外框待文化複核） */}
       <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-14">
@@ -133,7 +163,8 @@ export default function Home() {
           <ModeCard
             href="/journey"
             accent="emerald"
-            emblem="⛰️"
+            emblemSrc="/images/home/emblem-mode-a-mountain-v1.png"
+            bgSrc="/images/home/home-mode-a-forest-path-v1.jpg"
             chip="友善可玩"
             title="模式 A · 山徑劇情"
             kicker="教育 · 文化任務 · 劇情取向"
@@ -143,7 +174,8 @@ export default function Home() {
           <ModeCard
             href="/play"
             accent="sky"
-            emblem="⚔️"
+            emblemSrc="/images/home/emblem-mode-b-cards-v1.png"
+            bgSrc="/images/home/home-mode-b-arena-v1.jpg"
             chip="可連玩"
             title="模式 B · 競技對戰"
             kicker="vs 山林試煉（系統） · 闖五式"
@@ -155,18 +187,18 @@ export default function Home() {
         {/* 三特色 */}
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           <FeatureCard
-            emblem="🃏"
+            emblemSrc="/images/home/feature-cards-v1.png"
             title="爐石式對戰"
             desc="法力曲線、隨從與法術、戰場出牌。"
           />
           <FeatureCard
-            emblem="📚"
+            emblemSrc="/images/home/feature-language-v1.png"
             title="族語答題加成"
             desc="答對得加成，答錯揭示正解，正向學習。"
           />
           {/* 註：原稿此格為「Truku 文化主題／祖靈、圖紋」，屬文化避免清單；改中性自然主題，待 enzo-culture 核定正式呈現。 */}
           <FeatureCard
-            emblem="⛰️"
+            emblemSrc="/images/home/feature-nature-v1.png"
             title="山林主題"
             desc="山徑、溪流、部落與自然素材，貼近在地情境。"
           />
