@@ -367,8 +367,11 @@ export default function PlayPage() {
   const [selected, setSelected] = useState<string | null>(null);
 
   useEffect(() => {
+    // 刻意的客戶端 mount 初始化：newGame() 內含 Math.random()，須在 client 產生以避免 SSR/CSR hydration 不一致
+    /* eslint-disable react-hooks/set-state-in-effect */
     setMounted(true);
     setGame(newGame());
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   function reset() {
