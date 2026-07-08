@@ -1,0 +1,31 @@
+name: CI
+
+# PR 進 main 前的把關：lint + build（Next 的 build 含 TypeScript 型別檢查）
+# 綠燈才允許 auto-merge 合併。
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build (含 TypeScript 型別檢查)
+        run: npm run build
