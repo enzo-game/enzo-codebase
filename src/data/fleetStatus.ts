@@ -62,22 +62,22 @@ export const artBatches: PipelineRow[] = [
 // 特定敏感單項（不是整批，是某個字/某個裝飾）
 export const reviewItems: ItemRow[] = [
   {
-    name: "金幣族語命名 matu / sbalay / puni / lukus",
-    status: "blocked",
-    blocker: "逐詞核定中；sbalay（和解/真相儀式）敏感。圖面無字已放行，落字未核定不能上",
-    next: "Mnemosyne",
+    name: "金幣族語命名（糧/木/石/繩）",
+    status: "wip",
+    blocker: "司令決定改用 klokah 查證正確詞：idaw / qhuni / btunux / gasil（排除錯誤的 sbalay），標『示範·待核』。待 Claude 接入；正式發布前仍建議族語老師確認",
+    next: "Claude",
   },
   {
-    name: "卡名/節點名 elug / seejiq / btunux / hakaw / qmasan / sapah / alang",
-    status: "blocked",
-    blocker: "同上，逐詞核定中",
-    next: "Mnemosyne",
+    name: "卡名/節點名 elug / seejiq / btunux / hakaw…",
+    status: "wip",
+    blocker: "司令決定：顯示 klokah 真實詞＋『示範』標註（沿用 /journey 做法），對外發布前再收束",
+    next: "Claude",
   },
   {
-    name: "正式「織紋／菱形」文化外框",
-    status: "blocked",
-    blocker: "規範：不得由生圖模型自行發明。目前走 ORDER-018 中性外框頂著",
-    next: "族人",
+    name: "四角外框：司令決定走中性版",
+    status: "wip",
+    blocker: "司令拍板：不做菱形/織紋文化框，走 ORDER-018 中性外框（待 Codex 生圖）",
+    next: "Codex",
   },
   {
     name: "首頁 🏹🌈 logo 是否美術化（含弓箭）",
