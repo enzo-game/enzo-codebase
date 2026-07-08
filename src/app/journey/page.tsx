@@ -82,16 +82,23 @@ type EventCard = {
 
 const MAX_DAY = 7;
 const HAND_LIMIT = 5;
-const RES_EMOJI: Record<Resource, string> = { food: "🌾", wood: "🪵", stone: "🪨", rope: "🧵" };
 const RES_NAME: Record<Resource, string> = { food: "糧食", wood: "木材", stone: "石材", rope: "繩索" };
-const NODE_EMOJI: Record<NodeType, string> = {
-  start: "🏕",
-  obstacle: "🪨",
-  bridge: "🌉",
-  event: "❓",
-  supply: "📦",
-  destination: "🏔",
+// 美術素材（ORDER-015，Codex 生圖，已過 enzo-culture 複核）
+const RES_IMG: Record<Resource, string> = {
+  food: "/images/journey/res-food-v1.png",
+  wood: "/images/journey/res-wood-v1.png",
+  stone: "/images/journey/res-stone-v1.png",
+  rope: "/images/journey/res-rope-v1.png",
 };
+const NODE_IMG: Record<NodeType, string> = {
+  start: "/images/journey/node-normal-v1.png",
+  obstacle: "/images/journey/node-rockfall-v1.png",
+  bridge: "/images/journey/node-bridge-v1.png",
+  event: "/images/journey/node-event-v1.png",
+  supply: "/images/journey/node-supply-v1.png",
+  destination: "/images/journey/node-destination-v1.png",
+};
+const MAP_BASE = "/images/journey/board-journey-map-base-v1.jpg";
 
 const uid = () => Math.random().toString(36).slice(2);
 
@@ -478,7 +485,8 @@ export default function JourneyPage() {
           <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-2 flex items-center justify-around gap-2 text-sm col-span-2">
             {(Object.keys(game.res) as Resource[]).map((r) => (
               <span key={r} className="flex items-center gap-1" title={RES_NAME[r]}>
-                <span>{RES_EMOJI[r]}</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={RES_IMG[r]} width={22} height={22} alt={RES_NAME[r]} className="inline-block" />
                 <span className="font-semibold">{game.res[r]}</span>
               </span>
             ))}
@@ -497,27 +505,42 @@ export default function JourneyPage() {
         {/* 山徑節點 */}
         <section className="mb-3">
           <h2 className="text-xs uppercase tracking-wider text-slate-500 mb-2">山徑路線</h2>
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-3 flex flex-wrap items-stretch gap-2">
-            {game.nodes.map((n, i) => {
-              const here = i === game.idx;
-              return (
-                <div
-                  key={n.id}
-                  className={`flex-1 min-w-24 rounded-lg border-2 p-2 text-center relative ${
-                    here
-                      ? "border-emerald-400 bg-emerald-900/40"
-                      : n.cleared
-                        ? "border-slate-700 bg-slate-800/60 opacity-70"
-                        : "border-slate-700 bg-slate-800"
-                  }`}
-                >
-                  {here && (
-                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-lg" title="隊伍位置">
-                      🥾
-                    </span>
-                  )}
-                  <div className="text-xl mt-1">{NODE_EMOJI[n.type]}</div>
-                  <div className="text-xs font-semibold truncate">{n.name}</div>
+          <div className="relative rounded-xl border border-slate-800 overflow-hidden">
+            {/* 山徑地圖底（ORDER-015 美術，已過文化複核）＋深色 overlay 保節點可讀 */}
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url(${MAP_BASE})` }}
+              aria-hidden
+            />
+            <div className="absolute inset-0 bg-slate-950/70" aria-hidden />
+            <div className="relative p-3 flex flex-wrap items-stretch gap-2">
+              {game.nodes.map((n, i) => {
+                const here = i === game.idx;
+                return (
+                  <div
+                    key={n.id}
+                    className={`flex-1 min-w-24 rounded-lg border-2 p-2 text-center relative ${
+                      here
+                        ? "border-emerald-400 bg-emerald-900/70"
+                        : n.cleared
+                          ? "border-slate-700 bg-slate-900/70 opacity-80"
+                          : "border-slate-700 bg-slate-900/80"
+                    }`}
+                  >
+                    {here && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src="/images/journey/token-team-v1.png"
+                        width={44}
+                        height={44}
+                        alt="隊伍位置"
+                        title="隊伍位置"
+                        className="absolute -top-6 left-1/2 -translate-x-1/2 drop-shadow-lg"
+                      />
+                    )}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={NODE_IMG[n.type]} width={48} height={48} alt={n.name} className="mx-auto mt-1" />
+                    <div className="text-xs font-semibold truncate">{n.name}</div>
                   {n.truku !== "—" && <div className="text-[10px] text-emerald-300/70 truncate">{n.truku}</div>}
                   {n.type === "obstacle" || n.type === "bridge" ? (
                     <div className={`text-[11px] mt-1 ${n.cleared ? "text-emerald-400" : "text-rose-300"}`}>
@@ -527,8 +550,9 @@ export default function JourneyPage() {
                     <div className="text-[11px] mt-1 text-slate-500">{n.cleared ? "已通過" : "—"}</div>
                   )}
                 </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </section>
 
@@ -600,11 +624,15 @@ export default function JourneyPage() {
                   <div className="text-[10px] text-emerald-300/70">{c.truku}</div>
                   <div className="text-[10px] text-slate-400 mt-1 leading-snug">{c.desc}</div>
                   {c.costRes && (
-                    <div className="text-[10px] text-amber-300/80 mt-1">
-                      耗{" "}
-                      {Object.entries(c.costRes)
-                        .map(([r, v]) => `${RES_EMOJI[r as Resource]}${v}`)
-                        .join(" ")}
+                    <div className="flex items-center gap-2 text-[10px] text-amber-300/80 mt-1">
+                      <span>耗</span>
+                      {Object.entries(c.costRes).map(([r, v]) => (
+                        <span key={r} className="inline-flex items-center gap-0.5" title={RES_NAME[r as Resource]}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={RES_IMG[r as Resource]} width={14} height={14} alt={RES_NAME[r as Resource]} />
+                          {v}
+                        </span>
+                      ))}
                     </div>
                   )}
                   {c.quiz && <div className="text-[10px] text-sky-300/70 mt-1">★ 需答族語題</div>}
