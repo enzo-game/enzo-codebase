@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { vocab, audioUrl, distractors, ATTRIBUTION, SOURCE, SOURCE_URL } from "@/data/truku";
 
 /*
  * 模式 A · 山徑劇情（灰盒 MVP）
@@ -28,7 +29,7 @@ type EffectId =
 type PathNode = {
   id: string;
   name: string;
-  truku: string; // 示範佔位，待複核
+  vocabId: string; // 對應真實太魯閣語詞（klokah trv=33）
   type: NodeType;
   obstacle: number; // 需清除的阻礙點數（bridge：1 = 未搭建）
   cleared: boolean;
@@ -37,7 +38,7 @@ type PathNode = {
 type JCard = {
   key: string;
   name: string;
-  truku: string; // 該卡對應族語詞（示範佔位）
+  vocabId: string; // 該卡對應真實太魯閣語詞（klokah trv=33）
   cost: number;
   type: CardType;
   effect: EffectId;
@@ -72,8 +73,8 @@ type JGame = {
 
 type EventCard = {
   name: string;
-  truku: string;
-  kind: "天候" | "地形" | "正面" | "路段危機";
+  vocabId: string;
+  kind: "天候" | "地形" | "正面" | "路段危機" | "啟程";
   pressure: number;
   desc: string;
 };
@@ -117,14 +118,15 @@ function pushLog(log: LogEntry[], text: string, tone: LogEntry["tone"]): LogEntr
 
 // ───────────────────────── 牌庫 / 節點 / 事件（示範佔位資料）─────────────────────────
 
+// vocabId 對應 klokah trv=33 真實詞：走路25-10 石頭12-05 橋樑12-07 搬運26-52 幫忙34-05 飯21-01 看28-03
 const CARD_POOL: Omit<JCard, "key">[] = [
-  { name: "巡路", truku: "elug（示範）", cost: 1, type: "action", effect: "scout", quiz: true, desc: "前進 1 格（需目前路段已通行）。" },
-  { name: "搬石", truku: "btunux（示範）", cost: 2, type: "action", effect: "clearStone", quiz: true, desc: "清除落石阻礙：答對 -2、答錯 -1。" },
-  { name: "搭橋", truku: "hakaw（示範）", cost: 2, type: "action", effect: "buildBridge", quiz: true, costRes: { wood: 1, rope: 1 }, desc: "使橋梁路段可通行（耗木材1、繩索1）。" },
-  { name: "共同搬運", truku: "seejiq（示範）", cost: 2, type: "coop", effect: "coopClear", quiz: true, desc: "協力清障：答對 -3（體力<5 為 -2）、答錯 -1。" },
-  { name: "分工合作", truku: "gaya（示範）", cost: 1, type: "coop", effect: "weaveMark", quiz: true, desc: "織線標記：壓力 -1（答對再 -1），下一張牌 -1 行動點。" },
-  { name: "整理物資", truku: "idaw（示範）", cost: 1, type: "supply", effect: "gatherFood", quiz: false, desc: "獲得 2 糧食。" },
-  { name: "守望", truku: "qmita（示範）", cost: 2, type: "watch", effect: "reduceStress", quiz: true, desc: "降低壓力：答對 -3、答錯 -1。" },
+  { name: "巡路", vocabId: "25-10", cost: 1, type: "action", effect: "scout", quiz: true, desc: "前進 1 格（需目前路段已通行）。" },
+  { name: "搬石", vocabId: "12-05", cost: 2, type: "action", effect: "clearStone", quiz: true, desc: "清除落石阻礙：答對 -2、答錯 -1。" },
+  { name: "搭橋", vocabId: "12-07", cost: 2, type: "action", effect: "buildBridge", quiz: true, costRes: { wood: 1, rope: 1 }, desc: "使橋梁路段可通行（耗木材1、繩索1）。" },
+  { name: "共同搬運", vocabId: "26-52", cost: 2, type: "coop", effect: "coopClear", quiz: true, desc: "協力清障：答對 -3（體力<5 為 -2）、答錯 -1。" },
+  { name: "分工合作", vocabId: "34-05", cost: 1, type: "coop", effect: "weaveMark", quiz: true, desc: "織線標記：壓力 -1（答對再 -1），下一張牌 -1 行動點。" },
+  { name: "整理物資", vocabId: "21-01", cost: 1, type: "supply", effect: "gatherFood", quiz: false, desc: "獲得 2 糧食。" },
+  { name: "守望", vocabId: "28-03", cost: 2, type: "watch", effect: "reduceStress", quiz: true, desc: "降低壓力：答對 -3、答錯 -1。" },
 ];
 
 function buildDeck(): JCard[] {
@@ -146,23 +148,25 @@ function buildDeck(): JCard[] {
 }
 
 function buildNodes(): PathNode[] {
+  // vocabId：河流10-07 石頭12-05 橋樑12-07 道路10-01 家12-01 部落24-04
   return [
-    { id: "n0", name: "立霧溪口（起點）", truku: "—", type: "start", obstacle: 0, cleared: true },
-    { id: "n1", name: "落石路段", truku: "btunux（示範）", type: "obstacle", obstacle: 2, cleared: false },
-    { id: "n2", name: "峽谷吊橋", truku: "hakaw（示範）", type: "bridge", obstacle: 1, cleared: false },
-    { id: "n3", name: "霧林捷徑", truku: "qmasan（示範）", type: "event", obstacle: 0, cleared: false },
-    { id: "n4", name: "山腰營地", truku: "sapah（示範）", type: "supply", obstacle: 0, cleared: false },
-    { id: "n5", name: "部落（目的地）", truku: "alang（示範）", type: "destination", obstacle: 0, cleared: false },
+    { id: "n0", name: "立霧溪口（起點）", vocabId: "10-07", type: "start", obstacle: 0, cleared: true },
+    { id: "n1", name: "落石路段", vocabId: "12-05", type: "obstacle", obstacle: 2, cleared: false },
+    { id: "n2", name: "峽谷吊橋", vocabId: "12-07", type: "bridge", obstacle: 1, cleared: false },
+    { id: "n3", name: "林間捷徑", vocabId: "10-01", type: "event", obstacle: 0, cleared: false },
+    { id: "n4", name: "山腰營地", vocabId: "12-01", type: "supply", obstacle: 0, cleared: false },
+    { id: "n5", name: "部落（目的地）", vocabId: "24-04", type: "destination", obstacle: 0, cleared: false },
   ];
 }
 
 const EVENTS: EventCard[] = [
-  { name: "風起雲湧", truku: "bgihur（示範）", kind: "天候", pressure: 1, desc: "山風漸強，隊伍步伐放緩。" },
-  { name: "溪水上升", truku: "yayung（示範）", kind: "地形", pressure: 1, desc: "溪水漲起，橋段更難通行。" },
-  { name: "好天氣", truku: "malu karat（示範）", kind: "正面", pressure: -1, desc: "天色轉晴，士氣回升。" },
-  { name: "落石再起", truku: "btunux（示範）", kind: "路段危機", pressure: 1, desc: "碎石不時滑落。" },
-  { name: "山林餽贈", truku: "samat（示範）", kind: "正面", pressure: -1, desc: "沿途採得野菜與獵物。" },
-  { name: "濃霧起", truku: "rmux（示範）", kind: "天候", pressure: 1, desc: "白霧壟罩，視線受阻。" },
+  // vocabId：風10-04 河流10-07 太陽11-02 石頭12-05 獵物16-08 雲11-12
+  { name: "風起雲湧", vocabId: "10-04", kind: "天候", pressure: 1, desc: "山風漸強，隊伍步伐放緩。" },
+  { name: "溪水上升", vocabId: "10-07", kind: "地形", pressure: 1, desc: "溪水漲起，橋段更難通行。" },
+  { name: "好天氣", vocabId: "11-02", kind: "正面", pressure: -1, desc: "天色轉晴，士氣回升。" },
+  { name: "落石再起", vocabId: "12-05", kind: "路段危機", pressure: 1, desc: "碎石不時滑落。" },
+  { name: "山林餽贈", vocabId: "16-08", kind: "正面", pressure: -1, desc: "沿途採得野菜與山產。" },
+  { name: "濃霧起", vocabId: "11-12", kind: "天候", pressure: 1, desc: "白霧壟罩，視線受阻。" },
 ];
 
 // ───────────────────────── 初始化 ─────────────────────────
@@ -185,10 +189,10 @@ function newGame(): JGame {
     discard: [],
     event: {
       name: "啟程",
-      truku: "—",
-      kind: "正面",
+      vocabId: "10-01", // 道路 elug
+      kind: "啟程",
       pressure: 0,
-      desc: "連日風雨後，通往部落的山徑多處受阻。帶領隊伍安全返家。",
+      desc: "隊伍自立霧溪口出發，目標是安全返回部落。前方山徑待你逐段修復通行。",
     },
     coopDiscount: 0,
     status: "playing",
@@ -200,18 +204,17 @@ function newGame(): JGame {
 
 // ───────────────────────── 族語答題（示範佔位）─────────────────────────
 
-type Quiz = { prompt: string; options: string[]; answer: number; note: string };
+type Quiz = { prompt: string; options: string[]; answer: number; audioId: string; note: string };
 
 function quizFor(card: JCard): Quiz {
-  const correct = card.truku;
-  const pool = CARD_POOL.map((c) => c.truku).filter((t) => t !== correct);
-  const distractors = shuffle(pool).slice(0, 3);
-  const options = shuffle([correct, ...distractors]);
+  const ans = vocab(card.vocabId);
+  const opts = shuffle([ans, ...distractors(card.vocabId, 3)]);
   return {
-    prompt: `「${card.name}」的太魯閣族語是？`,
-    options,
-    answer: options.indexOf(correct),
-    note: "示範佔位題目，正式太魯閣族語內容待語言部審核 hunter.db 並經文化複核後填入。",
+    prompt: `「${ans.chinese}」的太魯閣族語是？`,
+    options: opts.map((o) => o.word),
+    answer: opts.findIndex((o) => o.word === ans.word),
+    audioId: card.vocabId,
+    note: `族語詞彙與發音來源：${SOURCE}。遊戲用法之文化複核進行中。`,
   };
 }
 
@@ -414,14 +417,29 @@ function camp(g: JGame): JGame {
 
 // ───────────────────────── 元件 ─────────────────────────
 
+function playAudio(id: string | null) {
+  if (!id) return;
+  const url = audioUrl(id);
+  if (!url || typeof window === "undefined") return;
+  try {
+    const a = new Audio(url);
+    void a.play().catch(() => {});
+  } catch {
+    /* 忽略播放失敗（如來源暫時無法連線） */
+  }
+}
+
 export default function JourneyPage() {
   const [game, setGame] = useState<JGame>(() => newGame());
   const [pending, setPending] = useState<JCard | null>(null);
   const [revealed, setRevealed] = useState<number | null>(null);
+  const [showRules, setShowRules] = useState(false);
+  const [confirmRestart, setConfirmRestart] = useState(false);
 
   const quiz = useMemo(() => (pending && pending.quiz ? quizFor(pending) : null), [pending]);
   const total = game.correct + game.wrong;
   const rate = total === 0 ? 0 : Math.round((game.correct / total) * 100);
+  const rateLabel = total === 0 ? "—" : `${rate}%`;
 
   function tryPlay(card: JCard) {
     if (!canAfford(game, card)) return;
@@ -448,6 +466,7 @@ export default function JourneyPage() {
     setGame(newGame());
     setPending(null);
     setRevealed(null);
+    setConfirmRestart(false);
   }
 
   return (
@@ -464,7 +483,7 @@ export default function JourneyPage() {
             </div>
             <h1 className="text-xl sm:text-2xl font-bold">Enzo · 山徑：修復山徑</h1>
             <p className="text-[11px] text-slate-400">
-              非戰鬥。答對族語題讓行動全額生效。示範題庫為佔位資料，正式族語內容待語言部與文化部複核。
+              非戰鬥。答對族語題讓行動全額生效。族語詞彙與發音為真實太魯閣語資料。
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs">
@@ -474,7 +493,22 @@ export default function JourneyPage() {
             <span className="rounded bg-sky-900/60 px-2 py-1">
               行動點 {game.ap}/{game.maxAp}
             </span>
-            <span className="rounded bg-emerald-900/60 px-2 py-1">命中 {rate}%</span>
+            <span className="rounded bg-emerald-900/60 px-2 py-1" title="答對題數 ÷ 已答題數">
+              答題正確率 {rateLabel}
+            </span>
+            <button
+              onClick={() => setShowRules(true)}
+              className="rounded bg-slate-700 hover:bg-slate-600 px-2 py-1"
+            >
+              規則
+            </button>
+            <button
+              onClick={() => setConfirmRestart(true)}
+              className="rounded bg-slate-800 hover:bg-slate-700 px-2 py-1 text-slate-300"
+              title="重新開始一局"
+            >
+              重新開始
+            </button>
           </div>
         </header>
 
@@ -498,6 +532,7 @@ export default function JourneyPage() {
           <section className="mb-3 rounded-xl border border-amber-700/40 bg-amber-950/20 p-3 text-sm">
             <span className="text-amber-300 font-semibold">今日事件 · {game.event.name}</span>
             <span className="text-slate-400 text-xs">（{game.event.kind}）</span>
+            <WordChip vocabId={game.event.vocabId} />
             <span className="text-slate-300"> — {game.event.desc}</span>
           </section>
         )}
@@ -541,13 +576,15 @@ export default function JourneyPage() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={NODE_IMG[n.type]} width={48} height={48} alt={n.name} className="mx-auto mt-1" />
                     <div className="text-xs font-semibold truncate">{n.name}</div>
-                  {n.truku !== "—" && <div className="text-[10px] text-emerald-300/70 truncate">{n.truku}</div>}
+                  <div className="flex justify-center">
+                    <WordChip vocabId={n.vocabId} />
+                  </div>
                   {n.type === "obstacle" || n.type === "bridge" ? (
                     <div className={`text-[11px] mt-1 ${n.cleared ? "text-emerald-400" : "text-rose-300"}`}>
                       {n.cleared ? "已通行" : n.type === "bridge" ? "待搭橋" : `阻礙 ${n.obstacle}`}
                     </div>
                   ) : (
-                    <div className="text-[11px] mt-1 text-slate-500">{n.cleared ? "已通過" : "—"}</div>
+                    <div className="text-[11px] mt-1 text-slate-500">{n.cleared ? "可通行" : here ? "在此" : "？未探索"}</div>
                   )}
                 </div>
                 );
@@ -585,18 +622,13 @@ export default function JourneyPage() {
             <h2 className="text-xs uppercase tracking-wider text-slate-500">
               行動籤（牌庫 {game.deck.length} · 棄 {game.discard.length}）
             </h2>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setGame((g) => camp(g))}
-                disabled={game.status !== "playing"}
-                className="rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 px-3 py-1 text-sm font-medium"
-              >
-                🌙 紮營（收束今日）
-              </button>
-              <button onClick={restart} className="rounded bg-slate-700 hover:bg-slate-600 px-3 py-1 text-sm">
-                重新開始
-              </button>
-            </div>
+            <button
+              onClick={() => setGame((g) => camp(g))}
+              disabled={game.status !== "playing"}
+              className="rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 px-3 py-1 text-sm font-medium"
+            >
+              🌙 紮營（收束今日）
+            </button>
           </div>
           <div className="flex flex-wrap gap-2">
             {game.hand.map((c) => {
@@ -621,7 +653,7 @@ export default function JourneyPage() {
                     <span className="text-[10px] text-slate-400">{cardTypeLabel(c.type)}</span>
                   </div>
                   <div className="font-semibold text-sm mt-1">{c.name}</div>
-                  <div className="text-[10px] text-emerald-300/70">{c.truku}</div>
+                  <WordChip vocabId={c.vocabId} />
                   <div className="text-[10px] text-slate-400 mt-1 leading-snug">{c.desc}</div>
                   {c.costRes && (
                     <div className="flex items-center gap-2 text-[10px] text-amber-300/80 mt-1">
@@ -641,6 +673,16 @@ export default function JourneyPage() {
             })}
           </div>
         </section>
+
+        {/* 來源標示（授權洽談中）＋ 文化複核狀態 */}
+        <footer className="mt-4 text-[10px] leading-relaxed text-slate-500 border-t border-slate-800 pt-2">
+          {ATTRIBUTION}
+          （
+          <a href={SOURCE_URL} target="_blank" rel="noreferrer" className="underline hover:text-slate-300">
+            {SOURCE}
+          </a>
+          ）· 太魯閣語 trv。正式對外發布之授權洽談中；族語於遊戲中之用法文化複核進行中。
+        </footer>
       </div>
 
       {/* 族語答題彈窗 */}
@@ -671,10 +713,67 @@ export default function JourneyPage() {
               })}
             </div>
             {revealed !== null && (
-              <p className="text-xs text-slate-300 mt-3">
-                {revealed === quiz.answer ? "✅ 答對！行動全額生效。" : "❌ 答錯，行動以半額生效。"}
-              </p>
+              <div className="mt-3 flex items-center gap-2">
+                <p className="text-xs text-slate-300">
+                  {revealed === quiz.answer ? "✅ 答對！行動全額生效。" : "❌ 答錯，行動以半額生效。"}
+                </p>
+                <button
+                  onClick={() => playAudio(quiz.audioId)}
+                  className="rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
+                  title="播放正解發音（原住民族語E樂園）"
+                >
+                  🔊 聽發音
+                </button>
+              </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 規則面板 */}
+      {showRules && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-5 text-sm">
+            <h3 className="text-lg font-bold mb-3">怎麼玩 · 勝敗條件</h3>
+            <ul className="space-y-2 text-slate-300">
+              <li>🎯 <b>目標</b>：在第 {MAX_DAY} 日結束前，帶隊伍抵達終點「部落」。</li>
+              <li>🃏 每回合有 <b>行動點</b>，打行動／協作牌前要答對族語題，行動才全額生效（答錯半額）。</li>
+              <li>🌙 <b>紮營</b>收束當日：消耗 <b>1 糧食</b>；糧食不足則隊伍體力 -2；當前路段未通行則壓力 +1。</li>
+              <li>💥 <b>失敗條件</b>：壓力達 {10}（被迫折返）、或隊伍體力歸 0（耗盡）、或第 {MAX_DAY} 日結束仍未抵達。</li>
+              <li>📦 資源：糧食（紮營消耗）、木材／繩索（搭橋）、石材（修橋、加固落石）。</li>
+            </ul>
+            <div className="text-right mt-4">
+              <button
+                onClick={() => setShowRules(false)}
+                className="rounded-full bg-emerald-600 hover:bg-emerald-500 px-5 py-2 text-sm font-semibold"
+              >
+                知道了
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 重新開始二次確認 */}
+      {confirmRestart && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-xs rounded-2xl bg-slate-900 border border-slate-700 p-5 text-center">
+            <h3 className="text-base font-bold mb-1">重新開始這一局？</h3>
+            <p className="text-xs text-slate-400 mb-4">目前進度會全部重置，無法復原。</p>
+            <div className="flex gap-2 justify-center">
+              <button
+                onClick={restart}
+                className="rounded-full bg-rose-600 hover:bg-rose-500 px-4 py-2 text-sm font-semibold"
+              >
+                確定重來
+              </button>
+              <button
+                onClick={() => setConfirmRestart(false)}
+                className="rounded-full bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm"
+              >
+                取消
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -689,7 +788,7 @@ export default function JourneyPage() {
             </h3>
             <p className="text-sm text-slate-400 mb-4">
               {game.status === "won"
-                ? `第 ${game.day} 日抵達，族語命中率 ${rate}%。`
+                ? `第 ${game.day} 日抵達，答題正確率 ${rateLabel}。`
                 : game.pressure >= game.maxPressure
                   ? "壓力達到上限，隊伍被迫折返。"
                   : game.teamHp <= 0
@@ -716,6 +815,39 @@ export default function JourneyPage() {
 
 function cardTypeLabel(t: CardType): string {
   return { action: "行動", coop: "協作", supply: "補給", watch: "守望", weave: "織圖" }[t];
+}
+
+// 顯示真實太魯閣語詞 + 發音（放在卡片按鈕內，故用 span 避免 button 巢狀；點擊不觸發卡片）
+function WordChip({ vocabId }: { vocabId: string }) {
+  const e = vocab(vocabId);
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] text-emerald-300/80">
+      <span className="truncate">{e.word}</span>
+      {e.hasAudio && (
+        <span
+          role="button"
+          tabIndex={0}
+          aria-label={`播放「${e.chinese}」的太魯閣語發音`}
+          title="播放發音（原住民族語E樂園）"
+          onClick={(ev) => {
+            ev.stopPropagation();
+            ev.preventDefault();
+            playAudio(vocabId);
+          }}
+          onKeyDown={(ev) => {
+            if (ev.key === "Enter" || ev.key === " ") {
+              ev.stopPropagation();
+              ev.preventDefault();
+              playAudio(vocabId);
+            }
+          }}
+          className="cursor-pointer rounded px-1 text-sky-300/90 hover:bg-slate-700/60"
+        >
+          🔊
+        </span>
+      )}
+    </span>
+  );
 }
 
 function StatBar({
