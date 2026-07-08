@@ -5,7 +5,8 @@
 export const LAST_UPDATED = "2026-07-08";
 export const PROD_URL = "https://enzo-codebase.vercel.app";
 
-export type Stage = "done" | "wip" | "blocked" | "na";
+export type Stage = "done" | "wip" | "blocked" | "pending" | "na";
+// done=過關 wip=進行中 blocked=卡住(真的卡) pending=尚未輪到 na=不適用
 
 // 誰負責推下一步（決定卡住時該找誰）
 export type Owner = "司令" | "Claude" | "Themis" | "Mnemosyne" | "族人" | "Codex" | "—";
@@ -46,14 +47,14 @@ export const artBatches: PipelineRow[] = [
   },
   {
     name: "ORDER-017 山徑升級 27張",
-    gen: "done", qa: "done", culture: "done", lang: "na", integrate: "blocked", live: "blocked",
+    gen: "done", qa: "done", culture: "done", lang: "na", integrate: "blocked", live: "pending",
     blocker: "圖都好、也過複核，卡在前端整合——還沒接進 /journey",
     next: "Claude",
   },
   {
     name: "ORDER-018 中性四角外框 5張",
-    gen: "wip", qa: "na", culture: "blocked", lang: "na", integrate: "blocked", live: "blocked",
-    blocker: "MD 已寫好，卡在生圖——待丟 Codex",
+    gen: "wip", qa: "pending", culture: "pending", lang: "na", integrate: "pending", live: "pending",
+    blocker: "MD 已寫好，生圖進行中——待丟 Codex",
     next: "Codex",
   },
 ];
