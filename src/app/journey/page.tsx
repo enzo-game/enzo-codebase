@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { vocab, audioUrl, distractors, ATTRIBUTION, SOURCE, SOURCE_URL } from "@/data/truku";
 
 /*
@@ -137,6 +137,12 @@ const NAV_ITEMS: { key: string; label: string; img: string; href?: string }[] = 
   { key: "achievement", label: "成就", img: "/images/journey/nav/nav-achievement-v1.png" },
   { key: "settings", label: "設定", img: "/images/journey/nav/nav-settings-v1.png" },
 ];
+
+// 中性裝飾外框（ORDER-018，Themis+司令 2026-07-08 放行；非正式織紋框，僅中性替代）
+const FRAME_CORNER = "/images/journey/frames/frame-corner-tl-v1.png";
+const FRAME_EDGE_H = "/images/journey/frames/frame-edge-h-v1.png";
+const FRAME_EDGE_V = "/images/journey/frames/frame-edge-v-v1.png";
+const FRAME_DIVIDER = "/images/journey/frames/frame-divider-v1.png";
 
 const uid = () => Math.random().toString(36).slice(2);
 
@@ -472,6 +478,13 @@ export default function JourneyPage() {
   const [revealed, setRevealed] = useState<number | null>(null);
   const [showRules, setShowRules] = useState(false);
   const [confirmRestart, setConfirmRestart] = useState(false);
+  // newGame() 內含 Math.random()（洗牌／隨機事件／uid），須在 client mount 後才渲染，
+  // 否則 SSR 與 client 首次渲染的牌序不一致 → hydration mismatch。
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
 
   const quiz = useMemo(() => (pending && pending.quiz ? quizFor(pending) : null), [pending]);
   const total = game.correct + game.wrong;
@@ -504,6 +517,18 @@ export default function JourneyPage() {
     setPending(null);
     setRevealed(null);
     setConfirmRestart(false);
+  }
+
+  // mount 前：SSR 與 client 首渲染皆輸出此骨架，確保 HTML 一致（避免 hydration mismatch）
+  if (!mounted) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-emerald-950 via-slate-950 to-slate-950 text-slate-100 flex">
+        <SideRail active="journey" />
+        <div className="flex-1 min-w-0 px-4 sm:px-6 py-6">
+          <div className="max-w-5xl mx-auto text-sm text-slate-500">載入山徑…</div>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -584,7 +609,7 @@ export default function JourneyPage() {
 
         {/* 山徑節點 */}
         <section className="mb-3">
-          <h2 className="text-xs uppercase tracking-wider text-slate-500 mb-2">山徑路線</h2>
+          <SectionHeading>山徑路線</SectionHeading>
           <div className="relative rounded-xl border border-slate-800 overflow-hidden">
             {/* 山徑地圖底（ORDER-015 美術，已過文化複核）＋深色 overlay 保節點可讀 */}
             <div
@@ -644,12 +669,13 @@ export default function JourneyPage() {
                 );
               })}
             </div>
+            <OrnateFrame />
           </div>
         </section>
 
         {/* 紀錄 */}
         <section className="mb-3">
-          <h2 className="text-xs uppercase tracking-wider text-slate-500 mb-2">行動紀錄</h2>
+          <SectionHeading>行動紀錄</SectionHeading>
           <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-3 min-h-16 max-h-32 overflow-auto space-y-1 text-xs">
             {game.log.map((l) => (
               <div
@@ -684,6 +710,8 @@ export default function JourneyPage() {
               🌙 紮營（收束今日）
             </button>
           </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={FRAME_DIVIDER} alt="" className="mb-2 h-2 w-40 object-contain object-left opacity-80" />
           <div className="flex flex-wrap gap-2">
             {game.hand.map((c) => {
               const playable = canAfford(game, c);
@@ -912,6 +940,52 @@ function SideRail({ active }: { active: string }) {
         );
       })}
     </nav>
+  );
+}
+
+// 中性裝飾外框（ORDER-018）：四邊平鋪 + 四角鏡像；pointer-events:none，純裝飾疊層，不擋互動。
+// 非正式織紋框，為 §16.2 之中性替代品，正式文化外框仍待真人族語老師另案複核。
+function OrnateFrame() {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-20" aria-hidden>
+      {/* 四邊：橫邊平鋪 x、直邊平鋪 y，對邊以 transform 鏡像 */}
+      <span
+        className="absolute inset-x-0 top-0 h-4 bg-repeat-x"
+        style={{ backgroundImage: `url(${FRAME_EDGE_H})`, backgroundSize: "auto 100%" }}
+      />
+      <span
+        className="absolute inset-x-0 bottom-0 h-4 bg-repeat-x"
+        style={{ backgroundImage: `url(${FRAME_EDGE_H})`, backgroundSize: "auto 100%", transform: "scaleY(-1)" }}
+      />
+      <span
+        className="absolute inset-y-0 left-0 w-4 bg-repeat-y"
+        style={{ backgroundImage: `url(${FRAME_EDGE_V})`, backgroundSize: "100% auto" }}
+      />
+      <span
+        className="absolute inset-y-0 right-0 w-4 bg-repeat-y"
+        style={{ backgroundImage: `url(${FRAME_EDGE_V})`, backgroundSize: "100% auto", transform: "scaleX(-1)" }}
+      />
+      {/* 四角：左上原圖，其餘鏡像 */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={FRAME_CORNER} alt="" width={40} height={40} className="absolute top-0 left-0" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={FRAME_CORNER} alt="" width={40} height={40} className="absolute top-0 right-0" style={{ transform: "scaleX(-1)" }} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={FRAME_CORNER} alt="" width={40} height={40} className="absolute bottom-0 left-0" style={{ transform: "scaleY(-1)" }} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={FRAME_CORNER} alt="" width={40} height={40} className="absolute bottom-0 right-0" style={{ transform: "scale(-1,-1)" }} />
+    </div>
+  );
+}
+
+// 區段標題 + 中性分隔飾（ORDER-018 frame-divider；線·圓點·線，非菱形）
+function SectionHeading({ children }: { children: ReactNode }) {
+  return (
+    <div className="mb-2">
+      <h2 className="text-xs uppercase tracking-wider text-slate-500">{children}</h2>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={FRAME_DIVIDER} alt="" className="mt-1 h-2 w-40 object-contain object-left opacity-80" />
+    </div>
   );
 }
 
