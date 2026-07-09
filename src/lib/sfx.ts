@@ -75,6 +75,16 @@ export function sfxWrong() {
   tone(ac, 147, t + 0.09, 0.2, 0.08, "triangle");
 }
 
+/** 連擊獎勵（連對 3 題）：明亮三音琶音，比單次答對更有慶祝感但不誇張 */
+export function sfxStreak() {
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  tone(ac, 587.33, t, 0.12, 0.09);
+  tone(ac, 739.99, t + 0.08, 0.12, 0.09);
+  tone(ac, 987.77, t + 0.16, 0.22, 0.11);
+}
+
 /** 抵達/勝利：三聲柔和上行（中性 UI 完成音） */
 export function sfxArrive() {
   const ac = getCtx();
