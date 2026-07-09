@@ -172,6 +172,12 @@ export default function Home() {
             <span className="h-1.5 w-1.5 rounded-full bg-amber-500/70" />
             <span className="h-px w-16 bg-gradient-to-l from-transparent to-slate-600" />
           </div>
+          <Link
+            href="/prologue"
+            className="anim-logo mt-6 inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-950/20 px-5 py-2 text-sm text-amber-100/90 transition hover:border-amber-400/70 hover:bg-amber-900/30"
+          >
+            ▶ 從序幕開始
+          </Link>
         </header>
 
         {/* 雙模式大卡 */}
