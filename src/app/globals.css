@@ -164,6 +164,24 @@ body {
   animation: scrollHint 1.8s ease-in-out infinite;
 }
 
+/* 打字機游標閃爍 */
+@keyframes caretBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+.caret {
+  display: inline-block;
+  width: 0.06em;
+  margin-left: 0.08em;
+  background: currentColor;
+  animation: caretBlink 0.9s step-end infinite;
+}
+
 /* 尊重使用者的減少動態偏好 */
 @media (prefers-reduced-motion: reduce) {
   .anim-logo,
@@ -171,7 +189,8 @@ body {
   .anim-feature,
   .glow-breathe,
   .ken-burns,
-  .scroll-hint {
+  .scroll-hint,
+  .caret {
     animation: none;
     opacity: 1;
   }
