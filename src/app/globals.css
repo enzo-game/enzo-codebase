@@ -119,13 +119,65 @@ body {
   transform: translateX(120%);
 }
 
+/* ───── 序幕滾動揭示（/prologue）───── */
+
+/* 進入視窗才淡入上浮 */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 1s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 1s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0s);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* 底圖極緩推近（Ken Burns 感） */
+@keyframes slowZoom {
+  from {
+    transform: scale(1.08);
+  }
+  to {
+    transform: scale(1.18);
+  }
+}
+.ken-burns {
+  animation: slowZoom 18s ease-out both;
+}
+
+/* 向下捲動提示箭頭 */
+@keyframes scrollHint {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(8px);
+    opacity: 1;
+  }
+}
+.scroll-hint {
+  animation: scrollHint 1.8s ease-in-out infinite;
+}
+
 /* 尊重使用者的減少動態偏好 */
 @media (prefers-reduced-motion: reduce) {
   .anim-logo,
   .anim-card,
   .anim-feature,
-  .glow-breathe {
+  .glow-breathe,
+  .ken-burns,
+  .scroll-hint {
     animation: none;
     opacity: 1;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
