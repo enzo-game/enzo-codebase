@@ -260,6 +260,7 @@ function buildNodes(): PathNode[] {
   ];
 }
 
+// v2 機制移植（ORDER-028 拍板）：擴充事件池至 12 項，紮營時隨機抽 1，重玩更有變化
 const EVENTS: EventCard[] = [
   // vocabId：風10-04 河流10-07 太陽11-02 石頭12-05 獵物16-08 雲11-12
   { name: "風起雲湧", vocabId: "10-04", kind: "天候", pressure: 1, desc: "山風漸強，隊伍步伐放緩。" },
@@ -268,6 +269,13 @@ const EVENTS: EventCard[] = [
   { name: "落石再起", vocabId: "12-05", kind: "路段危機", pressure: 1, desc: "碎石不時滑落。" },
   { name: "山林餽贈", vocabId: "16-08", kind: "正面", pressure: -1, desc: "沿途採得野菜與山產。" },
   { name: "濃霧起", vocabId: "11-12", kind: "天候", pressure: 1, desc: "白霧壟罩，視線受阻。" },
+  // vocabId：冷32-08 雪11-07 餓27-14 滑掉25-37 月亮11-03 幫忙34-05
+  { name: "寒風刺骨", vocabId: "32-08", kind: "天候", pressure: 1, desc: "低溫讓隊伍手腳僵硬，動作慢了下來。" },
+  { name: "初雪飄落", vocabId: "11-07", kind: "天候", pressure: 1, desc: "細雪灑落山徑，腳下打滑，得放慢腳步。" },
+  { name: "飢腸轆轆", vocabId: "27-14", kind: "路段危機", pressure: 1, desc: "糧食消耗得比預期快，肚子開始抗議。" },
+  { name: "濕滑坡地", vocabId: "25-37", kind: "地形", pressure: 1, desc: "剛下過雨的坡地又濕又滑，得小心行走。" },
+  { name: "月色皎潔", vocabId: "11-03", kind: "正面", pressure: -1, desc: "夜裡的月光意外地明亮，找路輕鬆不少。" },
+  { name: "隊伍互相打氣", vocabId: "34-05", kind: "正面", pressure: -1, desc: "疲憊時互相扶持一把，士氣回升不少。" },
 ];
 
 // ───────────────────────── 初始化 ─────────────────────────
@@ -438,7 +446,19 @@ function resolveSupplyChoice(g: JGame, resource: Resource): JGame {
   const n2 = ng.nodes[ng.idx];
   n2.cleared = true;
   ng.res[resource] += 3;
-  ng.log = pushLog(ng.log, `🎒 「${n2.name}」補給：${RES_NAME[resource]} +3。`, "good");
+  // v2 機制移植：30% 機率額外加碼一份隨機資源（變動獎勵，避免補給永遠是同一個固定結果）
+  if (Math.random() < 0.3) {
+    const resources: Resource[] = ["food", "wood", "stone", "rope"];
+    const bonus = resources[Math.floor(Math.random() * resources.length)];
+    ng.res[bonus] += 1;
+    ng.log = pushLog(
+      ng.log,
+      `🎒 「${n2.name}」補給：${RES_NAME[resource]} +3，意外多撿到 ${RES_NAME[bonus]} +1！`,
+      "good",
+    );
+  } else {
+    ng.log = pushLog(ng.log, `🎒 「${n2.name}」補給：${RES_NAME[resource]} +3。`, "good");
+  }
   return settle(ng);
 }
 
@@ -545,7 +565,13 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
     }
     case "gatherFood": {
       ng.res.food += 2;
-      ng.log = pushLog(ng.log, `▶｜整理物資：糧食 +2（${ng.res.food}）。`, "good");
+      // v2 機制移植：30% 機率額外加碼（獎懲系統原理：固定獎勵缺乏驚喜，混搭變動獎勵）
+      if (Math.random() < 0.3) {
+        ng.res.food += 1;
+        ng.log = pushLog(ng.log, `▶｜整理物資：糧食 +2，意外多找到一份，+1（${ng.res.food}）！`, "good");
+      } else {
+        ng.log = pushLog(ng.log, `▶｜整理物資：糧食 +2（${ng.res.food}）。`, "good");
+      }
       break;
     }
     case "reduceStress": {
