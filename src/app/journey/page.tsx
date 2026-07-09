@@ -271,6 +271,20 @@ const NODE_STORY: Record<string, string> = {
   "24-04": "最後一段路，天邊真的出現了一道彩虹橋。老人家說，那橋連著這個世界和祖先所在的地方——不是要你們現在就過橋，是提醒你們：平安回家，本身就是被祖先看顧著的事。把每一個人，帶回部落。",
 };
 
+// v5（ORDER-037）：故事卡配圖——沿用 ORDER-017 已通過 enzo-culture 複核的 6 張節點場景圖
+// （review-order-016-017-ui-art.md，🟢×6 PASS，無人物無圖騰），不用等 ORDER-034 新一批 Codex 生圖，
+// 現有已核准素材就能立刻讓每張故事卡都有圖。林間三個事件變體（林間捷徑/倒木擋道/岔路口）共用同一張林霧場景。
+const NODE_STORY_IMG: Record<string, string> = {
+  "10-07": "/images/journey/stories/scene-start-v1.jpg",
+  "12-05": "/images/journey/stories/scene-rockfall-v1.jpg",
+  "12-07": "/images/journey/stories/scene-bridge-v1.jpg",
+  "10-01": "/images/journey/stories/scene-forest-v1.jpg",
+  "08-03": "/images/journey/stories/scene-forest-v1.jpg",
+  "25-10": "/images/journey/stories/scene-forest-v1.jpg",
+  "12-01": "/images/journey/stories/scene-camp-v1.jpg",
+  "24-04": "/images/journey/stories/scene-village-v1.jpg",
+};
+
 function buildNodes(): PathNode[] {
   // vocabId：河流10-07 石頭12-05 橋樑12-07 家12-01 部落24-04
   const ev = EVENT_NODE_POOL[Math.floor(Math.random() * EVENT_NODE_POOL.length)];
@@ -1929,26 +1943,40 @@ export default function JourneyPage() {
         </div>
       )}
 
-      {/* 節點故事卡（v4，ORDER-032）：抵達有 NODE_STORY 的節點時彈出，樣式比照章節卡（一張一張卡，取代原本埋在面板裡的小字）。
+      {/* 節點故事卡（v4，ORDER-032；v5 ORDER-037 加配圖）：抵達有 NODE_STORY 的節點時彈出，樣式比照章節卡（一張一張卡，取代原本埋在面板裡的小字）。
           max-h + overflow-y-auto：部分傳說全文較長（如巨人馬威），避免固定高度裁切內文。
-          chapterCard === null 才渲染：章節卡優先顯示，避免兩層全螢幕蒙版同時疊加。 */}
+          chapterCard === null 才渲染：章節卡優先顯示，避免兩層全螢幕蒙版同時疊加。
+          配圖沿用 ORDER-017 已通過文化複核的節點場景圖（NODE_STORY_IMG），無圖就不顯示圖片區塊，不擋文字內容。 */}
       {chapterCard === null && storyCard !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md max-h-[70vh] overflow-y-auto rounded-2xl border border-amber-500/30 bg-slate-950/95 p-8 text-center shadow-2xl">
-            <div
-              className={`${notoSansTC.className} mb-4 inline-block rounded-full border border-amber-500/40 bg-amber-950/30 px-3 py-1 text-xs tracking-[0.3em] text-amber-300/90`}
-            >
-              這裡的故事
+          <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl border border-amber-500/30 bg-slate-950/95 shadow-2xl">
+            {NODE_STORY_IMG[storyCard] && (
+              <div className="relative h-40 sm:h-48 w-full overflow-hidden rounded-t-2xl">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={NODE_STORY_IMG[storyCard]}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/10 to-transparent" />
+              </div>
+            )}
+            <div className="p-8 pt-6 text-center">
+              <div
+                className={`${notoSansTC.className} mb-4 inline-block rounded-full border border-amber-500/40 bg-amber-950/30 px-3 py-1 text-xs tracking-[0.3em] text-amber-300/90`}
+              >
+                這裡的故事
+              </div>
+              <p className={`${notoSansTC.className} text-left text-sm leading-relaxed text-slate-200 whitespace-pre-line`}>
+                {NODE_STORY[storyCard]}
+              </p>
+              <button
+                onClick={() => setStoryCard(null)}
+                className={`${notoSerifTC.className} mt-6 rounded-lg border-2 border-amber-500/60 bg-gradient-to-b from-[#32251766] to-[#0f1218f0] px-8 py-2.5 text-sm font-bold tracking-[0.15em] text-amber-100 transition hover:-translate-y-0.5 hover:border-amber-300/90`}
+              >
+                繼續
+              </button>
             </div>
-            <p className={`${notoSansTC.className} text-left text-sm leading-relaxed text-slate-200 whitespace-pre-line`}>
-              {NODE_STORY[storyCard]}
-            </p>
-            <button
-              onClick={() => setStoryCard(null)}
-              className={`${notoSerifTC.className} mt-6 rounded-lg border-2 border-amber-500/60 bg-gradient-to-b from-[#32251766] to-[#0f1218f0] px-8 py-2.5 text-sm font-bold tracking-[0.15em] text-amber-100 transition hover:-translate-y-0.5 hover:border-amber-300/90`}
-            >
-              繼續
-            </button>
           </div>
         </div>
       )}
