@@ -1,27 +1,55 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Noto_Serif_TC, Noto_Sans_TC, Cinzel } from "next/font/google";
+import { useEffect, useRef, type ReactNode } from "react";
 import AmbientAudio from "@/components/AmbientAudio";
 
 /*
  * 峽谷行者 · 序幕（/prologue）
  * ─────────────────────────────────────────────
- * 電影式滾動敘事，逐字打字進場，帶玩家進入「模式 A 山徑」的動機與世界。
+ * 電影式滾動敘事，文字以淡入（fade in）進場，帶玩家進入「模式 A 山徑」的動機與世界。
  *
  * 敘事：融入 5 則**有出處**的太魯閣族傳說（Pusu Qhuni 石生起源／大洪水／射日／
  * 彩虹橋 Hakaw Utux 意象／巨人）。來源見 enzo-culture/references/truku-legends-sourced.md，
  * 司令 2026-07-09 核准。忠於文獻改編、標注出處；彩虹橋僅取「連結此世與祖先」之意象，
  * 不演出審判／獵首／紋面等神聖細節。族語專名待 Mnemosyne 對拼寫。
+ *
+ * 字體系統（僅本頁）：中文標題／內文／羅馬拼音分層，避免單一 font-family 造成跨平台
+ * fallback 不一致。使用 next/font/google 於建置期自動 self-host（無執行期外部請求、無
+ * CLS），非手動管理 woff2。
  */
+
+const notoSerifTC = Noto_Serif_TC({
+  weight: ["500", "700"],
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const notoSansTC = Noto_Sans_TC({
+  weight: ["400", "500"],
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const cinzel = Cinzel({
+  weight: ["400", "600"],
+  subsets: ["latin"],
+  display: "swap",
+});
 
 type Chapter = {
   bg: string;
   kicker?: string;
-  title: string; // 逐字打字（\n 換行）
-  sub?: string; // 打字完後淡入
+  title: string; // 淡入顯示（\n 換行）
+  sub?: ReactNode; // 標題淡入後接著淡入；含羅馬拼音（如 Pusu Qhuni）時用 <Latin>
   dim?: string;
 };
+
+/** 羅馬拼音／族語專名獨立字體（Cinzel），避免與中文字混排時字重/字距不協調 */
+function Latin({ children }: { children: ReactNode }) {
+  return <span className={`${cinzel.className} tracking-wide`}>{children}</span>;
+}
 
 const CHAPTERS: Chapter[] = [
   {
@@ -29,7 +57,11 @@ const CHAPTERS: Chapter[] = [
     bg: "/images/home/home-bg-night-mountains-v1.jpg",
     kicker: "序 · 根",
     title: "很久以前，\n祖先從半石半木的聖木裡誕生。",
-    sub: "那聖木叫 Pusu Qhuni——我們的起點。",
+    sub: (
+      <>
+        那聖木叫 <Latin>Pusu Qhuni</Latin>——我們的起點。
+      </>
+    ),
     dim: "bg-slate-950/72",
   },
   {
@@ -72,102 +104,8 @@ const CHAPTERS: Chapter[] = [
   },
 ];
 
-function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-}
-
-/** 逐字打字：進入視窗才開始打；打完 onDone。\n 換行。 */
-function Typewriter({
-  text,
-  speed = 55,
-  className,
-  onDone,
-}: {
-  text: string;
-  speed?: number;
-  className?: string;
-  onDone?: () => void;
-}) {
-  const [shown, setShown] = useState("");
-  const [done, setDone] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const doneRef = useRef(onDone);
-  useEffect(() => {
-    doneRef.current = onDone;
-  });
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    if (prefersReducedMotion()) {
-      // 減少動態：直接顯示全文（刻意的一次性初始化）
-      /* eslint-disable react-hooks/set-state-in-effect */
-      setShown(text);
-      setDone(true);
-      /* eslint-enable react-hooks/set-state-in-effect */
-      doneRef.current?.();
-      return;
-    }
-
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (!entries[0].isIntersecting) return;
-        io.disconnect();
-        let i = 0;
-        const tick = () => {
-          i += 1;
-          setShown(text.slice(0, i));
-          if (i >= text.length) {
-            setDone(true);
-            doneRef.current?.();
-            return;
-          }
-          timer = setTimeout(tick, speed);
-        };
-        tick();
-      },
-      { threshold: 0.5 },
-    );
-    io.observe(el);
-    return () => {
-      io.disconnect();
-      if (timer) clearTimeout(timer);
-    };
-  }, [text, speed]);
-
-  const lines = shown.split("\n");
-  return (
-    <div ref={ref} className={className} aria-label={text}>
-      {lines.map((ln, i) => (
-        <span key={i}>
-          {ln}
-          {i < lines.length - 1 && <br />}
-        </span>
-      ))}
-      {!done && (
-        <span className="caret" aria-hidden>
-          &nbsp;
-        </span>
-      )}
-    </div>
-  );
-}
-
-/** 進入視窗淡入上浮（kicker / sub / CTA / logo 用）。show=false 時先隱藏（等打字完） */
-function Reveal({
-  children,
-  show = true,
-  delay = 0,
-}: {
-  children: ReactNode;
-  show?: boolean;
-  delay?: number;
-}) {
+/** 進入視窗淡入上浮（logo / kicker / 標題 / 內文 / CTA 共用），delay 用來做錯開節奏 */
+function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -187,27 +125,29 @@ function Reveal({
     return () => io.disconnect();
   }, []);
   return (
-    <div
-      ref={ref}
-      className="reveal"
-      style={{
-        ["--reveal-delay" as string]: `${delay}s`,
-        visibility: show ? undefined : "hidden",
-      }}
-    >
+    <div ref={ref} className="reveal" style={{ ["--reveal-delay" as string]: `${delay}s` }}>
       {children}
     </div>
   );
 }
 
 function ChapterSection({ ch, index, last }: { ch: Chapter; index: number; last: boolean }) {
-  const [titleDone, setTitleDone] = useState(false);
+  const titleLines = ch.title.split("\n");
   return (
     <section className="relative flex h-screen snap-start items-center justify-center overflow-hidden px-6">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={ch.bg} alt="" aria-hidden className="ken-burns absolute inset-0 h-full w-full object-cover" />
       <div className={`absolute inset-0 ${ch.dim ?? "bg-slate-950/70"}`} />
       <div className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-transparent to-slate-950/80" />
+      {/* 文字可讀性遮罩：置中文字欄後方極淡的霧狀暗化，不做成明顯黑框 */}
+      <div
+        className="pointer-events-none absolute inset-x-[4%] inset-y-[16%] blur-2xl"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, rgba(3,8,15,0.55) 0%, rgba(3,8,15,0.32) 38%, rgba(3,8,15,0.1) 68%, transparent 82%)",
+        }}
+        aria-hidden
+      />
 
       <div className="relative z-10 mx-auto max-w-2xl text-center">
         {index === 0 && (
@@ -225,43 +165,89 @@ function ChapterSection({ ch, index, last }: { ch: Chapter; index: number; last:
 
         {ch.kicker && (
           <Reveal>
-            <div className="mb-5 inline-block rounded-full border border-amber-500/30 bg-amber-950/30 px-3 py-1 text-xs tracking-[0.3em] text-amber-300/90">
+            <div
+              className={`${notoSansTC.className} mb-5 inline-block rounded-full border border-amber-500/30 bg-amber-950/30 px-3 py-1 text-xs tracking-[0.3em] text-amber-300/90`}
+            >
               {ch.kicker}
             </div>
           </Reveal>
         )}
 
-        <Typewriter
-          text={ch.title}
-          className={`font-bold leading-snug ${
-            index === 0 || last ? "text-3xl sm:text-5xl" : "text-2xl sm:text-4xl"
-          }`}
-          onDone={() => setTitleDone(true)}
-        />
+        <Reveal delay={0.15}>
+          <div
+            className={`${notoSerifTC.className} font-bold leading-[1.35] tracking-wide [text-shadow:0_3px_10px_rgba(0,0,0,0.78),0_0_26px_rgba(217,181,108,0.16)] ${
+              index === 0 || last ? "text-3xl sm:text-5xl" : "text-2xl sm:text-4xl"
+            }`}
+          >
+            {titleLines.map((ln, i) => (
+              <span key={i}>
+                {ln}
+                {i < titleLines.length - 1 && <br />}
+              </span>
+            ))}
+          </div>
+        </Reveal>
 
         {ch.sub && (
-          <Reveal show={titleDone} delay={0.1}>
-            <p className="mt-5 text-base sm:text-lg text-slate-300/90">{ch.sub}</p>
+          <Reveal delay={0.3}>
+            <p className={`${notoSansTC.className} mt-5 text-base leading-loose tracking-wide text-slate-300/90 sm:text-lg`}>
+              {ch.sub}
+            </p>
+          </Reveal>
+        )}
+
+        {index === 0 && (
+          <Reveal delay={0.42}>
+            <p
+              className={`${notoSansTC.className} mx-auto mt-3 max-w-md text-sm leading-loose tracking-wide text-slate-400/90 sm:text-base`}
+            >
+              你將成為新的峽谷行者，穿越山林與迷霧，找回失落的名字與記憶。
+            </p>
+          </Reveal>
+        )}
+
+        {index === 0 && (
+          <Reveal delay={0.56}>
+            <div className="mt-10 flex flex-col items-center gap-3">
+              {/* 雙線邊框按鈕（中性直角/圓角雙框，非菱形——沿用 ORDER-018 中性外框原則） */}
+              <button
+                type="button"
+                onClick={() => {
+                  document.querySelectorAll("section")[1]?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className={`${notoSerifTC.className} group relative inline-flex items-center justify-center rounded border-2 border-amber-500/60 bg-gradient-to-b from-[#32251766] to-[#0f1218f0] px-10 py-4 text-lg font-bold tracking-[0.18em] text-amber-100 shadow-[0_12px_32px_rgba(0,0,0,0.45),0_0_26px_rgba(217,181,108,0.18)] transition hover:-translate-y-0.5 hover:border-amber-300/90 hover:shadow-[0_16px_42px_rgba(0,0,0,0.55),0_0_34px_rgba(217,181,108,0.28)]`}
+              >
+                <span className="pointer-events-none absolute inset-1 rounded border border-amber-500/25" aria-hidden />
+                開始旅程
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  document.querySelectorAll("section")[1]?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className={`${notoSansTC.className} tracking-[0.12em] text-sm text-amber-200/80 transition hover:text-amber-100`}
+              >
+                繼續閱讀序章
+              </button>
+            </div>
           </Reveal>
         )}
 
         {last && (
-          <Reveal show={titleDone} delay={0.25}>
+          <Reveal delay={0.45}>
+            {/* 與「開始旅程」同款雙線金框史詩感按鈕，維持序幕全程一致的視覺語彙 */}
             <Link
               href="/journey"
-              className="mt-10 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-8 py-3.5 text-base font-semibold text-emerald-50 shadow-lg transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-2xl"
+              className={`${notoSerifTC.className} group relative mt-10 inline-flex items-center justify-center gap-2 rounded border-2 border-emerald-400/60 bg-gradient-to-b from-[#123a2966] to-[#0f1218f0] px-10 py-4 text-lg font-bold tracking-[0.18em] text-emerald-100 shadow-[0_12px_32px_rgba(0,0,0,0.45),0_0_26px_rgba(52,211,153,0.18)] transition hover:-translate-y-0.5 hover:border-emerald-300/90 hover:shadow-[0_16px_42px_rgba(0,0,0,0.55),0_0_34px_rgba(52,211,153,0.28)]`}
             >
+              <span className="pointer-events-none absolute inset-1 rounded border border-emerald-400/25" aria-hidden />
               走上山徑
               <span>▸</span>
             </Link>
           </Reveal>
         )}
 
-        {index === 0 && (
-          <div className="scroll-hint pointer-events-none absolute inset-x-0 -bottom-24 mx-auto text-2xl text-slate-300">
-            ↓
-          </div>
-        )}
+        {index === 0 && <div className="scroll-hint mt-6 text-2xl text-slate-300">↓</div>}
       </div>
     </section>
   );
@@ -284,7 +270,7 @@ export default function ProloguePage() {
 
       <Link
         href="/journey"
-        className="fixed right-4 top-4 z-50 rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-300 backdrop-blur transition hover:bg-slate-800 hover:text-white"
+        className={`${notoSansTC.className} fixed right-4 top-4 z-50 rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-300 backdrop-blur transition hover:bg-slate-800 hover:text-white`}
       >
         略過序幕 ▸
       </Link>
@@ -295,7 +281,7 @@ export default function ProloguePage() {
         ))}
 
         <div className="bg-slate-950 px-6 py-6 text-center">
-          <p className="mx-auto max-w-xl text-[11px] leading-relaxed text-slate-600">
+          <p className={`${notoSansTC.className} mx-auto max-w-xl text-[11px] leading-relaxed text-slate-600`}>
             傳說依據：原住民族委員會、臺灣原住民族事典、維基百科等公開文獻，忠於記載改編。
             彩虹橋僅取「連結此世與祖先」之意象。族語專名與文化用法複核進行中，歡迎族人指正。
           </p>

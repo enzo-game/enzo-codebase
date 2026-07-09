@@ -164,24 +164,6 @@ body {
   animation: scrollHint 1.8s ease-in-out infinite;
 }
 
-/* 打字機游標閃爍 */
-@keyframes caretBlink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-}
-.caret {
-  display: inline-block;
-  width: 0.06em;
-  margin-left: 0.08em;
-  background: currentColor;
-  animation: caretBlink 0.9s step-end infinite;
-}
-
 /* ───── 序幕氛圍特效（scene-vfx）：微光粒子／山霧流動／祖靈光點 ─────
  * 固定疊層，跨章節持續存在（不隨捲動重製，效能較佳）。
  * 全部效果刻意極淡（opacity ≤ .65、blur）：神秘山林感，不做成仙俠滿天特效。
@@ -352,7 +334,6 @@ body {
   .glow-breathe,
   .ken-burns,
   .scroll-hint,
-  .caret,
   .scene-vfx::before,
   .scene-vfx .mist,
   .scene-vfx .spirit-light {

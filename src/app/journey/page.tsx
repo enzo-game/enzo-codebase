@@ -1,10 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { Noto_Serif_TC, Noto_Sans_TC } from "next/font/google";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { vocab, audioUrl, distractors, ATTRIBUTION, SOURCE, SOURCE_URL } from "@/data/truku";
 import AmbientAudio from "@/components/AmbientAudio";
-import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose } from "@/lib/sfx";
+import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose, sfxStreak } from "@/lib/sfx";
+
+// 章節標題卡字體（沿用 /prologue 同套字體系統，維持敘事連續性）
+const notoSerifTC = Noto_Serif_TC({ weight: ["700"], subsets: ["latin"], display: "swap" });
+const notoSansTC = Noto_Sans_TC({ weight: ["400", "500"], subsets: ["latin"], display: "swap" });
 
 /*
  * 模式 A · 山徑劇情（灰盒 MVP）
@@ -71,6 +76,7 @@ type JGame = {
   log: LogEntry[];
   correct: number;
   wrong: number;
+  streak: number; // 連續答對題數（v2 核心循環重構）
 };
 
 type EventCard = {
@@ -161,6 +167,41 @@ const FRAME_EDGE_H = "/images/journey/frames/frame-edge-h-v1.png";
 const FRAME_EDGE_V = "/images/journey/frames/frame-edge-v-v1.png";
 const FRAME_DIVIDER = "/images/journey/frames/frame-divider-v1.png";
 
+// ───────────────────────── 章節架構（v2：對齊 /prologue 的敘事章節，非各做各的）─────────────────────────
+// 6 節點分 3 章，沿用序幕已建立的章節名與傳說主題（Pusu Qhuni／大洪水／射日／彩虹橋），
+// 讓「先講故事」跟「玩的時候」是同一套架構，不是進了山徑就與序幕脫節。
+type ChapterMeta = { kicker: string; title: string; sub: string; nodeStart: number; nodeEnd: number };
+
+const CHAPTERS: ChapterMeta[] = [
+  {
+    kicker: "壹 · 斷路",
+    title: "溪水暴漲的那一夜，路碎成了好幾段。",
+    sub: "落石封住峽口，你得從立霧溪口出發，先把眼前這段路修好。",
+    nodeStart: 0,
+    nodeEnd: 1,
+  },
+  {
+    kicker: "貳 · 遠行",
+    title: "祖先曾為了射下太陽，世代接力，遠行不歸。",
+    sub: "峽谷吊橋、林間捷徑——換你帶隊伍上路，一步步往部落走。",
+    nodeStart: 2,
+    nodeEnd: 3,
+  },
+  {
+    kicker: "終 · 彩虹橋",
+    title: "把每一個人，平安帶回部落。",
+    sub: "補給、然後抵達——天邊那道彩虹橋連著此世與祖先，在等你們。",
+    nodeStart: 4,
+    nodeEnd: 5,
+  },
+];
+
+function chapterForIdx(idx: number): { chapter: ChapterMeta; index: number } {
+  const i = CHAPTERS.findIndex((c) => idx >= c.nodeStart && idx <= c.nodeEnd);
+  const index = i === -1 ? CHAPTERS.length - 1 : i;
+  return { chapter: CHAPTERS[index], index };
+}
+
 const uid = () => Math.random().toString(36).slice(2);
 
 function shuffle<T>(arr: T[]): T[] {
@@ -180,7 +221,7 @@ function pushLog(log: LogEntry[], text: string, tone: LogEntry["tone"]): LogEntr
 
 // vocabId 對應 klokah trv=33 真實詞：走路25-10 石頭12-05 橋樑12-07 搬運26-52 幫忙34-05 飯21-01 看28-03
 const CARD_POOL: Omit<JCard, "key">[] = [
-  { name: "巡路", vocabId: "25-10", cost: 1, type: "action", effect: "scout", quiz: true, desc: "前進 1 格（需目前路段已通行）。" },
+  { name: "巡路", vocabId: "25-10", cost: 1, type: "action", effect: "scout", quiz: true, desc: "前進 1 格；答對額外壓力 -1（不需要這張牌也能用常駐「前進」按鈕前進）。" },
   { name: "搬石", vocabId: "12-05", cost: 2, type: "action", effect: "clearStone", quiz: true, desc: "清除落石阻礙：答對 -2、答錯 -1。" },
   { name: "搭橋", vocabId: "12-07", cost: 2, type: "action", effect: "buildBridge", quiz: true, costRes: { wood: 1, rope: 1 }, desc: "使橋梁路段可通行（耗木材1、繩索1）。" },
   { name: "共同搬運", vocabId: "26-52", cost: 2, type: "coop", effect: "coopClear", quiz: true, desc: "協力清障：答對 -3（體力<5 為 -2）、答錯 -1。" },
@@ -259,7 +300,23 @@ function newGame(): JGame {
     log: pushLog([], "第 1 日：隊伍自立霧溪口啟程。", "sys"),
     correct: 0,
     wrong: 0,
+    streak: 0,
   };
+}
+
+// ───────────────────────── 壓力分級（v2：情緒曲線）─────────────────────────
+
+type PressureTier = "calm" | "tense" | "critical";
+
+function pressureTier(g: JGame): PressureTier {
+  if (g.pressure >= 8) return "critical";
+  if (g.pressure >= 5) return "tense";
+  return "calm";
+}
+
+// 危急時行動點上限收緊（3→2），逼玩家加快腳步
+function effectiveMaxAp(g: JGame): number {
+  return pressureTier(g) === "critical" ? Math.max(1, g.maxAp - 1) : g.maxAp;
 }
 
 // ───────────────────────── 族語答題（示範佔位）─────────────────────────
@@ -292,24 +349,97 @@ function settle(g: JGame): JGame {
   return ng;
 }
 
-// 到達新節點的即時效果
+// 到達新節點的即時效果（v2：event／supply 改為玩家主動選擇，不再自動結算）
 function enterNode(g: JGame): JGame {
   const ng: JGame = { ...g, nodes: g.nodes.map((n) => ({ ...n })), res: { ...g.res } };
   const node = ng.nodes[ng.idx];
   if (!node) return ng;
-  if (node.type === "supply" && !node.cleared) {
-    ng.res.food += 2;
-    ng.res.rope += 1;
+  if (node.type === "start" || node.type === "destination") {
     node.cleared = true;
-    ng.log = pushLog(ng.log, `📦 ${node.name}：補給 +2 糧食、+1 繩索。`, "good");
-  } else if (node.type === "event" && !node.cleared) {
-    node.cleared = true;
-    ng.pressure = Math.max(0, ng.pressure - 1);
-    ng.log = pushLog(ng.log, `❓ ${node.name}：捷徑順利通過，壓力 -1。`, "good");
-  } else if (node.type === "start" || node.type === "destination") {
-    node.cleared = true;
+  } else if (node.type === "event") {
+    ng.log = pushLog(ng.log, `❓ 抵達「${node.name}」：請選擇如何通過。`, "sys");
+  } else if (node.type === "supply") {
+    ng.log = pushLog(ng.log, `📦 抵達「${node.name}」：請選擇要補給的資源。`, "sys");
   }
   return ng;
+}
+
+// ───────────────────────── 前進（v2：脫離卡牌經濟，隨時可走，修死局）─────────────────────────
+
+function canAdvance(g: JGame): boolean {
+  if (g.status !== "playing") return false;
+  if (g.ap < 1) return false;
+  const node = g.nodes[g.idx];
+  return !!node && node.cleared && g.idx < g.nodes.length - 1;
+}
+
+function advance(g: JGame): JGame {
+  if (!canAdvance(g)) return g;
+  let ng: JGame = { ...g, res: { ...g.res }, nodes: g.nodes.map((n) => ({ ...n })), ap: g.ap - 1 };
+  ng.idx += 1;
+  ng = enterNode(ng);
+  ng.log = pushLog(ng.log, `▶ 前進至「${ng.nodes[ng.idx].name}」。`, "info");
+  return settle(ng);
+}
+
+// ───────────────────────── 花資源硬清（v2：risk/reward，落石/吊橋不靠語言題的另一條路）─────────────────────────
+
+function hardClearCost(n: PathNode): Partial<Record<Resource, number>> | null {
+  if (n.type === "obstacle" && !n.cleared) return { stone: 2 };
+  if (n.type === "bridge" && !n.cleared) return { wood: 2, rope: 2 };
+  return null;
+}
+
+function canHardClear(g: JGame): boolean {
+  if (g.status !== "playing") return false;
+  const node = g.nodes[g.idx];
+  const cost = node && hardClearCost(node);
+  if (!cost) return false;
+  return Object.entries(cost).every(([r, v]) => g.res[r as Resource] >= (v ?? 0));
+}
+
+function hardClear(g: JGame): JGame {
+  if (!canHardClear(g)) return g;
+  const cost = hardClearCost(g.nodes[g.idx]) as Partial<Record<Resource, number>>;
+  const ng: JGame = { ...g, res: { ...g.res }, nodes: g.nodes.map((n) => ({ ...n })) };
+  for (const [r, v] of Object.entries(cost)) ng.res[r as Resource] -= v ?? 0;
+  const node = ng.nodes[ng.idx];
+  node.obstacle = 0;
+  node.cleared = true;
+  ng.log = pushLog(ng.log, `⛏ 花資源硬清：「${node.name}」已可通行。`, "good");
+  return settle(ng);
+}
+
+// ───────────────────────── 事件／補給節點選擇（v2：真取捨，取代自動結算）─────────────────────────
+
+function resolveEventChoice(g: JGame, choice: "fast" | "careful"): JGame {
+  const node = g.nodes[g.idx];
+  if (g.status !== "playing" || !node || node.type !== "event" || node.cleared) return g;
+  if (choice === "careful" && (g.res.wood < 1 || g.res.rope < 1)) return g;
+  const ng: JGame = { ...g, res: { ...g.res }, nodes: g.nodes.map((n) => ({ ...n })) };
+  const n2 = ng.nodes[ng.idx];
+  n2.cleared = true;
+  if (choice === "fast") {
+    ng.pressure = Math.min(ng.maxPressure, ng.pressure + 2);
+    ng.log = pushLog(ng.log, `🏃 「${n2.name}」快速通過：壓力 +2。`, "bad");
+  } else {
+    ng.res.wood -= 1;
+    ng.res.rope -= 1;
+    ng.res.food += 1;
+    ng.log = pushLog(ng.log, `🔍 「${n2.name}」謹慎探勘：耗木材1・繩索1，沿途採得糧食 +1。`, "good");
+  }
+  return settle(ng);
+}
+
+function resolveSupplyChoice(g: JGame, resource: Resource): JGame {
+  const node = g.nodes[g.idx];
+  if (g.status !== "playing" || !node || node.type !== "supply" || node.cleared) return g;
+  const ng: JGame = { ...g, res: { ...g.res }, nodes: g.nodes.map((n) => ({ ...n })) };
+  const n2 = ng.nodes[ng.idx];
+  n2.cleared = true;
+  ng.res[resource] += 3;
+  ng.log = pushLog(ng.log, `🎒 「${n2.name}」補給：${RES_NAME[resource]} +3。`, "good");
+  return settle(ng);
 }
 
 // ───────────────────────── 出牌結算 ─────────────────────────
@@ -345,8 +475,15 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
   ng.hand = ng.hand.filter((c) => c.key !== card.key);
   ng.discard = [...ng.discard, card];
   if (card.quiz) {
-    if (correct) ng.correct += 1;
-    else ng.wrong += 1;
+    if (correct) {
+      ng.correct += 1;
+      ng.streak += 1;
+    } else {
+      ng.wrong += 1;
+      ng.streak = 0;
+    }
+  } else {
+    ng.streak = 0; // 不需答題的卡也會重置連擊（v2 設計：連擊只獎勵持續答對）
   }
 
   const node = ng.nodes[ng.idx];
@@ -354,10 +491,16 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
 
   switch (card.effect) {
     case "scout": {
+      // v2：巡路不再是前進唯一解（見常駐「前進」按鈕），但答對有額外獎勵（壓力 -1）
       if (node && node.cleared && ng.idx < ng.nodes.length - 1) {
         ng.idx += 1;
         ng = enterNode(ng);
-        ng.log = pushLog(ng.log, `${tag}｜巡路：前進至「${ng.nodes[ng.idx].name}」。`, correct ? "good" : "info");
+        if (correct) {
+          ng.pressure = Math.max(0, ng.pressure - 1);
+          ng.log = pushLog(ng.log, `${tag}｜巡路：前進至「${ng.nodes[ng.idx].name}」，腳步輕快，壓力 -1。`, "good");
+        } else {
+          ng.log = pushLog(ng.log, `${tag}｜巡路：前進至「${ng.nodes[ng.idx].name}」。`, "info");
+        }
       } else {
         ng.log = pushLog(ng.log, `${tag}｜巡路：目前路段尚未通行，無法前進。`, "bad");
       }
@@ -420,6 +563,17 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
     }
   }
 
+  // 連擊獎勵（v2）：每連對 3 題，順風而行，補 1 行動點
+  if (ng.streak > 0 && ng.streak % 3 === 0) {
+    const cap = effectiveMaxAp(ng);
+    if (ng.ap < cap) {
+      ng.ap = Math.min(cap, ng.ap + 1);
+      ng.log = pushLog(ng.log, `🔥 連對 ${ng.streak} 題！順風而行，行動點 +1。`, "good");
+    } else {
+      ng.log = pushLog(ng.log, `🔥 連對 ${ng.streak} 題！順風而行。`, "good");
+    }
+  }
+
   return settle(ng);
 }
 
@@ -429,14 +583,15 @@ function camp(g: JGame): JGame {
   if (g.status !== "playing") return g;
   const ng: JGame = { ...g, res: { ...g.res }, nodes: g.nodes.map((n) => ({ ...n })) };
 
-  // 消耗糧食
-  ng.res.food -= 1;
+  // 消耗糧食：壓力分級（v2）——緊張／危急時消耗加倍，逼玩家加快腳步
+  const foodCost = pressureTier(g) === "calm" ? 1 : 2;
+  ng.res.food -= foodCost;
   if (ng.res.food < 0) {
     ng.res.food = 0;
     ng.teamHp = Math.max(0, ng.teamHp - 2);
-    ng.log = pushLog(ng.log, "🌙 紮營：糧食不足，隊伍體力 -2。", "bad");
+    ng.log = pushLog(ng.log, `🌙 紮營：糧食不足，隊伍體力 -2。`, "bad");
   } else {
-    ng.log = pushLog(ng.log, `🌙 紮營：消耗 1 糧食（剩 ${ng.res.food}）。`, "sys");
+    ng.log = pushLog(ng.log, `🌙 紮營：消耗 ${foodCost} 糧食（剩 ${ng.res.food}）。`, "sys");
   }
 
   // 未處理的路段阻礙 → 壓力 +1
@@ -460,6 +615,12 @@ function camp(g: JGame): JGame {
     `📅 第 ${ng.day} 日｜事件「${ev.name}」（${ev.kind}）：壓力 ${ev.pressure >= 0 ? "+" : ""}${ev.pressure}。${ev.desc}`,
     ev.pressure > 0 ? "bad" : "good",
   );
+
+  // 危急（壓力≥8）：行動點上限收緊，套用今日事件後的最終壓力值判定
+  ng.ap = Math.min(ng.ap, effectiveMaxAp(ng));
+  if (pressureTier(ng) === "critical") {
+    ng.log = pushLog(ng.log, "⚠ 情勢危急：行動點上限收緊為 2。", "bad");
+  }
 
   // 補牌至手牌上限
   while (ng.hand.length < HAND_LIMIT && (ng.deck.length > 0 || ng.discard.length > 0)) {
@@ -491,12 +652,12 @@ function playAudio(id: string | null) {
 
 // ───────────────────────── 任務引導（mode-a-quests-v1，Calypso）─────────────────────────
 
-// 目前這一步的「狀況」＋「該做什麼」（依當前節點型別與狀態）
-// 各節點狀態下「能推進」所需的行動牌效果
+// 目前這一步的「狀況」＋「該做什麼」（依當前節點型別與狀態，v2：對齊 core-loop-v2 設計）
+// 各節點狀態下「能清除」所需的行動牌效果（不含前進——前進已脫離卡牌經濟，見常駐「前進」按鈕）
 function neededEffects(n: PathNode): EffectId[] {
   if (!n.cleared && n.type === "obstacle") return ["clearStone", "coopClear"];
   if (!n.cleared && n.type === "bridge") return ["buildBridge", "coopClear"];
-  return ["scout"]; // 已清 / start / event / supply / destination → 巡路前進
+  return [];
 }
 
 function stepHint(g: JGame): { situation: string; todo: string } {
@@ -504,42 +665,47 @@ function stepHint(g: JGame): { situation: string; todo: string } {
   if (g.status === "lost") return { situation: "任務失敗", todo: "點「重新開始」再試一次。" };
   const n = g.nodes[g.idx];
   const last = g.idx >= g.nodes.length - 1;
-  // 手牌沒有可推進的行動牌 → 提示紮營重抽；否則行動點用完 → 提示紮營
-  const need = neededEffects(n);
-  const hasCard = g.hand.some((c) => need.includes(c.effect));
-  const apNote = !hasCard
-    ? "　手牌沒有可用的行動牌 → 點「紮營」換日重抽。"
-    : g.ap <= 0
-      ? "　行動點用完了 → 點「紮營」換日、補行動點。"
-      : "";
+  const apNote = g.ap <= 0 ? "　行動點用完了 → 點「紮營」換日、補行動點。" : "";
   let s: { situation: string; todo: string };
   switch (n.type) {
-    case "start":
-      s = { situation: "立霧溪口・出發點", todo: "出「巡路」前進到下一段山徑。" };
-      break;
     case "obstacle":
-      s = n.cleared
-        ? { situation: "落石已清除", todo: "出「巡路」前進。" }
-        : { situation: `落石擋道（剩 ${n.obstacle} 點）`, todo: "出「搬石」或「共同搬運」清除落石；阻礙歸零後再「巡路」前進。" };
+    case "bridge": {
+      const label = n.type === "obstacle" ? `落石擋道（剩 ${n.obstacle} 點）` : "峽谷吊橋斷裂";
+      if (n.cleared) {
+        s = { situation: n.type === "obstacle" ? "落石已清除" : "吊橋已完成", todo: "點「前進」。" };
+      } else {
+        const hasCard = g.hand.some((c) => neededEffects(n).includes(c.effect));
+        const canHard = canHardClear(g);
+        s = {
+          situation: label,
+          todo:
+            !hasCard && !canHard
+              ? "手牌無可用行動牌、資源也不夠硬清 → 點「紮營」換日重抽／囤資源。"
+              : n.type === "obstacle"
+                ? "出「搬石」／「共同搬運」答題清除，或花資源「硬清」（石材×2，免答題）。"
+                : "出「搭橋」／「共同搬運」答題修復，或花資源「硬清」（木材×2・繩索×2，免答題）。",
+        };
+      }
       break;
-    case "bridge":
-      s = n.cleared
-        ? { situation: "吊橋已完成", todo: "出「巡路」過橋前進。" }
-        : { situation: "峽谷吊橋斷裂", todo: "出「搭橋」（需木材1・繩索1，答對才成功）或「共同搬運」修復；完成後「巡路」前進。" };
+    }
+    case "start":
+      s = { situation: "立霧溪口・出發點", todo: "點「前進」出發。" };
       break;
     case "event":
       s = n.cleared
-        ? { situation: "林間捷徑・已通過", todo: "出「巡路」前進。" }
-        : { situation: "林間捷徑", todo: "出「巡路」通過（順利通過壓力 -1）。" };
+        ? { situation: "林間捷徑・已通過", todo: "點「前進」。" }
+        : { situation: "林間捷徑", todo: "選擇「快速通過」（壓力 +2）或「謹慎探勘」（耗木材/繩索各1，換糧食 +1）。" };
       break;
     case "supply":
-      s = { situation: "山腰營地・補給點", todo: n.cleared ? "已補給。出「巡路」繼續。" : "出「巡路」續行（抵達即自動補給）。" };
+      s = n.cleared
+        ? { situation: "山腰營地・已補給", todo: "點「前進」。" }
+        : { situation: "山腰營地・補給點", todo: "選一項資源，補給 +3。" };
       break;
     case "destination":
-      s = { situation: last ? "部落・終點在望" : "部落", todo: "出「巡路」抵達，帶所有人回家。" };
+      s = { situation: last ? "部落・終點在望" : "部落", todo: "點「前進」抵達，帶所有人回家。" };
       break;
     default:
-      s = { situation: n.name, todo: "出「巡路」前進。" };
+      s = { situation: n.name, todo: "點「前進」。" };
   }
   return { situation: s.situation, todo: s.todo + apNote };
 }
@@ -587,6 +753,19 @@ export default function JourneyPage() {
     else if (game.status === "lost") sfxLose();
   }, [game.status]);
 
+  // 章節標題卡（v2）：idx 進入新章節的第一個節點時顯示，銜接 /prologue 的章節架構
+  const [chapterCard, setChapterCard] = useState<number | null>(null);
+  const [seenChapters, setSeenChapters] = useState<number>(-1);
+  useEffect(() => {
+    if (!mounted) return;
+    const { index } = chapterForIdx(game.idx);
+    if (game.nodes[game.idx]?.type !== undefined && index !== seenChapters && CHAPTERS[index].nodeStart === game.idx) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setChapterCard(index);
+      setSeenChapters(index);
+    }
+  }, [mounted, game.idx, game.nodes, seenChapters]);
+
   const quiz = useMemo(() => (pending && pending.quiz ? quizFor(pending) : null), [pending]);
   const total = game.correct + game.wrong;
   const rate = total === 0 ? 0 : Math.round((game.correct / total) * 100);
@@ -608,6 +787,11 @@ export default function JourneyPage() {
     const correct = optIdx === quiz.answer;
     if (correct) sfxCorrect();
     else sfxWrong();
+    // 連擊獎勵預判：稍晚於答對音效播放，做出「更爽」的聲音層次
+    const willStreak = correct ? game.streak + 1 : 0;
+    if (willStreak > 0 && willStreak % 3 === 0) {
+      setTimeout(() => sfxStreak(), 300);
+    }
     setRevealed(optIdx);
     setTimeout(() => {
       setGame((g) => playCard(g, pending, correct));
@@ -616,11 +800,35 @@ export default function JourneyPage() {
     }, 850);
   }
 
+  function doAdvance() {
+    if (!canAdvance(game)) return;
+    sfxPlayCard();
+    setGame((g) => advance(g));
+  }
+
+  function doHardClear() {
+    if (!canHardClear(game)) return;
+    sfxPlayCard();
+    setGame((g) => hardClear(g));
+  }
+
+  function doEventChoice(choice: "fast" | "careful") {
+    sfxPlayCard();
+    setGame((g) => resolveEventChoice(g, choice));
+  }
+
+  function doSupplyChoice(resource: Resource) {
+    sfxPlayCard();
+    setGame((g) => resolveSupplyChoice(g, resource));
+  }
+
   function restart() {
     setGame(newGame());
     setPending(null);
     setRevealed(null);
     setConfirmRestart(false);
+    setSeenChapters(-1);
+    setChapterCard(null);
   }
 
   // mount 前：SSR 與 client 首渲染皆輸出此骨架，確保 HTML 一致（避免 hydration mismatch）
@@ -662,7 +870,7 @@ export default function JourneyPage() {
             </span>
             <span className="rounded bg-sky-900/60 px-2 py-1 inline-flex items-center gap-1">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={ICON_ACTION} width={14} height={14} alt="" />行動點 {game.ap}/{game.maxAp}
+              <img src={ICON_ACTION} width={14} height={14} alt="" />行動點 {game.ap}/{effectiveMaxAp(game)}
             </span>
             <span
               className="rounded bg-emerald-900/60 px-2 py-1 inline-flex items-center gap-1"
@@ -687,9 +895,20 @@ export default function JourneyPage() {
           </div>
         </header>
 
-        {/* 頂部數值列 */}
+        {/* 頂部數值列（v2：壓力分級變色，危急時脈動警示） */}
         <section className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-          <StatBar label="壓力" value={game.pressure} max={game.maxPressure} color="bg-rose-500" invert icon={METER_PRESSURE} />
+          <StatBar
+            label="壓力"
+            value={game.pressure}
+            max={game.maxPressure}
+            color={
+              pressureTier(game) === "critical" ? "bg-red-500" : pressureTier(game) === "tense" ? "bg-amber-500" : "bg-rose-500"
+            }
+            invert
+            icon={METER_PRESSURE}
+            pulse={pressureTier(game) === "critical"}
+            tag={pressureTier(game) === "critical" ? "危急" : pressureTier(game) === "tense" ? "緊張" : undefined}
+          />
           <StatBar label="隊伍體力" value={game.teamHp} max={game.maxTeamHp} color="bg-emerald-500" icon={METER_STAMINA} />
           <div className="relative rounded-lg border border-slate-800 bg-slate-900/50 p-2 pt-3 flex items-start justify-around gap-2 text-sm col-span-2">
             {/* 族語落字（決策#22）：klokah 真實詞＋發音，整區標「示範·待核」待語言部終核 */}
@@ -703,13 +922,15 @@ export default function JourneyPage() {
                   <img src={COIN_IMG[r]} width={24} height={24} alt={RES_NAME[r]} className="inline-block" />
                   <span className="font-semibold">{game.res[r]}</span>
                 </span>
+                {/* 中文名稱為主要可見標籤（避免只藏在 title tooltip 裡看不到）；族語詞為輔助學習 */}
+                <span className="text-[10px] text-slate-400">{RES_NAME[r]}</span>
                 <WordChip vocabId={RES_VOCAB[r]} />
               </span>
             ))}
           </div>
         </section>
 
-        {/* 任務面板（mode-a-quests-v1）：主線目標＋節點進度＋這一步該做什麼＋支線 */}
+        {/* 任務面板（v2：主線目標＋節點進度＋這一步＋可直接操作的行動按鈕＋支線＋連擊） */}
         <section className="mb-3 rounded-xl border border-emerald-800/50 bg-emerald-950/25 p-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -722,11 +943,72 @@ export default function JourneyPage() {
           </div>
           {(() => {
             const hint = stepHint(game);
+            const node = game.nodes[game.idx];
+            const canGoAdvance = canAdvance(game);
+            const canGoHardClear = canHardClear(game);
             return (
               <div className="mt-2 rounded-lg bg-slate-950/50 p-2.5">
                 <div className="text-[11px] uppercase tracking-wider text-emerald-400/80">這一步</div>
                 <div className="mt-0.5 text-sm font-medium text-emerald-100">{hint.situation}</div>
                 <div className="mt-1 text-xs leading-relaxed text-slate-300">{hint.todo}</div>
+
+                {/* 常駐「前進」：脫離卡牌經濟，路段已清就能按（v2 修死局） */}
+                {game.status === "playing" && node.cleared && game.idx < game.nodes.length - 1 && (
+                  <button
+                    onClick={doAdvance}
+                    disabled={!canGoAdvance}
+                    className="mt-2 w-full rounded-lg bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 disabled:hover:bg-emerald-700 px-3 py-2 text-sm font-semibold transition"
+                  >
+                    ▶ 前進（行動點 -1）
+                  </button>
+                )}
+
+                {/* 花資源硬清：obstacle/bridge 未清時的免答題替代方案 */}
+                {game.status === "playing" && !node.cleared && (node.type === "obstacle" || node.type === "bridge") && (
+                  <button
+                    onClick={doHardClear}
+                    disabled={!canGoHardClear}
+                    className="mt-2 w-full rounded-lg border border-amber-600/60 bg-amber-950/30 hover:bg-amber-900/40 disabled:opacity-30 px-3 py-2 text-sm font-semibold text-amber-200 transition"
+                  >
+                    ⛏ 花資源硬清（{node.type === "obstacle" ? "石材×2" : "木材×2・繩索×2"}，免答題）
+                  </button>
+                )}
+
+                {/* 林間捷徑選擇 */}
+                {game.status === "playing" && !node.cleared && node.type === "event" && (
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      onClick={() => doEventChoice("fast")}
+                      className="rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 px-3 py-2 text-xs font-medium transition"
+                    >
+                      🏃 快速通過（壓力 +2）
+                    </button>
+                    <button
+                      onClick={() => doEventChoice("careful")}
+                      disabled={game.res.wood < 1 || game.res.rope < 1}
+                      className="rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-3 py-2 text-xs font-medium transition"
+                    >
+                      🔍 謹慎探勘（耗木材1・繩索1，換糧食+1）
+                    </button>
+                  </div>
+                )}
+
+                {/* 山腰營地選擇 */}
+                {game.status === "playing" && !node.cleared && node.type === "supply" && (
+                  <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {(Object.keys(RES_NAME) as Resource[]).map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => doSupplyChoice(r)}
+                        className="flex flex-col items-center gap-1 rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 px-2 py-2 text-xs font-medium transition"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={COIN_IMG[r]} width={20} height={20} alt={RES_NAME[r]} />
+                        {RES_NAME[r]} +3
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -744,6 +1026,11 @@ export default function JourneyPage() {
                 {q.label}
               </span>
             ))}
+            {game.streak > 0 && (
+              <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300">
+                🔥 連對 {game.streak}
+              </span>
+            )}
           </div>
         </section>
 
@@ -759,6 +1046,11 @@ export default function JourneyPage() {
 
         {/* 山徑節點 */}
         <section className="mb-3">
+          <div className="mb-1 flex items-center gap-2">
+            <span className={`${notoSansTC.className} rounded-full border border-amber-500/30 bg-amber-950/30 px-2 py-0.5 text-[10px] tracking-[0.2em] text-amber-300/90`}>
+              {chapterForIdx(game.idx).chapter.kicker}
+            </span>
+          </div>
           <SectionHeading>山徑路線</SectionHeading>
           <div className="relative rounded-xl border border-slate-800 overflow-hidden">
             {/* 山徑地圖底（ORDER-015 美術，已過文化複核）＋深色 overlay 保節點可讀 */}
@@ -975,10 +1267,14 @@ export default function JourneyPage() {
             <h3 className="text-lg font-bold mb-3">怎麼玩 · 勝敗條件</h3>
             <ul className="space-y-2 text-slate-300">
               <li>🎯 <b>目標</b>：在第 {MAX_DAY} 日結束前，帶隊伍抵達終點「部落」。</li>
-              <li>🃏 每回合有 <b>行動點</b>，打行動／協作牌前要答對族語題，行動才全額生效（答錯半額）。</li>
-              <li>🌙 <b>紮營</b>收束當日：消耗 <b>1 糧食</b>；糧食不足則隊伍體力 -2；當前路段未通行則壓力 +1。</li>
+              <li>▶ 路段清除後，隨時可點常駐的<b>「前進」</b>（花 1 行動點）走到下一段，不需要特定卡牌。</li>
+              <li>🃏 落石／吊橋可以打行動／協作牌清除（答對族語題全額生效、答錯半額），也可以花<b>雙倍資源「硬清」</b>直接清除、不用答題——省語言題但耗資源，自己選。</li>
+              <li>❓ 林間捷徑／山腰營地是<b>真選擇</b>：快速通過 vs 謹慎探勘、要補哪一種資源，自己決定。</li>
+              <li>🔥 連續答對 3 題族語題會觸發<b>「順風」</b>，補 1 行動點。</li>
+              <li>🌡 <b>壓力分級</b>：5 分以上「緊張」（紮營消耗糧食變 2）；8 分以上「危急」（行動點上限收緊為 2）。</li>
+              <li>🌙 <b>紮營</b>收束當日：消耗糧食（見上）；糧食不足則隊伍體力 -2；當前路段未通行則壓力 +1。</li>
               <li>💥 <b>失敗條件</b>：壓力達 {10}（被迫折返）、或隊伍體力歸 0（耗盡）、或第 {MAX_DAY} 日結束仍未抵達。</li>
-              <li>📦 資源：糧食（紮營消耗）、木材／繩索（搭橋）、石材（修橋、加固落石）。</li>
+              <li>📦 資源：<b>糧食</b>（紮營消耗）、<b>木材／繩索</b>（搭橋）、<b>石材</b>（硬清落石）——資源列圖示下方的族語詞是真實太魯閣語，可點喇叭聽發音。</li>
             </ul>
             <div className="text-right mt-4">
               <button
@@ -1012,6 +1308,29 @@ export default function JourneyPage() {
                 取消
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 章節標題卡（v2）：進入新章節時的過場，沿用 /prologue 字體與 kicker 樣式，維持敘事連續 */}
+      {chapterCard !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-slate-950/95 p-8 text-center shadow-2xl">
+            <div
+              className={`${notoSansTC.className} mb-4 inline-block rounded-full border border-amber-500/40 bg-amber-950/30 px-3 py-1 text-xs tracking-[0.3em] text-amber-300/90`}
+            >
+              {CHAPTERS[chapterCard].kicker}
+            </div>
+            <div className={`${notoSerifTC.className} text-xl font-bold leading-snug text-amber-50 sm:text-2xl`}>
+              {CHAPTERS[chapterCard].title}
+            </div>
+            <p className={`${notoSansTC.className} mt-4 text-sm leading-relaxed text-slate-300`}>{CHAPTERS[chapterCard].sub}</p>
+            <button
+              onClick={() => setChapterCard(null)}
+              className={`${notoSerifTC.className} mt-6 rounded-lg border-2 border-amber-500/60 bg-gradient-to-b from-[#32251766] to-[#0f1218f0] px-8 py-2.5 text-sm font-bold tracking-[0.15em] text-amber-100 transition hover:-translate-y-0.5 hover:border-amber-300/90`}
+            >
+              繼續
+            </button>
           </div>
         </div>
       )}
@@ -1179,6 +1498,8 @@ function StatBar({
   color,
   invert,
   icon,
+  pulse,
+  tag,
 }: {
   label: string;
   value: number;
@@ -1186,10 +1507,12 @@ function StatBar({
   color: string;
   invert?: boolean;
   icon?: string;
+  pulse?: boolean;
+  tag?: string;
 }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-2">
+    <div className={`rounded-lg border bg-slate-900/50 p-2 ${pulse ? "border-red-500/70 animate-pulse" : "border-slate-800"}`}>
       <div className="flex justify-between text-[11px] mb-1">
         <span className="text-slate-400 flex items-center gap-1">
           {icon && (
@@ -1197,6 +1520,7 @@ function StatBar({
             <img src={icon} width={14} height={14} alt="" />
           )}
           {label}
+          {tag && <span className="ml-1 rounded bg-amber-900/50 px-1 text-[10px] text-amber-300">{tag}</span>}
         </span>
         <span className={invert ? "text-rose-300" : "text-emerald-300"}>
           {value}/{max}
