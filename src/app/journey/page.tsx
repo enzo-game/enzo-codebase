@@ -1665,23 +1665,76 @@ export default function JourneyPage() {
                 </div>
               </div>
 
-              <div className="mb-3 flex flex-wrap gap-1 min-h-[40px] items-center rounded-lg bg-slate-900/60 p-2">
-                {building.stone + building.wood + building.rope === 0 && (
-                  <span className="text-xs text-slate-600">還沒放任何材料……</span>
-                )}
-                {Array.from({ length: building.stone }).map((_, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={`s${i}`} src={RES_IMG.stone} width={18} height={18} alt="頁岩" />
-                ))}
-                {Array.from({ length: building.wood }).map((_, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={`w${i}`} src={RES_IMG.wood} width={18} height={18} alt="橫樑" />
-                ))}
-                {Array.from({ length: building.rope }).map((_, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={`r${i}`} src={RES_IMG.rope} width={18} height={18} alt="藤索" />
-                ))}
-              </div>
+              {/* 修路剖面圖（v5，ORDER-038）：司令回饋只有一條百分比進度條「文字很無聊」，
+                  要看得懂「怎麼搭橋」。改成動態剖面示意圖——頁岩沿缺口底部一塊塊排出路基，
+                  橫樑從左岸往右岸延伸，藤索斜線固定兩端；新放的材料用 CSS keyframe 彈入，非靜態圖。 */}
+              {(() => {
+                const GAP_X0 = 90;
+                const GAP_X1 = 310;
+                const GAP_W = GAP_X1 - GAP_X0;
+                const STONE_SLOTS = 11;
+                const blockW = GAP_W / STONE_SLOTS;
+                const stoneCount = Math.min(building.stone, STONE_SLOTS);
+                const woodWidth = GAP_W * Math.min(1, building.wood / 3);
+                const fillColor = tier === "safe" ? "#10b981" : tier === "risky" ? "#f59e0b" : "#e11d48";
+                return (
+                  <svg viewBox="0 0 400 150" className="mb-1 w-full rounded-lg bg-slate-900/60" aria-hidden="true">
+                    <polygon points="0,150 0,60 90,90 90,150" fill="#334155" />
+                    <polygon points="400,150 400,60 310,90 310,150" fill="#334155" />
+                    <path
+                      d="M0,138 Q50,132 100,138 T200,138 T300,138 T400,138"
+                      fill="none"
+                      stroke="#38bdf8"
+                      strokeOpacity="0.45"
+                      strokeWidth="2"
+                    />
+                    {Array.from({ length: stoneCount }).map((_, i) => (
+                      <rect
+                        key={`stone-${i}`}
+                        x={GAP_X0 + i * blockW + 1}
+                        y={126}
+                        width={blockW - 2}
+                        height={10}
+                        rx={1}
+                        fill={fillColor}
+                        fillOpacity={0.85}
+                        className="build-pop"
+                      />
+                    ))}
+                    {building.wood > 0 && (
+                      <rect
+                        x={GAP_X0}
+                        y={96}
+                        width={woodWidth}
+                        height={9}
+                        rx={2}
+                        fill="#b45309"
+                        className="build-pop transition-all duration-300 ease-out"
+                      />
+                    )}
+                    {building.rope >= 1 && (
+                      <line x1={GAP_X0 + 3} y1={96} x2={72} y2={90} stroke="#a3a3a3" strokeWidth="2" strokeDasharray="3 2" className="build-pop" />
+                    )}
+                    {building.rope >= 2 && (
+                      <line
+                        x1={GAP_X0 + Math.max(woodWidth, 6) - 3}
+                        y1={96}
+                        x2={328}
+                        y2={90}
+                        stroke="#a3a3a3"
+                        strokeWidth="2"
+                        strokeDasharray="3 2"
+                        className="build-pop transition-all duration-300 ease-out"
+                      />
+                    )}
+                    {building.stone + building.wood + building.rope === 0 && (
+                      <text x="200" y="105" textAnchor="middle" className="fill-slate-600 text-[11px]">
+                        還沒放任何材料……
+                      </text>
+                    )}
+                  </svg>
+                );
+              })()}
 
               <div className="grid grid-cols-3 gap-2 mb-2 text-xs">
                 <button
