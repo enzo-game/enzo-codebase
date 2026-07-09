@@ -248,13 +248,22 @@ function buildDeck(): JCard[] {
   return shuffle(deck);
 }
 
+// v2 機制移植：event 節點隨機池（3 種情境，重玩時抽一種，取代永遠固定的「林間捷徑」）
+// 效果數值保持一致（快速通過=壓力+2；謹慎探勘=耗木材1・繩索1換糧食+1），只變情境文字，降低平衡風險
+const EVENT_NODE_POOL: { name: string; vocabId: string }[] = [
+  { name: "林間捷徑", vocabId: "10-01" }, // elug 道路
+  { name: "倒木擋道", vocabId: "08-03" }, // qhuni 樹
+  { name: "岔路口", vocabId: "25-10" }, // mksa 走路
+];
+
 function buildNodes(): PathNode[] {
-  // vocabId：河流10-07 石頭12-05 橋樑12-07 道路10-01 家12-01 部落24-04
+  // vocabId：河流10-07 石頭12-05 橋樑12-07 家12-01 部落24-04
+  const ev = EVENT_NODE_POOL[Math.floor(Math.random() * EVENT_NODE_POOL.length)];
   return [
     { id: "n0", name: "立霧溪口（起點）", vocabId: "10-07", type: "start", obstacle: 0, cleared: true },
     { id: "n1", name: "落石路段", vocabId: "12-05", type: "obstacle", obstacle: 2, cleared: false },
     { id: "n2", name: "峽谷吊橋", vocabId: "12-07", type: "bridge", obstacle: 1, cleared: false },
-    { id: "n3", name: "林間捷徑", vocabId: "10-01", type: "event", obstacle: 0, cleared: false },
+    { id: "n3", name: ev.name, vocabId: ev.vocabId, type: "event", obstacle: 0, cleared: false },
     { id: "n4", name: "山腰營地", vocabId: "12-01", type: "supply", obstacle: 0, cleared: false },
     { id: "n5", name: "部落（目的地）", vocabId: "24-04", type: "destination", obstacle: 0, cleared: false },
   ];
@@ -719,8 +728,8 @@ function stepHint(g: JGame): { situation: string; todo: string } {
       break;
     case "event":
       s = n.cleared
-        ? { situation: "林間捷徑・已通過", todo: "點「前進」。" }
-        : { situation: "林間捷徑", todo: "選擇「快速通過」（壓力 +2）或「謹慎探勘」（耗木材/繩索各1，換糧食 +1）。" };
+        ? { situation: `${n.name}・已通過`, todo: "點「前進」。" }
+        : { situation: n.name, todo: "選擇「快速通過」（壓力 +2）或「謹慎探勘」（耗木材/繩索各1，換糧食 +1）。" };
       break;
     case "supply":
       s = n.cleared
