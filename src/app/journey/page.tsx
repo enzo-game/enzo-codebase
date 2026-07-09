@@ -256,6 +256,20 @@ const EVENT_NODE_POOL: { name: string; vocabId: string }[] = [
   { name: "岔路口", vocabId: "25-10" }, // mksa 走路
 ];
 
+// v3（ORDER-030）：節點故事——依 enzo-game-design/docs/mode-a-chapter-story-v1.md，
+// 融入已核准的太魯閣族傳說（大洪水/射日/巨人馬威/彩虹橋意象），依節點 vocabId 對應。
+// 事件節點（林間捷徑/倒木擋道/岔路口）隨機池，各配一段故事，維持一致性。
+const NODE_STORY: Record<string, string> = {
+  "10-07": "出發前，老人家只交代一句話：「路斷了，就一段一段修。別想著一次到家。」你把繩子重新繫緊，看了隊伍一眼——該上路了。",
+  "12-05": "這段路，三天前還在。溪水漲得比記憶中的任何一次都高，把整片山壁沖鬆，落石堆得比人高。老人家說，這樣的大水，祖先也遇過一次——那次，山河整個重新排過。這次，換你們重新排一次路。",
+  "12-07": "吊橋斷了一半，垂在溪谷上晃。傳說中射日的祖先，也是這樣一段一段把不可能的距離走完的——出發的人揹著孩子，沿路種下小米，等到射日成功，早已是後代的事了。這座橋，你們也接得完。",
+  "10-01": "林間有一條窄窄的近路，繞過一塊被踩得凹陷的台地——老一輩叫它「馬威的腳印」。傳說巨人馬威一步能跨一座山頭，腳一跺就踏出這樣的平台；他曾張大嘴堵在獵物的必經之路上，不勞而獲，害族人挨餓。後來族人們合力把燒紅的水晶石偽裝成獵物滾下山，馬威一口吞下，痛得滾進花蓮外海，只剩兩腳露出水面，成了蘭嶼與綠島。族人說，馬威應該只是睡著了，還在那片海裡，默默看著這片山。——這條捷徑好走，但貪快，有時候要付出代價。",
+  "08-03": "一棵巨大的檜木橫倒在小徑正中央，樹根還帶著新鮮的濕泥——這棵樹倒下不過是這幾天的事。繞過去，還是想辦法直接跨過？",
+  "25-10": "小徑在這裡分成兩條，一條寬一條窄，都通往看不見盡頭的林子裡。沒有路標，只能靠自己的判斷。",
+  "12-01": "隊伍在營地卸下重擔，糧食分著吃。沒有人多說話，但每個人都在補：補睡眠、補力氣、補接下來要用的木頭與繩索。部落已經不遠了。",
+  "24-04": "最後一段路，天邊真的出現了一道彩虹橋。老人家說，那橋連著這個世界和祖先所在的地方——不是要你們現在就過橋，是提醒你們：平安回家，本身就是被祖先看顧著的事。把每一個人，帶回部落。",
+};
+
 function buildNodes(): PathNode[] {
   // vocabId：河流10-07 石頭12-05 橋樑12-07 家12-01 部落24-04
   const ev = EVENT_NODE_POOL[Math.floor(Math.random() * EVENT_NODE_POOL.length)];
@@ -930,15 +944,15 @@ export default function JourneyPage() {
           </div>
         </header>
 
-        {/* 任務面板（v2：主線目標＋節點進度＋這一步＋可直接操作的行動按鈕＋支線＋連擊）
-            視覺層級修正：搬到統計數字前面，第一眼就是「該做什麼」，不是一堆數字（盲測發現原順序讓玩家迷路） */}
-        <section className="mb-3 rounded-xl border-2 border-emerald-600/70 bg-emerald-950/25 p-3 shadow-[0_0_24px_rgba(16,185,129,0.15)]">
+        {/* 任務面板（v3，ORDER-030）：主線目標＋節點進度＋節點故事＋這一步＋可直接操作的行動按鈕＋支線＋連擊
+            視覺層級修正：搬到統計數字前面，第一眼就是「該做什麼」；面板整體放大字級（司令實測回報還是太小看不清） */}
+        <section className="mb-3 rounded-2xl border-4 border-emerald-500/80 bg-emerald-950/30 p-4 shadow-[0_0_32px_rgba(16,185,129,0.25)]">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="rounded bg-emerald-800/70 px-2 py-0.5 text-[11px] font-semibold text-emerald-50">主線</span>
-              <span className="text-sm font-semibold">修復山徑 · 返回部落</span>
+              <span className="rounded bg-emerald-700 px-2.5 py-1 text-xs font-bold text-emerald-50">主線</span>
+              <span className="text-base font-bold">修復山徑 · 返回部落</span>
             </div>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-xs text-slate-300">
               節點 {game.idx}/{game.nodes.length - 1} · 第 {game.day}/{MAX_DAY} 日
             </span>
           </div>
@@ -947,18 +961,28 @@ export default function JourneyPage() {
             const node = game.nodes[game.idx];
             const canGoAdvance = canAdvance(game);
             const canGoHardClear = canHardClear(game);
+            const story = NODE_STORY[node.vocabId];
             return (
-              <div className="mt-2 rounded-lg bg-slate-950/50 p-2.5">
-                <div className="text-[11px] uppercase tracking-wider text-emerald-400/80">這一步</div>
-                <div className="mt-0.5 text-sm font-medium text-emerald-100">{hint.situation}</div>
-                <div className="mt-1 text-xs leading-relaxed text-slate-300">{hint.todo}</div>
+              <div className="mt-3 rounded-lg bg-slate-950/60 p-3.5">
+                <div className="text-xs uppercase tracking-wider text-emerald-400 font-semibold">這一步</div>
+                <div className="mt-1 text-lg font-bold text-emerald-100">{hint.situation}</div>
+                <div className="mt-1.5 text-sm leading-relaxed text-slate-200">{hint.todo}</div>
+
+                {/* 節點故事（v3，ORDER-030）：依 mode-a-chapter-story-v1.md，融入已核准太魯閣族傳說 */}
+                {story && (
+                  <p
+                    className={`${notoSansTC.className} mt-3 border-l-2 border-amber-500/50 pl-3 text-xs italic leading-relaxed text-amber-100/80`}
+                  >
+                    {story}
+                  </p>
+                )}
 
                 {/* 常駐「前進」：脫離卡牌經濟，路段已清就能按（v2 修死局） */}
                 {game.status === "playing" && node.cleared && game.idx < game.nodes.length - 1 && (
                   <button
                     onClick={doAdvance}
                     disabled={!canGoAdvance}
-                    className="mt-2 w-full rounded-lg bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 disabled:hover:bg-emerald-700 px-3 py-2 text-sm font-semibold transition"
+                    className="mt-3 w-full rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:hover:bg-emerald-600 px-4 py-3.5 text-base font-bold shadow-lg transition"
                   >
                     ▶ 前進（行動點 -1）
                   </button>
