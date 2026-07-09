@@ -13,12 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Enzo · Truku 山徑 — 太魯閣族語冒險卡牌",
+  title: "峽谷行者 Canyon Walker · Truku 山徑 — 太魯閣族語冒險卡牌",
   description:
-    "Enzo 是結合太魯閣族語學習的冒險卡牌遊戲：修復山徑、答對族語題觸發加成，帶隊伍安全返回部落。族語詞彙與發音來自原住民族語E樂園（原民會）。",
-  applicationName: "Enzo",
+    "《峽谷行者 Canyon Walker》是結合太魯閣族語學習的冒險卡牌遊戲：修復山徑、答對族語題觸發加成，帶隊伍安全返回部落。族語詞彙與發音來自原住民族語E樂園（原民會）。",
+  applicationName: "峽谷行者 Canyon Walker",
   openGraph: {
-    title: "Enzo · Truku 山徑",
+    title: "峽谷行者 Canyon Walker · Truku 山徑",
     description: "答對太魯閣族語題，修復山徑、帶隊伍返回部落。原民族語學習 × 冒險卡牌。",
     type: "website",
     locale: "zh_TW",

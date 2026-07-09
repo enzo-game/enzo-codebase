@@ -142,8 +142,15 @@ export default function Home() {
       <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-14">
         {/* 品牌 */}
         <header className="text-center">
-          <div className="text-5xl">🏹🌈</div>
-          <h1 className="mt-2 font-serif text-6xl font-bold tracking-tight">Enzo</h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/brand/logo-canyon-walker-v1.png"
+            alt="峽谷行者 Canyon Walker"
+            width={320}
+            height={330}
+            className="mx-auto w-56 sm:w-72 h-auto drop-shadow-[0_4px_24px_rgba(0,0,0,0.6)]"
+          />
+          <h1 className="sr-only">峽谷行者 Canyon Walker</h1>
           {/* 中性分隔飾（非菱形）：線 · 圓點 · 線 */}
           <div className="mx-auto mt-4 flex items-center justify-center gap-3 text-slate-600">
             <span className="h-px w-16 bg-gradient-to-r from-transparent to-slate-600" />
