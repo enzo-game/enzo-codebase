@@ -536,6 +536,56 @@ function resolveSupplyChoice(g: JGame, resource: Resource, correct: boolean, voc
   return settle(applyStreakBonus(ng));
 }
 
+// ───────────────────────── 修復路段（v5，ORDER-036：動手建造，落石節點專用）─────────────────────────
+// 司令回饋：故事寫了「這次換你們重新排一次路」，結果玩家只是點按鈕答題，敘事沒兌現、遊戲太單薄。
+// 改成真的要動手選材料疊路：頁岩堆疊路基、蛇木架橫樑（可省略，改走純疊石工法）、藤索綁緊固定（必要）。
+// 簡化版規則式穩定度判定（非真實物理引擎，依司令拍板）。族語題仍保留、但降為輔助加成，不是唯一內容。
+type BuildMaterials = { stone: number; wood: number; rope: number };
+
+function buildScore(b: BuildMaterials): number {
+  return Math.min(100, b.stone * 10 + b.wood * 20);
+}
+
+// 環境機制（純自然力，不掛任何族語信仰概念）：石頭堆太密會擋住水路，測試時有機率被溪水沖毀部分結構
+function resolveBuildTest(g: JGame, b: BuildMaterials, quizCorrect: boolean, vocabId: string): JGame {
+  const node = g.nodes[g.idx];
+  if (g.status !== "playing" || !node || node.type !== "obstacle" || node.cleared || b.rope < 1) return g;
+  const ng: JGame = { ...g, nodes: g.nodes.map((n) => ({ ...n })) };
+  ng.wordLog = [...ng.wordLog, { vocabId, correct: quizCorrect }];
+  if (quizCorrect) {
+    ng.correct += 1;
+    ng.streak += 1;
+  } else {
+    ng.wrong += 1;
+    ng.streak = 0;
+  }
+
+  let score = buildScore(b) + (quizCorrect ? 15 : 0);
+  let envPenalty = false;
+  if (b.stone > 8 && Math.random() < 0.3) {
+    score = Math.max(0, score - 25);
+    envPenalty = true;
+  }
+  const n2 = ng.nodes[ng.idx];
+  const pass = score >= 60;
+  if (pass) {
+    n2.obstacle = 0;
+    n2.cleared = true;
+    if (b.wood === 0) {
+      const cap = effectiveMaxAp(ng);
+      if (ng.ap < cap) ng.ap = Math.min(cap, ng.ap + 1);
+      ng.log = pushLog(ng.log, `✅ 「${n2.name}」重新排好了路——全程沒砍一根木材，工法巧思獎勵：行動點 +1！`, "good");
+    } else {
+      ng.log = pushLog(ng.log, `✅ 「${n2.name}」重新排好了路，隊伍安全通過。`, "good");
+    }
+  } else if (envPenalty) {
+    ng.log = pushLog(ng.log, `🌊 石頭堆太密擋住了水路，溪水暴漲沖毀了部分結構，得再加固一次。`, "bad");
+  } else {
+    ng.log = pushLog(ng.log, `❌ 結構還不夠穩，山羌走到一半又跳了回來，得再加固一次。`, "info");
+  }
+  return settle(applyStreakBonus(ng));
+}
+
 // ───────────────────────── 出牌結算 ─────────────────────────
 
 function apCost(g: JGame, card: JCard): number {
@@ -802,14 +852,16 @@ function stepHint(g: JGame): { situation: string; todo: string } {
         s = { situation: n.type === "obstacle" ? "落石已清除" : "吊橋已完成", todo: "點「前進」。" };
       } else {
         const hasCard = g.hand.some((c) => neededEffects(n).includes(c.effect));
-        const canHard = canHardClear(g);
+        const canHard = n.type === "obstacle" ? g.res.rope >= 1 : canHardClear(g);
         s = {
           situation: label,
           todo:
             !hasCard && !canHard
-              ? "手牌無可用行動牌、資源也不夠硬清 → 點「紮營」換日重抽／囤資源。"
+              ? n.type === "obstacle"
+                ? "手牌無可用行動牌、繩索也不夠（修復路段至少要 1 繩索）→ 點「紮營」換日重抽／囤資源。"
+                : "手牌無可用行動牌、資源也不夠硬清 → 點「紮營」換日重抽／囤資源。"
               : n.type === "obstacle"
-                ? "出「搬石」／「共同搬運」，或花資源「硬清」（石材×2）——皆需答題，答對全額答錯半額。"
+                ? "出「搬石」／「共同搬運」快速過，或點「修復路段」動手疊石架橋（可省木材，答題只是加成不是唯一內容）。"
                 : "出「搭橋」／「共同搬運」，或花資源「硬清」（木材×2・繩索×2）——皆需答題，答對全額答錯半額。",
         };
       }
@@ -912,10 +964,11 @@ export default function JourneyPage() {
 
   const quiz = useMemo(() => (pending && pending.quiz ? quizFor(pending) : null), [pending]);
 
-  // v3（ORDER-031）：非卡牌動作的答題閘門（硬清／謹慎探勘／補給）——共用同一套隨機詞庫題型
-  const [pendingAction, setPendingAction] = useState<{ kind: "hardClear" | "eventCareful" | "supply"; resource?: Resource } | null>(
-    null,
-  );
+  // v3（ORDER-031）：非卡牌動作的答題閘門（硬清／謹慎探勘／補給／v5 修復路段測試）——共用同一套隨機詞庫題型
+  const [pendingAction, setPendingAction] = useState<{
+    kind: "hardClear" | "eventCareful" | "supply" | "buildTest";
+    resource?: Resource;
+  } | null>(null);
   const [actionRevealed, setActionRevealed] = useState<number | null>(null);
   // v4（ORDER-033）：題目改綁「當前節點」的詞，而非全詞庫隨機——司令實測回報「毫無記憶點」，
   // 隨機題跟眼前情境（節點故事剛講的東西）毫無關聯，答完就忘。改成問「這個節點」對應的詞，
@@ -937,8 +990,32 @@ export default function JourneyPage() {
     null,
   );
   const [challengeRevealed, setChallengeRevealed] = useState<number | null>(null);
+
+  // v5（ORDER-036）：修復路段——動手疊石／架橫樑／綁藤索，取代落石節點原本的「花資源硬清」單鍵答題。
+  // building 只存本次已放的材料數（資源在放置當下就從 game.res 扣，不設暫存/退還——跟遊戲其他機制一致：
+  // 資源花下去就是花下去了，就算這次沒測過關，也不退回）。
+  const [building, setBuilding] = useState<BuildMaterials | null>(null);
   const anyModalOpen =
-    !!pending || !!pendingAction || chapterCard !== null || storyCard !== null || showRules || confirmRestart || !!challenge;
+    !!pending ||
+    !!pendingAction ||
+    chapterCard !== null ||
+    storyCard !== null ||
+    showRules ||
+    confirmRestart ||
+    !!challenge ||
+    !!building;
+
+  function addMaterial(kind: keyof BuildMaterials) {
+    if (!building || game.res[kind] < 1) return;
+    setGame((g) => ({ ...g, res: { ...g.res, [kind]: g.res[kind] - 1 } }));
+    setBuilding((b) => (b ? { ...b, [kind]: b[kind] + 1 } : b));
+  }
+
+  function startBuildTest() {
+    if (!building || building.rope < 1) return;
+    setActionRevealed(null);
+    setPendingAction({ kind: "buildTest" });
+  }
 
   function startChallenge() {
     if (game.status !== "playing" || anyModalOpen) return;
@@ -1063,6 +1140,10 @@ export default function JourneyPage() {
     } else if (pendingAction.kind === "supply" && pendingAction.resource) {
       const resource = pendingAction.resource;
       setGame((g) => resolveSupplyChoice(g, resource, correct, vocabId));
+    } else if (pendingAction.kind === "buildTest" && building) {
+      const result = resolveBuildTest(game, building, correct, vocabId);
+      setGame(result);
+      if (result.nodes[game.idx]?.cleared) setBuilding(null);
     }
     setPendingAction(null);
     setActionRevealed(null);
@@ -1079,6 +1160,9 @@ export default function JourneyPage() {
     setStoryCard(null);
     setChallenge(null);
     setChallengeRevealed(null);
+    setBuilding(null);
+    setPendingAction(null);
+    setActionRevealed(null);
   }
 
   // mount 前：SSR 與 client 首渲染皆輸出此骨架，確保 HTML 一致（避免 hydration mismatch）
@@ -1187,14 +1271,27 @@ export default function JourneyPage() {
                   </button>
                 )}
 
-                {/* 花資源硬清：obstacle/bridge 未清時的替代方案（v3：一樣要答題，答對全額答錯半額） */}
-                {game.status === "playing" && !node.cleared && (node.type === "obstacle" || node.type === "bridge") && (
+                {/* 花資源硬清：bridge 未清時的替代方案（v3：一樣要答題，答對全額答錯半額）。
+                    obstacle（落石）改走下面的「修復路段」動手建造玩法（v5，ORDER-036）。 */}
+                {game.status === "playing" && !node.cleared && node.type === "bridge" && (
                   <button
                     onClick={doHardClear}
                     disabled={!canGoHardClear}
                     className="mt-2 w-full rounded-lg border border-amber-600/60 bg-amber-950/30 hover:bg-amber-900/40 disabled:opacity-30 px-3 py-2 text-sm font-semibold text-amber-200 transition"
                   >
-                    ⛏ 花資源硬清（{node.type === "obstacle" ? "石材×2" : "木材×2・繩索×2"}）
+                    ⛏ 花資源硬清（木材×2・繩索×2）
+                  </button>
+                )}
+
+                {/* 修復路段（v5，ORDER-036）：動手疊石／架橫樑／綁藤索，取代原本單鍵答題的「花資源硬清」——
+                    司令回饋故事寫了「重新排一次路」，結果玩家什麼都沒得做，敘事沒兌現。 */}
+                {game.status === "playing" && !node.cleared && node.type === "obstacle" && (
+                  <button
+                    onClick={() => setBuilding({ stone: 0, wood: 0, rope: 0 })}
+                    disabled={anyModalOpen}
+                    className="mt-2 w-full rounded-lg border border-amber-600/60 bg-amber-950/30 hover:bg-amber-900/40 disabled:opacity-30 px-3 py-2 text-sm font-semibold text-amber-200 transition"
+                  >
+                    🏗 修復路段（動手疊石架橋）
                   </button>
                 )}
 
@@ -1527,15 +1624,120 @@ export default function JourneyPage() {
         </div>
       )}
 
+      {/* 修復路段建造彈窗（v5，ORDER-036）：動手選材料疊路，取代原本「花資源硬清」的單鍵答題。
+          building && !pendingAction 才渲染——測試時换成上面/下面的答題彈窗，避免兩層蒙版疊加（沿用 ORDER-032 的互斥原則）。 */}
+      {building && !pendingAction && (() => {
+        const node = game.nodes[game.idx];
+        const score = buildScore(building);
+        const tier = score >= 60 ? "safe" : score >= 35 ? "risky" : "weak";
+        const barColor = tier === "safe" ? "bg-emerald-500" : tier === "risky" ? "bg-amber-500" : "bg-rose-600";
+        const textColor = tier === "safe" ? "text-emerald-400" : tier === "risky" ? "text-amber-400" : "text-rose-400";
+        return (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+            <div className="w-full max-w-lg rounded-2xl border border-amber-500/40 bg-slate-950/95 p-5">
+              <div className="text-xs text-amber-300 mb-1">修復路段 · 這次，換你們重新排一次路</div>
+              <h3 className="text-lg font-bold mb-2">{node.name}</h3>
+              <p className="text-xs text-slate-400 mb-3">
+                溪水沖垮了這段路，用手邊的材料，一塊一塊把它重新接起來——疊頁岩打底、架橫樑跨過缺口、最後用藤索綁緊固定。
+              </p>
+
+              <div className="mb-3">
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-slate-300">結構穩定度</span>
+                  <span className={`font-bold ${textColor}`}>{Math.min(100, score)}%</span>
+                </div>
+                <div className="h-3 rounded-full bg-slate-800 overflow-hidden">
+                  <div className={`h-full ${barColor} transition-all`} style={{ width: `${Math.min(100, score)}%` }} />
+                </div>
+              </div>
+
+              <div className="mb-3 flex flex-wrap gap-1 min-h-[40px] items-center rounded-lg bg-slate-900/60 p-2">
+                {building.stone + building.wood + building.rope === 0 && (
+                  <span className="text-xs text-slate-600">還沒放任何材料……</span>
+                )}
+                {Array.from({ length: building.stone }).map((_, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={`s${i}`} src={RES_IMG.stone} width={18} height={18} alt="頁岩" />
+                ))}
+                {Array.from({ length: building.wood }).map((_, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={`w${i}`} src={RES_IMG.wood} width={18} height={18} alt="橫樑" />
+                ))}
+                {Array.from({ length: building.rope }).map((_, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={`r${i}`} src={RES_IMG.rope} width={18} height={18} alt="藤索" />
+                ))}
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 mb-2 text-xs">
+                <button
+                  onClick={() => addMaterial("stone")}
+                  disabled={game.res.stone < 1}
+                  className="rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-2 py-2 font-medium transition"
+                >
+                  🪨 疊頁岩
+                  <br />
+                  <span className="text-slate-500">btunux・剩 {game.res.stone}</span>
+                </button>
+                <button
+                  onClick={() => addMaterial("wood")}
+                  disabled={game.res.wood < 1}
+                  className="rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-2 py-2 font-medium transition"
+                >
+                  🪵 架橫樑
+                  <br />
+                  <span className="text-slate-500">qhuni・剩 {game.res.wood}</span>
+                </button>
+                <button
+                  onClick={() => addMaterial("rope")}
+                  disabled={game.res.rope < 1}
+                  className="rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-2 py-2 font-medium transition"
+                >
+                  🪢 綁藤索
+                  <br />
+                  <span className="text-slate-500">gasil・剩 {game.res.rope}</span>
+                </button>
+              </div>
+
+              <p className="text-[10px] text-slate-500 mb-3 leading-relaxed">
+                {building.wood === 0
+                  ? "純疊石工法：省下橫樑木材，測試通過後有額外行動點獎勵。"
+                  : "架橫樑能更快墊高穩定度，但這次用了木材，沒有省料獎勵。"}
+                {building.stone > 8 && " ⚠️ 石頭堆太密，可能擋住水路，測試時有風險——大自然的路，要留給水走。"}
+              </p>
+
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  onClick={() => setBuilding(null)}
+                  className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-xs"
+                >
+                  先不修了
+                </button>
+                <div className="text-right">
+                  {building.rope < 1 && <p className="text-[10px] text-rose-400 mb-1">還沒綁緊固定，至少要用 1 個藤索。</p>}
+                  <button
+                    onClick={startBuildTest}
+                    disabled={building.rope < 1}
+                    className="rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 px-4 py-2 text-xs font-bold"
+                  >
+                    🚶 測試通行
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* 族語答題彈窗（v3，ORDER-031）：硬清／謹慎探勘／補給共用，答對全額、答錯半額 */}
       {pendingAction && actionQuiz && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
           <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-5">
             <div className="text-xs text-slate-400 mb-1">
-              {pendingAction.kind === "hardClear" && "花資源硬清"}
-              {pendingAction.kind === "eventCareful" && "謹慎探勘"}
-              {pendingAction.kind === "supply" && `補給（${RES_NAME[pendingAction.resource as Resource]}）`}
-              {" — 答對則全額生效"}
+              {pendingAction.kind === "hardClear" && "花資源硬清 — 答對則全額生效"}
+              {pendingAction.kind === "eventCareful" && "謹慎探勘 — 答對則全額生效"}
+              {pendingAction.kind === "supply" && `補給（${RES_NAME[pendingAction.resource as Resource]}）— 答對則全額生效`}
+              {pendingAction.kind === "buildTest" && "測試通行前，先答一題（答對：隊伍信心加成，結構穩定度 +15）"}
             </div>
             <h3 className="text-lg font-bold mb-1">{actionQuiz.prompt}</h3>
             <p className="text-[10px] text-amber-300/70 mb-3">{actionQuiz.note}</p>
@@ -1563,7 +1765,13 @@ export default function JourneyPage() {
               <div className="mt-3 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <p className="text-xs text-slate-300">
-                    {actionRevealed === actionQuiz.answer ? "✅ 答對！全額生效。" : "❌ 答錯，半額生效。"}
+                    {pendingAction.kind === "buildTest"
+                      ? actionRevealed === actionQuiz.answer
+                        ? "✅ 答對！穩定度 +15。"
+                        : "❌ 答錯，沒有加成。"
+                      : actionRevealed === actionQuiz.answer
+                        ? "✅ 答對！全額生效。"
+                        : "❌ 答錯，半額生效。"}
                   </p>
                   <button
                     onClick={() => playAudio(actionQuiz.audioId)}
@@ -1577,7 +1785,7 @@ export default function JourneyPage() {
                   onClick={confirmActionAnswer}
                   className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 text-xs font-bold"
                 >
-                  繼續 ▶
+                  {pendingAction.kind === "buildTest" ? "測試通行 🚶" : "繼續 ▶"}
                 </button>
               </div>
             )}
@@ -1650,8 +1858,10 @@ export default function JourneyPage() {
             <ul className="space-y-2 text-slate-300">
               <li>🎯 <b>目標</b>：在第 {MAX_DAY} 日結束前，帶隊伍抵達終點「部落」。</li>
               <li>▶ 路段清除後，隨時可點常駐的<b>「前進」</b>（花 1 行動點）走到下一段，不需要特定卡牌。</li>
-              <li>🃏 落石／吊橋可以打行動／協作牌清除，也可以花<b>雙倍資源「硬清」</b>——兩者都要先答族語題，答對全額答錯半額，硬清只是省行動點、不是省答題。</li>
+              <li>🏗 落石路段是<b>動手建造</b>：點「修復路段」，用頁岩／橫樑／藤索疊出穩定度（至少要 1 藤索才能測試），或直接打「搬石」／「共同搬運」牌快速清除。純疊石不用木材完工有額外行動點獎勵。</li>
+              <li>🃏 吊橋可以打行動／協作牌清除，也可以花<b>雙倍資源「硬清」</b>——都要先答族語題，答對全額答錯半額，硬清只是省行動點、不是省答題。</li>
               <li>❓ 林間捷徑是<b>真選擇</b>：「快速通過」不用答題但壓力 +4（高風險捷徑）；「謹慎探勘」要答題換糧食。山腰營地要補哪一種資源也要先答題，答對 +3、答錯僅 +1。</li>
+              <li>📖 標題列的<b>「族語挑戰」</b>隨時可打，免費不佔行動點，從完整詞庫隨機抽 10 題練習，答對率高送行動點獎勵。</li>
               <li>🔥 連續答對 3 題族語題會觸發<b>「順風」</b>，補 1 行動點。</li>
               <li>🌡 <b>壓力分級</b>：5 分以上「緊張」（紮營消耗糧食變 2）；8 分以上「危急」（行動點上限收緊為 2）。</li>
               <li>🌙 <b>紮營</b>收束當日：消耗糧食（見上）；糧食不足則隊伍體力 -2；當前路段未通行則壓力 +1。</li>
