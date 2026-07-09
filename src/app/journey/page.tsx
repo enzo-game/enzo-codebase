@@ -864,6 +864,23 @@ export default function JourneyPage() {
     }
   }, [mounted, game.idx, game.nodes, seenChapters]);
 
+  // 節點故事過場卡：抵達有 NODE_STORY 的節點時，彈出跟章節卡同樣的全螢幕過場（司令指示「一張一張卡」比較好看，
+  // 取代原本埋在面板裡的斜體小字）。依賴 chapterCard 才觸發，讓章節卡與故事卡不會同時疊加——
+  // 同一節點若兩者皆滿足，章節卡先彈出，玩家關閉後（chapterCard 變回 null）此 effect 才重新判斷並顯示故事卡。
+  const [storyCard, setStoryCard] = useState<string | null>(null);
+  const [seenStories, setSeenStories] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!mounted || chapterCard !== null) return;
+    const node = game.nodes[game.idx];
+    if (!node) return;
+    const story = NODE_STORY[node.vocabId];
+    if (story && !seenStories.has(node.vocabId)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setStoryCard(node.vocabId);
+      setSeenStories((prev) => new Set(prev).add(node.vocabId));
+    }
+  }, [mounted, chapterCard, game.idx, game.nodes, seenStories]);
+
   const quiz = useMemo(() => (pending && pending.quiz ? quizFor(pending) : null), [pending]);
 
   // v3（ORDER-031）：非卡牌動作的答題閘門（硬清／謹慎探勘／補給）——共用同一套隨機詞庫題型
@@ -967,6 +984,8 @@ export default function JourneyPage() {
     setConfirmRestart(false);
     setSeenChapters(-1);
     setChapterCard(null);
+    setSeenStories(new Set());
+    setStoryCard(null);
   }
 
   // mount 前：SSR 與 client 首渲染皆輸出此骨架，確保 HTML 一致（避免 hydration mismatch）
@@ -1050,21 +1069,11 @@ export default function JourneyPage() {
             const node = game.nodes[game.idx];
             const canGoAdvance = canAdvance(game);
             const canGoHardClear = canHardClear(game);
-            const story = NODE_STORY[node.vocabId];
             return (
               <div className="mt-3 rounded-lg bg-slate-950/60 p-3.5">
                 <div className="text-xs uppercase tracking-wider text-emerald-400 font-semibold">這一步</div>
                 <div className="mt-1 text-lg font-bold text-emerald-100">{hint.situation}</div>
                 <div className="mt-1.5 text-sm leading-relaxed text-slate-200">{hint.todo}</div>
-
-                {/* 節點故事（v3，ORDER-030）：依 mode-a-chapter-story-v1.md，融入已核准太魯閣族傳說 */}
-                {story && (
-                  <p
-                    className={`${notoSansTC.className} mt-3 border-l-2 border-amber-500/50 pl-3 text-xs italic leading-relaxed text-amber-100/80`}
-                  >
-                    {story}
-                  </p>
-                )}
 
                 {/* 常駐「前進」：脫離卡牌經濟，路段已清就能按（v2 修死局） */}
                 {game.status === "playing" && node.cleared && game.idx < game.nodes.length - 1 && (
@@ -1511,7 +1520,9 @@ export default function JourneyPage() {
         </div>
       )}
 
-      {/* 章節標題卡（v2）：進入新章節時的過場，沿用 /prologue 字體與 kicker 樣式，維持敘事連續 */}
+      {/* 章節標題卡（v2）：進入新章節時的過場，沿用 /prologue 字體與 kicker 樣式，維持敘事連續。
+          優先權高於故事卡（見下）——同一節點若兩者的觸發 state 剛好同時被設成非 null（effect 批次處理時序），
+          章節卡在 JSX 順位優先渲染，避免兩層全螢幕蒙版疊加；玩家關掉章節卡後故事卡才顯示。 */}
       {chapterCard !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-slate-950/95 p-8 text-center shadow-2xl">
@@ -1526,6 +1537,30 @@ export default function JourneyPage() {
             <p className={`${notoSansTC.className} mt-4 text-sm leading-relaxed text-slate-300`}>{CHAPTERS[chapterCard].sub}</p>
             <button
               onClick={() => setChapterCard(null)}
+              className={`${notoSerifTC.className} mt-6 rounded-lg border-2 border-amber-500/60 bg-gradient-to-b from-[#32251766] to-[#0f1218f0] px-8 py-2.5 text-sm font-bold tracking-[0.15em] text-amber-100 transition hover:-translate-y-0.5 hover:border-amber-300/90`}
+            >
+              繼續
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 節點故事卡（v4，ORDER-032）：抵達有 NODE_STORY 的節點時彈出，樣式比照章節卡（一張一張卡，取代原本埋在面板裡的小字）。
+          max-h + overflow-y-auto：部分傳說全文較長（如巨人馬威），避免固定高度裁切內文。
+          chapterCard === null 才渲染：章節卡優先顯示，避免兩層全螢幕蒙版同時疊加。 */}
+      {chapterCard === null && storyCard !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-md max-h-[70vh] overflow-y-auto rounded-2xl border border-amber-500/30 bg-slate-950/95 p-8 text-center shadow-2xl">
+            <div
+              className={`${notoSansTC.className} mb-4 inline-block rounded-full border border-amber-500/40 bg-amber-950/30 px-3 py-1 text-xs tracking-[0.3em] text-amber-300/90`}
+            >
+              這裡的故事
+            </div>
+            <p className={`${notoSansTC.className} text-left text-sm leading-relaxed text-slate-200 whitespace-pre-line`}>
+              {NODE_STORY[storyCard]}
+            </p>
+            <button
+              onClick={() => setStoryCard(null)}
               className={`${notoSerifTC.className} mt-6 rounded-lg border-2 border-amber-500/60 bg-gradient-to-b from-[#32251766] to-[#0f1218f0] px-8 py-2.5 text-sm font-bold tracking-[0.15em] text-amber-100 transition hover:-translate-y-0.5 hover:border-amber-300/90`}
             >
               繼續
