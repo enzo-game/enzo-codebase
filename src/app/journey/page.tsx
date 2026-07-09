@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Noto_Serif_TC, Noto_Sans_TC } from "next/font/google";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { vocab, audioUrl, distractors, ATTRIBUTION, SOURCE, SOURCE_URL } from "@/data/truku";
+import { vocab, audioUrl, distractors, ATTRIBUTION, SOURCE, SOURCE_URL, VOCAB } from "@/data/truku";
 import AmbientAudio from "@/components/AmbientAudio";
 import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose, sfxStreak } from "@/lib/sfx";
 
@@ -354,16 +354,26 @@ function effectiveMaxAp(g: JGame): number {
 
 type Quiz = { prompt: string; options: string[]; answer: number; audioId: string; note: string };
 
-function quizFor(card: JCard): Quiz {
-  const ans = vocab(card.vocabId);
-  const opts = shuffle([ans, ...distractors(card.vocabId, 3)]);
+function quizForVocab(vocabId: string): Quiz {
+  const ans = vocab(vocabId);
+  const opts = shuffle([ans, ...distractors(vocabId, 3)]);
   return {
     prompt: `「${ans.chinese}」的太魯閣族語是？`,
     options: opts.map((o) => o.word),
     answer: opts.findIndex((o) => o.word === ans.word),
-    audioId: card.vocabId,
+    audioId: vocabId,
     note: `族語詞彙與發音來源：${SOURCE}。遊戲用法之文化複核進行中。`,
   };
+}
+
+function quizFor(card: JCard): Quiz {
+  return quizForVocab(card.vocabId);
+}
+
+// v3（ORDER-031）：非卡牌動作（硬清／事件謹慎/補給）補答題閘門，避免完全繞過族語題
+// （放行紅線：模式 A 必須內建族語答題迴圈——這幾個動作原本零門檻，等於繞過去了）
+function randomVocabId(): string {
+  return VOCAB[Math.floor(Math.random() * VOCAB.length)].id;
 }
 
 // ───────────────────────── 判定 ─────────────────────────
@@ -429,60 +439,96 @@ function canHardClear(g: JGame): boolean {
   return Object.entries(cost).every(([r, v]) => g.res[r as Resource] >= (v ?? 0));
 }
 
-function hardClear(g: JGame): JGame {
+// v3（ORDER-031）：花資源硬清補答題閘門（答對全額清除／答錯半額，資源照樣扣——
+// 原本零門檻等於繞過族語題，違反模式 A 放行紅線）
+function hardClear(g: JGame, correct: boolean): JGame {
   if (!canHardClear(g)) return g;
   const cost = hardClearCost(g.nodes[g.idx]) as Partial<Record<Resource, number>>;
   const ng: JGame = { ...g, res: { ...g.res }, nodes: g.nodes.map((n) => ({ ...n })) };
   for (const [r, v] of Object.entries(cost)) ng.res[r as Resource] -= v ?? 0;
+  if (correct) {
+    ng.correct += 1;
+    ng.streak += 1;
+  } else {
+    ng.wrong += 1;
+    ng.streak = 0;
+  }
   const node = ng.nodes[ng.idx];
-  node.obstacle = 0;
-  node.cleared = true;
-  ng.log = pushLog(ng.log, `⛏ 花資源硬清：「${node.name}」已可通行。`, "good");
-  return settle(ng);
+  if (correct) {
+    node.obstacle = 0;
+    node.cleared = true;
+    ng.log = pushLog(ng.log, `✅ 答對｜花資源硬清：「${node.name}」已可通行。`, "good");
+  } else {
+    const half = Math.ceil(node.obstacle / 2);
+    node.obstacle = half;
+    if (node.obstacle === 0) node.cleared = true;
+    ng.log = pushLog(ng.log, `❌ 答錯｜花資源硬清：資源已耗，僅清一半（剩 ${node.obstacle}）。`, "info");
+  }
+  return settle(applyStreakBonus(ng));
 }
 
-// ───────────────────────── 事件／補給節點選擇（v2：真取捨，取代自動結算）─────────────────────────
+// ───────────────────────── 事件／補給節點選擇（v2：真取捨；v3 加答題閘門）─────────────────────────
 
-function resolveEventChoice(g: JGame, choice: "fast" | "careful"): JGame {
+// 「快速通過」故意保留免答題（設計本意：花代價換省事的高風險捷徑），但代價調高（壓力+2→+4）
+// 「謹慎探勘」改為答題閘門：答對才有額外糧食，答錯仍清節點但沒有加碼
+function resolveEventChoice(g: JGame, choice: "fast" | "careful", correct?: boolean): JGame {
   const node = g.nodes[g.idx];
   if (g.status !== "playing" || !node || node.type !== "event" || node.cleared) return g;
   if (choice === "careful" && (g.res.wood < 1 || g.res.rope < 1)) return g;
-  const ng: JGame = { ...g, res: { ...g.res }, nodes: g.nodes.map((n) => ({ ...n })) };
+  let ng: JGame = { ...g, res: { ...g.res }, nodes: g.nodes.map((n) => ({ ...n })) };
   const n2 = ng.nodes[ng.idx];
   n2.cleared = true;
   if (choice === "fast") {
-    ng.pressure = Math.min(ng.maxPressure, ng.pressure + 2);
-    ng.log = pushLog(ng.log, `🏃 「${n2.name}」快速通過：壓力 +2。`, "bad");
+    ng.pressure = Math.min(ng.maxPressure, ng.pressure + 4);
+    ng.log = pushLog(ng.log, `🏃 「${n2.name}」快速通過：壓力 +4。`, "bad");
   } else {
     ng.res.wood -= 1;
     ng.res.rope -= 1;
-    ng.res.food += 1;
-    ng.log = pushLog(ng.log, `🔍 「${n2.name}」謹慎探勘：耗木材1・繩索1，沿途採得糧食 +1。`, "good");
+    if (correct) {
+      ng.correct += 1;
+      ng.streak += 1;
+      ng.res.food += 1;
+      ng.log = pushLog(ng.log, `✅ 答對｜「${n2.name}」謹慎探勘：耗木材1・繩索1，沿途採得糧食 +1。`, "good");
+    } else {
+      ng.wrong += 1;
+      ng.streak = 0;
+      ng.log = pushLog(ng.log, `❌ 答錯｜「${n2.name}」謹慎探勘：耗木材1・繩索1，沒能多找到什麼。`, "info");
+    }
+    ng = applyStreakBonus(ng);
   }
   return settle(ng);
 }
 
-function resolveSupplyChoice(g: JGame, resource: Resource): JGame {
+// 補給答題閘門：答對 +3（維持既有30%變動加碼），答錯僅 +1（無加碼）
+function resolveSupplyChoice(g: JGame, resource: Resource, correct: boolean): JGame {
   const node = g.nodes[g.idx];
   if (g.status !== "playing" || !node || node.type !== "supply" || node.cleared) return g;
   const ng: JGame = { ...g, res: { ...g.res }, nodes: g.nodes.map((n) => ({ ...n })) };
   const n2 = ng.nodes[ng.idx];
   n2.cleared = true;
-  ng.res[resource] += 3;
-  // v2 機制移植：30% 機率額外加碼一份隨機資源（變動獎勵，避免補給永遠是同一個固定結果）
-  if (Math.random() < 0.3) {
-    const resources: Resource[] = ["food", "wood", "stone", "rope"];
-    const bonus = resources[Math.floor(Math.random() * resources.length)];
-    ng.res[bonus] += 1;
-    ng.log = pushLog(
-      ng.log,
-      `🎒 「${n2.name}」補給：${RES_NAME[resource]} +3，意外多撿到 ${RES_NAME[bonus]} +1！`,
-      "good",
-    );
+  if (correct) {
+    ng.correct += 1;
+    ng.streak += 1;
+    ng.res[resource] += 3;
+    if (Math.random() < 0.3) {
+      const resources: Resource[] = ["food", "wood", "stone", "rope"];
+      const bonus = resources[Math.floor(Math.random() * resources.length)];
+      ng.res[bonus] += 1;
+      ng.log = pushLog(
+        ng.log,
+        `✅ 答對｜「${n2.name}」補給：${RES_NAME[resource]} +3，意外多撿到 ${RES_NAME[bonus]} +1！`,
+        "good",
+      );
+    } else {
+      ng.log = pushLog(ng.log, `✅ 答對｜「${n2.name}」補給：${RES_NAME[resource]} +3。`, "good");
+    }
   } else {
-    ng.log = pushLog(ng.log, `🎒 「${n2.name}」補給：${RES_NAME[resource]} +3。`, "good");
+    ng.wrong += 1;
+    ng.streak = 0;
+    ng.res[resource] += 1;
+    ng.log = pushLog(ng.log, `❌ 答錯｜「${n2.name}」補給：${RES_NAME[resource]} +1。`, "info");
   }
-  return settle(ng);
+  return settle(applyStreakBonus(ng));
 }
 
 // ───────────────────────── 出牌結算 ─────────────────────────
@@ -500,6 +546,20 @@ function canAfford(g: JGame, card: JCard): boolean {
     }
   }
   return true;
+}
+
+// 連擊獎勵（v2）：每連對 3 題，順風而行，補 1 行動點。共用給卡牌與 v3 答題閘門動作。
+function applyStreakBonus(ng: JGame): JGame {
+  if (ng.streak > 0 && ng.streak % 3 === 0) {
+    const cap = effectiveMaxAp(ng);
+    if (ng.ap < cap) {
+      ng.ap = Math.min(cap, ng.ap + 1);
+      ng.log = pushLog(ng.log, `🔥 連對 ${ng.streak} 題！順風而行，行動點 +1。`, "good");
+    } else {
+      ng.log = pushLog(ng.log, `🔥 連對 ${ng.streak} 題！順風而行。`, "good");
+    }
+  }
+  return ng;
 }
 
 function playCard(g: JGame, card: JCard, correct: boolean): JGame {
@@ -612,18 +672,7 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
     }
   }
 
-  // 連擊獎勵（v2）：每連對 3 題，順風而行，補 1 行動點
-  if (ng.streak > 0 && ng.streak % 3 === 0) {
-    const cap = effectiveMaxAp(ng);
-    if (ng.ap < cap) {
-      ng.ap = Math.min(cap, ng.ap + 1);
-      ng.log = pushLog(ng.log, `🔥 連對 ${ng.streak} 題！順風而行，行動點 +1。`, "good");
-    } else {
-      ng.log = pushLog(ng.log, `🔥 連對 ${ng.streak} 題！順風而行。`, "good");
-    }
-  }
-
-  return settle(ng);
+  return settle(applyStreakBonus(ng));
 }
 
 // ───────────────────────── 紮營（結束當日）─────────────────────────
@@ -731,8 +780,8 @@ function stepHint(g: JGame): { situation: string; todo: string } {
             !hasCard && !canHard
               ? "手牌無可用行動牌、資源也不夠硬清 → 點「紮營」換日重抽／囤資源。"
               : n.type === "obstacle"
-                ? "出「搬石」／「共同搬運」答題清除，或花資源「硬清」（石材×2，免答題）。"
-                : "出「搭橋」／「共同搬運」答題修復，或花資源「硬清」（木材×2・繩索×2，免答題）。",
+                ? "出「搬石」／「共同搬運」，或花資源「硬清」（石材×2）——皆需答題，答對全額答錯半額。"
+                : "出「搭橋」／「共同搬運」，或花資源「硬清」（木材×2・繩索×2）——皆需答題，答對全額答錯半額。",
         };
       }
       break;
@@ -816,6 +865,14 @@ export default function JourneyPage() {
   }, [mounted, game.idx, game.nodes, seenChapters]);
 
   const quiz = useMemo(() => (pending && pending.quiz ? quizFor(pending) : null), [pending]);
+
+  // v3（ORDER-031）：非卡牌動作的答題閘門（硬清／謹慎探勘／補給）——共用同一套隨機詞庫題型
+  const [pendingAction, setPendingAction] = useState<{ kind: "hardClear" | "eventCareful" | "supply"; resource?: Resource } | null>(
+    null,
+  );
+  const [actionRevealed, setActionRevealed] = useState<number | null>(null);
+  const actionQuiz = useMemo(() => (pendingAction ? quizForVocab(randomVocabId()) : null), [pendingAction]);
+
   const total = game.correct + game.wrong;
   const rate = total === 0 ? 0 : Math.round((game.correct / total) * 100);
   const rateLabel = total === 0 ? "—" : `${rate}%`;
@@ -855,20 +912,52 @@ export default function JourneyPage() {
     setGame((g) => advance(g));
   }
 
+  // v3：硬清／謹慎探勘／補給改為先答題，答對全額、答錯半額（比照卡牌規則）。
+  // 「快速通過」故意保留免答題（設計本意的高風險捷徑），直接結算。
   function doHardClear() {
     if (!canHardClear(game)) return;
-    sfxPlayCard();
-    setGame((g) => hardClear(g));
+    setActionRevealed(null);
+    setPendingAction({ kind: "hardClear" });
   }
 
   function doEventChoice(choice: "fast" | "careful") {
-    sfxPlayCard();
-    setGame((g) => resolveEventChoice(g, choice));
+    if (choice === "fast") {
+      sfxPlayCard();
+      setGame((g) => resolveEventChoice(g, "fast"));
+    } else {
+      setActionRevealed(null);
+      setPendingAction({ kind: "eventCareful" });
+    }
   }
 
   function doSupplyChoice(resource: Resource) {
-    sfxPlayCard();
-    setGame((g) => resolveSupplyChoice(g, resource));
+    setActionRevealed(null);
+    setPendingAction({ kind: "supply", resource });
+  }
+
+  function answerAction(optIdx: number) {
+    if (!pendingAction || !actionQuiz) return;
+    const correct = optIdx === actionQuiz.answer;
+    if (correct) sfxCorrect();
+    else sfxWrong();
+    const willStreak = correct ? game.streak + 1 : 0;
+    if (willStreak > 0 && willStreak % 3 === 0) {
+      setTimeout(() => sfxStreak(), 300);
+    }
+    setActionRevealed(optIdx);
+    setTimeout(() => {
+      const action = pendingAction;
+      if (action.kind === "hardClear") {
+        setGame((g) => hardClear(g, correct));
+      } else if (action.kind === "eventCareful") {
+        setGame((g) => resolveEventChoice(g, "careful", correct));
+      } else if (action.kind === "supply" && action.resource) {
+        const resource = action.resource;
+        setGame((g) => resolveSupplyChoice(g, resource, correct));
+      }
+      setPendingAction(null);
+      setActionRevealed(null);
+    }, 850);
   }
 
   function restart() {
@@ -988,14 +1077,14 @@ export default function JourneyPage() {
                   </button>
                 )}
 
-                {/* 花資源硬清：obstacle/bridge 未清時的免答題替代方案 */}
+                {/* 花資源硬清：obstacle/bridge 未清時的替代方案（v3：一樣要答題，答對全額答錯半額） */}
                 {game.status === "playing" && !node.cleared && (node.type === "obstacle" || node.type === "bridge") && (
                   <button
                     onClick={doHardClear}
                     disabled={!canGoHardClear}
                     className="mt-2 w-full rounded-lg border border-amber-600/60 bg-amber-950/30 hover:bg-amber-900/40 disabled:opacity-30 px-3 py-2 text-sm font-semibold text-amber-200 transition"
                   >
-                    ⛏ 花資源硬清（{node.type === "obstacle" ? "石材×2" : "木材×2・繩索×2"}，免答題）
+                    ⛏ 花資源硬清（{node.type === "obstacle" ? "石材×2" : "木材×2・繩索×2"}）
                   </button>
                 )}
 
@@ -1320,6 +1409,56 @@ export default function JourneyPage() {
         </div>
       )}
 
+      {/* 族語答題彈窗（v3，ORDER-031）：硬清／謹慎探勘／補給共用，答對全額、答錯半額 */}
+      {pendingAction && actionQuiz && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-5">
+            <div className="text-xs text-slate-400 mb-1">
+              {pendingAction.kind === "hardClear" && "花資源硬清"}
+              {pendingAction.kind === "eventCareful" && "謹慎探勘"}
+              {pendingAction.kind === "supply" && `補給（${RES_NAME[pendingAction.resource as Resource]}）`}
+              {" — 答對則全額生效"}
+            </div>
+            <h3 className="text-lg font-bold mb-1">{actionQuiz.prompt}</h3>
+            <p className="text-[10px] text-amber-300/70 mb-3">{actionQuiz.note}</p>
+            <div className="grid gap-2">
+              {actionQuiz.options.map((opt, idx) => {
+                let cls = "bg-slate-800 hover:bg-slate-700";
+                if (actionRevealed !== null) {
+                  if (idx === actionQuiz.answer) cls = "bg-emerald-700";
+                  else if (idx === actionRevealed) cls = "bg-rose-700";
+                  else cls = "bg-slate-800 opacity-60";
+                }
+                return (
+                  <button
+                    key={idx}
+                    disabled={actionRevealed !== null}
+                    onClick={() => answerAction(idx)}
+                    className={`rounded-lg px-4 py-2 text-left ${cls}`}
+                  >
+                    {String.fromCharCode(65 + idx)}. {opt}
+                  </button>
+                );
+              })}
+            </div>
+            {actionRevealed !== null && (
+              <div className="mt-3 flex items-center gap-2">
+                <p className="text-xs text-slate-300">
+                  {actionRevealed === actionQuiz.answer ? "✅ 答對！全額生效。" : "❌ 答錯，半額生效。"}
+                </p>
+                <button
+                  onClick={() => playAudio(actionQuiz.audioId)}
+                  className="rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
+                  title="播放正解發音（原住民族語E樂園）"
+                >
+                  🔊 聽發音
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* 規則面板 */}
       {showRules && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
@@ -1328,8 +1467,8 @@ export default function JourneyPage() {
             <ul className="space-y-2 text-slate-300">
               <li>🎯 <b>目標</b>：在第 {MAX_DAY} 日結束前，帶隊伍抵達終點「部落」。</li>
               <li>▶ 路段清除後，隨時可點常駐的<b>「前進」</b>（花 1 行動點）走到下一段，不需要特定卡牌。</li>
-              <li>🃏 落石／吊橋可以打行動／協作牌清除（答對族語題全額生效、答錯半額），也可以花<b>雙倍資源「硬清」</b>直接清除、不用答題——省語言題但耗資源，自己選。</li>
-              <li>❓ 林間捷徑／山腰營地是<b>真選擇</b>：快速通過 vs 謹慎探勘、要補哪一種資源，自己決定。</li>
+              <li>🃏 落石／吊橋可以打行動／協作牌清除，也可以花<b>雙倍資源「硬清」</b>——兩者都要先答族語題，答對全額答錯半額，硬清只是省行動點、不是省答題。</li>
+              <li>❓ 林間捷徑是<b>真選擇</b>：「快速通過」不用答題但壓力 +4（高風險捷徑）；「謹慎探勘」要答題換糧食。山腰營地要補哪一種資源也要先答題，答對 +3、答錯僅 +1。</li>
               <li>🔥 連續答對 3 題族語題會觸發<b>「順風」</b>，補 1 行動點。</li>
               <li>🌡 <b>壓力分級</b>：5 分以上「緊張」（紮營消耗糧食變 2）；8 分以上「危急」（行動點上限收緊為 2）。</li>
               <li>🌙 <b>紮營</b>收束當日：消耗糧食（見上）；糧食不足則隊伍體力 -2；當前路段未通行則壓力 +1。</li>
