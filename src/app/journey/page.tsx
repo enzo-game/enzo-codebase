@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Noto_Serif_TC, Noto_Sans_TC } from "next/font/google";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useImperativeHandle, useMemo, useRef, useState, forwardRef, type ReactNode } from "react";
 import { vocab, audioUrl, distractors, ATTRIBUTION, SOURCE, SOURCE_URL, VOCAB } from "@/data/truku";
 import AmbientAudio from "@/components/AmbientAudio";
 import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose, sfxStreak } from "@/lib/sfx";
@@ -1087,6 +1087,439 @@ function sideQuests(g: JGame): SideQuest[] {
   ];
 }
 
+// ───────────────────────── 修復路段：動手拖拉建造畫布（v6，ORDER-040）─────────────────────────
+// 司令分享了一份參考原型（canvas 拖拉連線 + 彈簧鬆弛視覺 + 山羌沿路徑走過的動畫），
+// 想把「搭橋」做得更有實感。決定：真正的過關判定（穩定度公式、資源扣除、答題閘門）
+// 沿用已上線且測試過的 resolveBuildTest／building 狀態（見上方），不讓一個全新的物理權威
+// 取代已驗證的規則——避免在沒有充分測試的情況下引入新的破綻。這個畫布純粹是「動手建造」的
+// 互動與視覺層：拖拉頁岩/橫樑/藤索連線＋輕量鬆弛動畫＋依實際判定結果播放山羌沿路徑通過或摔落的
+// 過場動畫。不做應力斷裂判定（沒有這個必要，也避免額外的失敗模式）。
+//
+// 文化把關：原型用「祖靈祝福(Gaya)」當分數、把占卜鳥 Sisin 寫成會講話的教學吉祥物——
+// 兩者都被拿掉。Gaya 是太魯閣族現在仍在使用的祖訓/生活規範系統，不當分數或評語角色；
+// Sisin 占卜鳥是真實仍在使用的占卜方式，不裝萌當導覽員。提示文字改用中性的「工法筆記」。
+// 材料標籤也一併修正：原型誤用「Urung」當黃藤（已驗證 urung＝動物的角，對不上）、
+// 「Qwarux」查無來源——一律改用遊戲既有已驗證詞：qhuni（木材）／gasil（繩索）。
+
+type PNode = { id: string; x: number; y: number; fixed: boolean; anchor: boolean; side?: "left" | "right"; vx: number; vy: number };
+type PSpring = { a: string; b: string; length: number; kind: "wood" | "rope" };
+type Pier = { x: number; y: number; width: number; nodeId: string };
+
+type BuildCanvasHandle = {
+  runCrossing: (pass: boolean, onDone: () => void) => void;
+};
+
+const BuildCanvas = forwardRef<
+  BuildCanvasHandle,
+  { tool: "stone" | "wood" | "rope"; onUseMaterial: (kind: "stone" | "wood" | "rope") => boolean; interactive: boolean }
+>(function BuildCanvas({ tool, onUseMaterial, interactive }, ref) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const toolRef = useRef(tool);
+  toolRef.current = tool;
+  const interactiveRef = useRef(interactive);
+  interactiveRef.current = interactive;
+  const onUseMaterialRef = useRef(onUseMaterial);
+  onUseMaterialRef.current = onUseMaterial;
+
+  const stateRef = useRef({
+    nodes: [] as PNode[],
+    springs: [] as PSpring[],
+    piers: [] as Pier[],
+    dragFrom: null as PNode | null,
+    mouse: { x: 0, y: 0 },
+    hover: null as PNode | null,
+    deer: { active: false, x: 0, y: 0, path: [] as PNode[], t: 0, dur: 0, fallAt: 1, done: false },
+  });
+
+  function findWalkPath(): PNode[] | null {
+    const s = stateRef.current;
+    const left = s.nodes.find((n) => n.id === "L1");
+    if (!left) return null;
+    const visited = new Set<string>();
+    let found: PNode[] | null = null;
+    function dfs(node: PNode, path: PNode[]) {
+      if (visited.has(node.id) || found) return;
+      visited.add(node.id);
+      path.push(node);
+      if (node.fixed && node.side === "right") {
+        found = [...path];
+        return;
+      }
+      const neighbors: PNode[] = [];
+      for (const sp of s.springs) {
+        if (sp.a === node.id) {
+          const n2 = s.nodes.find((n) => n.id === sp.b);
+          if (n2) neighbors.push(n2);
+        } else if (sp.b === node.id) {
+          const n2 = s.nodes.find((n) => n.id === sp.a);
+          if (n2) neighbors.push(n2);
+        }
+      }
+      neighbors.sort((a, b) => b.x - a.x);
+      for (const n2 of neighbors) dfs(n2, path);
+      path.pop();
+    }
+    dfs(left, []);
+    return found;
+  }
+
+  useImperativeHandle(ref, () => ({
+    runCrossing(pass, onDone) {
+      const s = stateRef.current;
+      const path = findWalkPath();
+      const usablePath = path && path.length >= 2 ? path : null;
+      const dur = 1400;
+      if (usablePath) {
+        s.deer = { active: true, x: usablePath[0].x, y: usablePath[0].y - 10, path: usablePath, t: 0, dur, fallAt: pass ? 1 : 0.35 + Math.random() * 0.3, done: false };
+      } else {
+        // 沒有連通路徑：山羌原地表示「走不過去」，直接判定為未通過的短動畫
+        const left = s.nodes.find((n) => n.id === "L1");
+        s.deer = {
+          active: true,
+          x: left ? left.x : 0,
+          y: left ? left.y - 10 : 0,
+          path: left ? [left, left] : [],
+          t: 0,
+          dur: 500,
+          fallAt: pass ? 1 : 0,
+          done: false,
+        };
+      }
+      const check = setInterval(() => {
+        if (s.deer.done) {
+          clearInterval(check);
+          onDone();
+        }
+      }, 100);
+    },
+  }));
+
+  // 初始化與畫布尺寸（掛載一次；resize 監聽用 ResizeObserver）
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const container = canvas.parentElement;
+    if (!container) return;
+
+    function initNodes(w: number, h: number) {
+      stateRef.current.nodes = [
+        { id: "L1", x: w * 0.12, y: h * 0.4, fixed: true, anchor: true, side: "left", vx: 0, vy: 0 },
+        { id: "L2", x: w * 0.09, y: h * 0.62, fixed: true, anchor: true, side: "left", vx: 0, vy: 0 },
+        { id: "R1", x: w * 0.88, y: h * 0.4, fixed: true, anchor: true, side: "right", vx: 0, vy: 0 },
+        { id: "R2", x: w * 0.91, y: h * 0.62, fixed: true, anchor: true, side: "right", vx: 0, vy: 0 },
+      ];
+      stateRef.current.springs = [];
+      stateRef.current.piers = [];
+      stateRef.current.deer = { active: false, x: 0, y: 0, path: [], t: 0, dur: 0, fallAt: 1, done: false };
+    }
+
+    function resize() {
+      const w = container!.clientWidth;
+      const h = container!.clientHeight;
+      canvas!.width = w;
+      canvas!.height = h;
+      initNodes(w, h);
+    }
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(container);
+
+    function getPos(clientX: number, clientY: number) {
+      const rect = canvas!.getBoundingClientRect();
+      return { x: (clientX - rect.left) * (canvas!.width / rect.width), y: (clientY - rect.top) * (canvas!.height / rect.height) };
+    }
+
+    function nodeAt(pos: { x: number; y: number }): PNode | null {
+      let found: PNode | null = null;
+      for (const n of stateRef.current.nodes) {
+        const d = Math.hypot(n.x - pos.x, n.y - pos.y);
+        if (d < 13) found = n;
+      }
+      return found;
+    }
+
+    function onPointerDown(e: PointerEvent) {
+      if (!interactiveRef.current) return;
+      const pos = getPos(e.clientX, e.clientY);
+      const s = stateRef.current;
+      if (toolRef.current === "stone") {
+        const riverTop = canvas!.height * 0.55;
+        const riverBottom = canvas!.height * 0.85;
+        if (pos.y > riverTop && pos.y < riverBottom) {
+          if (!onUseMaterialRef.current("stone")) return;
+          const id = "P" + Math.random().toString(36).slice(2);
+          s.nodes.push({ id, x: pos.x, y: pos.y, fixed: true, anchor: false, vx: 0, vy: 0 });
+          s.piers.push({ x: pos.x, y: pos.y, width: 46, nodeId: id });
+        }
+        return;
+      }
+      const hit = nodeAt(pos);
+      if (hit) s.dragFrom = hit;
+    }
+
+    function onPointerMove(e: PointerEvent) {
+      const pos = getPos(e.clientX, e.clientY);
+      stateRef.current.mouse = pos;
+      stateRef.current.hover = nodeAt(pos);
+    }
+
+    function onPointerUp(e: PointerEvent) {
+      if (!interactiveRef.current) return;
+      const s = stateRef.current;
+      if (!s.dragFrom) return;
+      const pos = getPos(e.clientX, e.clientY);
+      const from = s.dragFrom;
+      s.dragFrom = null;
+      const dist = Math.hypot(pos.x - from.x, pos.y - from.y);
+      if (dist < 18 || dist > 260) return;
+      if (toolRef.current !== "wood" && toolRef.current !== "rope") return;
+      let to = nodeAt(pos);
+      if (to && to.id === from.id) return;
+      const kind = toolRef.current;
+      if (!onUseMaterialRef.current(kind)) return;
+      if (!to) {
+        to = { id: "N" + Math.random().toString(36).slice(2), x: pos.x, y: pos.y, fixed: false, anchor: false, vx: 0, vy: 0 };
+        s.nodes.push(to);
+      }
+      const already = s.springs.some((sp) => (sp.a === from.id && sp.b === to!.id) || (sp.a === to!.id && sp.b === from.id));
+      if (!already) s.springs.push({ a: from.id, b: to.id, length: dist, kind });
+    }
+
+    canvas!.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+
+    let raf = 0;
+    function tick() {
+      const s = stateRef.current;
+      const w = canvas!.width;
+      const h = canvas!.height;
+
+      // 輕量鬆弛（僅視覺垂墜感，不判斷斷裂——過關與否由外部已驗證的規則決定）。
+      // 調校備註：重力/勁度原本讓自由節點大幅盪離放置點，容易讓第二段連線超出可及距離
+      // （220px 上限），變成怎麼接都接不到——這裡把重力調輕、勁度調高、迭代加多，
+      // 讓下垂感明顯但收斂快、不會盪出太遠。
+      for (const n of s.nodes) {
+        if (n.fixed) continue;
+        n.vy += 0.04;
+        n.x += n.vx;
+        n.y += n.vy;
+        n.vx *= 0.85;
+        n.vy *= 0.85;
+        if (n.y > h * 0.86) {
+          n.y = h * 0.86;
+          n.vy = 0;
+        }
+      }
+      for (let iter = 0; iter < 10; iter++) {
+        for (const sp of s.springs) {
+          const a = s.nodes.find((n) => n.id === sp.a);
+          const b = s.nodes.find((n) => n.id === sp.b);
+          if (!a || !b) continue;
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const dist = Math.hypot(dx, dy) || 0.001;
+          const diff = sp.length - dist;
+          if (sp.kind === "rope" && dist < sp.length) continue; // 繩索不吃壓縮力
+          const k = sp.kind === "wood" ? 0.6 : 0.35;
+          const pct = (diff / dist) * k * 0.5;
+          const ox = dx * pct;
+          const oy = dy * pct;
+          if (!a.fixed) {
+            a.x -= ox;
+            a.y -= oy;
+          }
+          if (!b.fixed) {
+            b.x += ox;
+            b.y += oy;
+          }
+        }
+      }
+
+      // 山羌過場動畫推進
+      const deer = s.deer;
+      if (deer.active && !deer.done) {
+        deer.t += 16.7 / deer.dur;
+        const segCount = Math.max(1, deer.path.length - 1);
+        const travel = Math.min(deer.t, deer.fallAt);
+        const segF = travel * segCount;
+        const segI = Math.min(segCount - 1, Math.floor(segF));
+        const localT = segF - segI;
+        const p0 = deer.path[segI];
+        const p1 = deer.path[Math.min(deer.path.length - 1, segI + 1)];
+        if (p0 && p1) {
+          deer.x = p0.x + (p1.x - p0.x) * localT;
+          deer.y = p0.y - 10 + (p1.y - p0.y) * localT;
+        }
+        if (deer.t >= deer.fallAt && deer.fallAt < 1) {
+          // 未通過：從當前點墜落
+          deer.y += (deer.t - deer.fallAt) * 240;
+        }
+        if (deer.t >= 1) {
+          deer.done = true;
+        }
+      }
+
+      draw(canvas!.getContext("2d")!, w, h, s, interactiveRef.current, toolRef.current);
+      raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      canvas!.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+    };
+  }, []);
+
+  // 用專屬的定高外層容器包住 canvas，resize() 讀的是這層的 clientWidth/Height——
+  // 不能直接讓 canvas 的 parentElement 是整個彈窗卡片（否則量到的會是整張卡片的高度，不是畫布該有的高度）。
+  return (
+    <div className="h-56 w-full overflow-hidden rounded-lg bg-slate-950/60 sm:h-64">
+      <canvas ref={canvasRef} className="block h-full w-full touch-none" />
+    </div>
+  );
+});
+
+function draw(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  s: {
+    nodes: PNode[];
+    springs: PSpring[];
+    piers: Pier[];
+    dragFrom: PNode | null;
+    mouse: { x: number; y: number };
+    hover: PNode | null;
+    deer: { active: boolean; x: number; y: number; path: PNode[]; t: number; dur: number; fallAt: number; done: boolean };
+  },
+  interactive: boolean,
+  tool: "stone" | "wood" | "rope",
+) {
+  ctx.clearRect(0, 0, w, h);
+
+  // 峽谷背景
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, "#0b1512");
+  sky.addColorStop(1, "#152a1d");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = "#243b2c";
+  ctx.beginPath();
+  ctx.moveTo(0, h * 0.4);
+  ctx.lineTo(w * 0.1, h * 0.38);
+  ctx.lineTo(w * 0.08, h * 0.6);
+  ctx.lineTo(0, h * 0.75);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(w, h * 0.4);
+  ctx.lineTo(w * 0.9, h * 0.38);
+  ctx.lineTo(w * 0.92, h * 0.6);
+  ctx.lineTo(w, h * 0.75);
+  ctx.closePath();
+  ctx.fill();
+
+  // 溪水
+  const water = ctx.createLinearGradient(0, h * 0.85, 0, h);
+  water.addColorStop(0, "#0e4650");
+  water.addColorStop(1, "#082a31");
+  ctx.fillStyle = water;
+  ctx.fillRect(0, h * 0.86, w, h * 0.14);
+
+  // 頁岩石柱
+  for (const pier of s.piers) {
+    ctx.fillStyle = "#475569";
+    ctx.strokeStyle = "#64748b";
+    ctx.lineWidth = 1;
+    const top = pier.y;
+    const bottom = h * 0.86;
+    ctx.beginPath();
+    ctx.roundRect(pier.x - pier.width / 2, top, pier.width, bottom - top, 3);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  // 連線（橫樑/藤索）
+  for (const sp of s.springs) {
+    const a = s.nodes.find((n) => n.id === sp.a);
+    const b = s.nodes.find((n) => n.id === sp.b);
+    if (!a || !b) continue;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    if (sp.kind === "wood") {
+      ctx.strokeStyle = "#b45309";
+      ctx.lineWidth = 7;
+      ctx.setLineDash([]);
+    } else {
+      ctx.strokeStyle = "#a3a3a3";
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([4, 3]);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // 拖拉預覽線
+  if (s.dragFrom && interactive) {
+    ctx.beginPath();
+    ctx.moveTo(s.dragFrom.x, s.dragFrom.y);
+    ctx.lineTo(s.mouse.x, s.mouse.y);
+    ctx.strokeStyle = tool === "wood" ? "rgba(180,83,9,0.7)" : "rgba(163,163,163,0.7)";
+    ctx.lineWidth = tool === "wood" ? 5 : 2;
+    ctx.stroke();
+  }
+
+  // 節點
+  for (const n of s.nodes) {
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.anchor ? 7 : n.fixed ? 5 : 4, 0, Math.PI * 2);
+    if (n.anchor) {
+      ctx.fillStyle = "#f59e0b";
+    } else if (n.fixed) {
+      ctx.fillStyle = "#94a3b8";
+    } else {
+      ctx.fillStyle = "#10b981";
+    }
+    ctx.fill();
+    if (s.hover === n && interactive) {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, 12, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(251,191,36,0.6)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }
+
+  // 山羌
+  if (s.deer.active) {
+    ctx.save();
+    ctx.translate(s.deer.x, s.deer.y);
+    ctx.fillStyle = "#92400e";
+    ctx.beginPath();
+    ctx.ellipse(0, -6, 10, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#713f12";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-5, -1);
+    ctx.lineTo(-6, 4);
+    ctx.moveTo(5, -1);
+    ctx.lineTo(6, 4);
+    ctx.stroke();
+    ctx.fillStyle = "#78350f";
+    ctx.beginPath();
+    ctx.arc(-9, -10, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
 export default function JourneyPage() {
   const [game, setGame] = useState<JGame>(() => newGame());
   const [pending, setPending] = useState<JCard | null>(null);
@@ -1170,6 +1603,11 @@ export default function JourneyPage() {
   // building 只存本次已放的材料數（資源在放置當下就從 game.res 扣，不設暫存/退還——跟遊戲其他機制一致：
   // 資源花下去就是花下去了，就算這次沒測過關，也不退回）。
   const [building, setBuilding] = useState<BuildMaterials | null>(null);
+  // v6（ORDER-040）：畫布互動工具選擇 + 過場動畫狀態（拖拉建造期間 crossing=false；
+  // 答題確認後 crossing=true，畫布播完山羌動畫才真正結算並關窗，不是答完題立刻跳結果）。
+  const [buildTool, setBuildTool] = useState<"stone" | "wood" | "rope">("stone");
+  const [crossing, setCrossing] = useState(false);
+  const buildCanvasRef = useRef<BuildCanvasHandle>(null);
   const anyModalOpen =
     !!pending ||
     !!pendingAction ||
@@ -1181,9 +1619,10 @@ export default function JourneyPage() {
     !!building;
 
   function addMaterial(kind: keyof BuildMaterials) {
-    if (!building || game.res[kind] < 1) return;
+    if (!building || game.res[kind] < 1) return false;
     setGame((g) => ({ ...g, res: { ...g.res, [kind]: g.res[kind] - 1 } }));
     setBuilding((b) => (b ? { ...b, [kind]: b[kind] + 1 } : b));
+    return true;
   }
 
   function startBuildTest() {
@@ -1316,9 +1755,20 @@ export default function JourneyPage() {
       const resource = pendingAction.resource;
       setGame((g) => resolveSupplyChoice(g, resource, correct, vocabId));
     } else if (pendingAction.kind === "buildTest" && building) {
+      // v6（ORDER-040）：結果已經算好了（沿用已驗證的 resolveBuildTest 規則），
+      // 但先讓畫布播山羌過橋／摔落的動畫，動畫播完才真正 setGame 結算並關窗——
+      // 讓「答完題」跟「看到結果」之間有一段有意義的動態呈現，不是答完立刻跳畫面。
       const result = resolveBuildTest(game, building, correct, vocabId);
-      setGame(result);
-      if (result.nodes[game.idx]?.cleared) setBuilding(null);
+      const pass = !!result.nodes[game.idx]?.cleared;
+      setPendingAction(null);
+      setActionRevealed(null);
+      setCrossing(true);
+      buildCanvasRef.current?.runCrossing(pass, () => {
+        setGame(result);
+        setCrossing(false);
+        if (pass) setBuilding(null);
+      });
+      return;
     }
     setPendingAction(null);
     setActionRevealed(null);
@@ -1807,24 +2257,27 @@ export default function JourneyPage() {
         </div>
       )}
 
-      {/* 修復路段建造彈窗（v5，ORDER-036）：動手選材料疊路，取代原本「花資源硬清」的單鍵答題。
-          building && !pendingAction 才渲染——測試時换成上面/下面的答題彈窗，避免兩層蒙版疊加（沿用 ORDER-032 的互斥原則）。 */}
-      {building && !pendingAction && (() => {
+      {/* 修復路段建造彈窗（v5 ORDER-036；v6 ORDER-040 換成拖拉建造畫布）：動手拖拉頁岩/橫樑/藤索，
+          取代原本「花資源硬清」的單鍵答題。building 非 null 就一直渲染（含 pendingAction/crossing 期間），
+          讓答題彈窗疊在上層、動畫播放時畫布仍可見；過關判定沿用已驗證的 resolveBuildTest。 */}
+      {building && (() => {
         const node = game.nodes[game.idx];
         const score = buildScore(building);
         const tier = score >= 60 ? "safe" : score >= 35 ? "risky" : "weak";
         const barColor = tier === "safe" ? "bg-emerald-500" : tier === "risky" ? "bg-amber-500" : "bg-rose-600";
         const textColor = tier === "safe" ? "text-emerald-400" : tier === "risky" ? "text-amber-400" : "text-rose-400";
+        const interactive = !pendingAction && !crossing;
         return (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
             <div className="w-full max-w-lg rounded-2xl border border-amber-500/40 bg-slate-950/95 p-5">
               <div className="text-xs text-amber-300 mb-1">修復路段 · 這次，換你們重新排一次路</div>
               <h3 className="text-lg font-bold mb-2">{node.name}</h3>
               <p className="text-xs text-slate-400 mb-3">
-                溪水沖垮了這段路，用手邊的材料，一塊一塊把它重新接起來——疊頁岩打底、架橫樑跨過缺口、最後用藤索綁緊固定。
+                溪水沖垮了這段路。拖拉手邊的材料，把它重新接起來——頁岩固定樁可以直接點在河床上；
+                橫樑跟藤索則從一個節點拖到另一個節點，牽出連線。
               </p>
 
-              <div className="mb-3">
+              <div className="mb-2">
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="text-slate-300">結構穩定度</span>
                   <span className={`font-bold ${textColor}`}>{Math.min(100, score)}%</span>
@@ -1834,109 +2287,51 @@ export default function JourneyPage() {
                 </div>
               </div>
 
-              {/* 修路剖面圖（v5，ORDER-038）：司令回饋只有一條百分比進度條「文字很無聊」，
-                  要看得懂「怎麼搭橋」。改成動態剖面示意圖——頁岩沿缺口底部一塊塊排出路基，
-                  橫樑從左岸往右岸延伸，藤索斜線固定兩端；新放的材料用 CSS keyframe 彈入，非靜態圖。 */}
-              {(() => {
-                const GAP_X0 = 90;
-                const GAP_X1 = 310;
-                const GAP_W = GAP_X1 - GAP_X0;
-                const STONE_SLOTS = 11;
-                const blockW = GAP_W / STONE_SLOTS;
-                const stoneCount = Math.min(building.stone, STONE_SLOTS);
-                const woodWidth = GAP_W * Math.min(1, building.wood / 3);
-                const fillColor = tier === "safe" ? "#10b981" : tier === "risky" ? "#f59e0b" : "#e11d48";
-                return (
-                  <svg viewBox="0 0 400 150" className="mb-1 w-full rounded-lg bg-slate-900/60" aria-hidden="true">
-                    <polygon points="0,150 0,60 90,90 90,150" fill="#334155" />
-                    <polygon points="400,150 400,60 310,90 310,150" fill="#334155" />
-                    <path
-                      d="M0,138 Q50,132 100,138 T200,138 T300,138 T400,138"
-                      fill="none"
-                      stroke="#38bdf8"
-                      strokeOpacity="0.45"
-                      strokeWidth="2"
-                    />
-                    {Array.from({ length: stoneCount }).map((_, i) => (
-                      <rect
-                        key={`stone-${i}`}
-                        x={GAP_X0 + i * blockW + 1}
-                        y={126}
-                        width={blockW - 2}
-                        height={10}
-                        rx={1}
-                        fill={fillColor}
-                        fillOpacity={0.85}
-                        className="build-pop"
-                      />
-                    ))}
-                    {building.wood > 0 && (
-                      <rect
-                        x={GAP_X0}
-                        y={96}
-                        width={woodWidth}
-                        height={9}
-                        rx={2}
-                        fill="#b45309"
-                        className="build-pop transition-all duration-300 ease-out"
-                      />
-                    )}
-                    {building.rope >= 1 && (
-                      <line x1={GAP_X0 + 3} y1={96} x2={72} y2={90} stroke="#a3a3a3" strokeWidth="2" strokeDasharray="3 2" className="build-pop" />
-                    )}
-                    {building.rope >= 2 && (
-                      <line
-                        x1={GAP_X0 + Math.max(woodWidth, 6) - 3}
-                        y1={96}
-                        x2={328}
-                        y2={90}
-                        stroke="#a3a3a3"
-                        strokeWidth="2"
-                        strokeDasharray="3 2"
-                        className="build-pop transition-all duration-300 ease-out"
-                      />
-                    )}
-                    {building.stone + building.wood + building.rope === 0 && (
-                      <text x="200" y="105" textAnchor="middle" className="fill-slate-600 text-[11px]">
-                        還沒放任何材料……
-                      </text>
-                    )}
-                  </svg>
-                );
-              })()}
+              {/* 拖拉建造畫布（v6，ORDER-040）：司令分享了一份 canvas 物理原型作參考，過關判定仍走
+                  已驗證的 resolveBuildTest，這裡只負責「動手建造」的互動與山羌過橋/摔落的過場動畫。 */}
+              <BuildCanvas ref={buildCanvasRef} tool={buildTool} onUseMaterial={addMaterial} interactive={interactive} />
 
-              <div className="grid grid-cols-3 gap-2 mb-2 text-xs">
+              <div className="mt-2 grid grid-cols-3 gap-2 mb-2 text-xs">
                 <button
-                  onClick={() => addMaterial("stone")}
+                  onClick={() => setBuildTool("stone")}
                   disabled={game.res.stone < 1}
-                  className="flex flex-col items-center gap-1 rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-2 py-2 font-medium transition"
+                  className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-2 font-medium transition disabled:opacity-30 ${
+                    buildTool === "stone" ? "border-amber-500 bg-amber-950/30" : "border-slate-700 bg-slate-900/70 hover:bg-slate-800"
+                  }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={RES_IMG.stone} width={20} height={20} alt="" />
-                  疊頁岩
+                  頁岩樁
                   <span className="text-slate-500">btunux・剩 {game.res.stone}</span>
                 </button>
                 <button
-                  onClick={() => addMaterial("wood")}
+                  onClick={() => setBuildTool("wood")}
                   disabled={game.res.wood < 1}
-                  className="flex flex-col items-center gap-1 rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-2 py-2 font-medium transition"
+                  className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-2 font-medium transition disabled:opacity-30 ${
+                    buildTool === "wood" ? "border-amber-500 bg-amber-950/30" : "border-slate-700 bg-slate-900/70 hover:bg-slate-800"
+                  }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={RES_IMG.wood} width={20} height={20} alt="" />
-                  架橫樑
+                  橫樑
                   <span className="text-slate-500">qhuni・剩 {game.res.wood}</span>
                 </button>
                 <button
-                  onClick={() => addMaterial("rope")}
+                  onClick={() => setBuildTool("rope")}
                   disabled={game.res.rope < 1}
-                  className="flex flex-col items-center gap-1 rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-2 py-2 font-medium transition"
+                  className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-2 font-medium transition disabled:opacity-30 ${
+                    buildTool === "rope" ? "border-amber-500 bg-amber-950/30" : "border-slate-700 bg-slate-900/70 hover:bg-slate-800"
+                  }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={RES_IMG.rope} width={20} height={20} alt="" />
-                  綁藤索
+                  藤索
                   <span className="text-slate-500">gasil・剩 {game.res.rope}</span>
                 </button>
               </div>
+              <p className="text-[10px] text-slate-500 mb-3">
+                {buildTool === "stone" ? "點河床即可放置頁岩樁。" : "從一個節點拖拉到另一個點，放開就牽線。"}
+              </p>
 
               <p className="text-[10px] text-slate-500 mb-3 leading-relaxed">
                 {building.wood === 0
@@ -1952,7 +2347,8 @@ export default function JourneyPage() {
               <div className="flex items-center justify-between gap-2">
                 <button
                   onClick={() => setBuilding(null)}
-                  className="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-xs"
+                  disabled={!interactive}
+                  className="rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-30 px-4 py-2 text-xs"
                 >
                   先不修了
                 </button>
@@ -1960,7 +2356,7 @@ export default function JourneyPage() {
                   {building.rope < 1 && <p className="text-[10px] text-rose-400 mb-1">還沒綁緊固定，至少要用 1 個藤索。</p>}
                   <button
                     onClick={startBuildTest}
-                    disabled={building.rope < 1}
+                    disabled={building.rope < 1 || !interactive}
                     className="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 px-4 py-2 text-xs font-bold"
                   >
                     <IconFootprint className="w-3.5 h-3.5 shrink-0" /> 測試通行
