@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CARDS, Card, RARITY_COLOR, THEME_EMOJI } from "@/data/cards";
+import type { JSX } from "react";
+import { CARDS, Card, RARITY_COLOR, Theme } from "@/data/cards";
 import { questionFor } from "@/data/questions";
 import AmbientAudio from "@/components/AmbientAudio";
 import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose } from "@/lib/sfx";
@@ -44,6 +45,111 @@ type Game = {
 
 const HERO_HP = 30;
 const BOARD_MAX = 7;
+
+// ───────────────────────── 圖示（比照 /journey ORDER-039：全面移除表情符號）─────────────────────────
+// 一律用線稿 SVG 圖示，不用彩色 emoji 圖形字元。統一 24×24 viewBox、currentColor 描邊，
+// 可用 text-* class 跟著文字變色。✓ ✕ ○ ★ ▶ ◀ 等純排版符號（非彩色 emoji）維持不變。
+type IconProps = { className?: string };
+function IconCheck({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 12.5l5 5L20 6" />
+    </svg>
+  );
+}
+function IconCross({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 5l14 14M19 5L5 19" />
+    </svg>
+  );
+}
+function IconMountain({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 19l6-11 4 6 2-3 6 8z" />
+    </svg>
+  );
+}
+function IconRain({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 15.5a4 4 0 01.5-8 5 5 0 019.4 2.1A3.5 3.5 0 0116 17H8" />
+      <path d="M8 19l-1 2M12 19l-1 2M16 19l-1 2" />
+    </svg>
+  );
+}
+function IconHeart({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20s-7-4.4-9.5-9A5.5 5.5 0 0112 5.8 5.5 5.5 0 0121.5 11c-2.5 4.6-9.5 9-9.5 9z" />
+    </svg>
+  );
+}
+function IconSword({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 4L9 15" />
+      <path d="M13 11l3 3" />
+      <path d="M6 18l3-3" />
+      <path d="M4 20l2-2" />
+    </svg>
+  );
+}
+function IconGem({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 9l3-5h10l3 5-8 12z" />
+      <path d="M4 9h16" />
+      <path d="M9.5 4L12 9l2.5-5" />
+    </svg>
+  );
+}
+function IconPerson({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="7.5" r="3.5" />
+      <path d="M5 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5" />
+    </svg>
+  );
+}
+function IconPaw({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="15" r="4" />
+      <circle cx="6" cy="9" r="2" />
+      <circle cx="18" cy="9" r="2" />
+      <circle cx="9.5" cy="5.5" r="1.7" />
+      <circle cx="14.5" cy="5.5" r="1.7" />
+    </svg>
+  );
+}
+function IconLeaf({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 19c0-8 6-14 14-14 0 8-6 14-14 14z" />
+      <path d="M5 19c3-3 6-6 10-10" />
+    </svg>
+  );
+}
+function IconBow({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 3a15 15 0 000 18" />
+      <path d="M6 12h14" />
+      <path d="M17 9l3 3-3 3" />
+    </svg>
+  );
+}
+
+// 卡牌題材圖示（取代原本的彩色 emoji THEME_EMOJI）
+const THEME_ICON = {
+  animal: IconPaw,
+  plant: IconLeaf,
+  nature: IconMountain,
+  tool: IconBow,
+  person: IconPerson,
+} satisfies Record<Theme, (props: IconProps) => JSX.Element>;
 
 // ───────────────────────── 工具 ─────────────────────────
 
@@ -141,8 +247,8 @@ function playCard(g: Game, card: Card, isCorrect: boolean): Game {
     ng.log = pushLog(
       ng.log,
       isCorrect
-        ? `✅ ${card.nameZh}：答對！加成「${card.trukuBonus}」（${atk}/${hp}）`
-        : `❌ ${card.nameZh}：答錯，基礎打出（${card.attack}/${card.health}）`,
+        ? `✓ ${card.nameZh}：答對！加成「${card.trukuBonus}」（${atk}/${hp}）`
+        : `✕ ${card.nameZh}：答錯，基礎打出（${card.attack}/${card.health}）`,
       isCorrect ? "good" : "bad",
     );
   } else {
@@ -217,8 +323,8 @@ function applySpell(g: Game, card: Card, isCorrect: boolean): Game {
   ng.log = pushLog(
     ng.log,
     isCorrect
-      ? `✅ ${card.nameZh}：答對！${note || card.trukuBonus}`
-      : `❌ ${card.nameZh}：答錯，基礎施放（${note || base}）`,
+      ? `✓ ${card.nameZh}：答對！${note || card.trukuBonus}`
+      : `✕ ${card.nameZh}：答錯，基礎施放（${note || base}）`,
     isCorrect ? "good" : "bad",
   );
   return ng;
@@ -240,7 +346,7 @@ function resolveAttack(
     ng.pBoard = ng.pBoard.map((m) =>
       m.key === attackerKey ? { ...m, canAttack: false } : m,
     );
-    ng.log = pushLog(ng.log, `⚔ ${attacker.card.nameZh} 攻擊山林試煉 ${attacker.attack} 點`, "info");
+    ng.log = pushLog(ng.log, `${attacker.card.nameZh} 攻擊山林試煉 ${attacker.attack} 點`, "info");
   } else {
     const t = ng.eBoard.find((m) => m.key === target.key);
     if (!t) return g;
@@ -254,7 +360,7 @@ function resolveAttack(
       .filter((m) => m.health > 0);
     ng.log = pushLog(
       ng.log,
-      `⚔ ${attacker.card.nameZh}（${attacker.attack}/${aHp}）換 ${t.card.nameZh}（${t.attack}/${tHp}）`,
+      `${attacker.card.nameZh}（${attacker.attack}/${aHp}）換 ${t.card.nameZh}（${t.attack}/${tHp}）`,
       "info",
     );
   }
@@ -296,7 +402,7 @@ function runEnemyTurn(g: Game): Game {
           bonus: false,
         },
       ];
-      ng.log = pushLog(ng.log, `🏔 山林試煉派出「${c.nameZh}」（${c.attack}/${c.health}）`, "sys");
+      ng.log = pushLog(ng.log, `山林試煉派出「${c.nameZh}」（${c.attack}/${c.health}）`, "sys");
       played = true;
     }
   }
@@ -322,7 +428,7 @@ function runEnemyTurn(g: Game): Game {
         .filter((m) => m.health > 0);
       ng.log = pushLog(
         ng.log,
-        `🗡 ${cur.card.nameZh}（${cur.attack}/${aHp}）換 ${threat.card.nameZh}（${threat.attack}/${tHp}）`,
+        `${cur.card.nameZh}（${cur.attack}/${aHp}）換 ${threat.card.nameZh}（${threat.attack}/${tHp}）`,
         "sys",
       );
     } else {
@@ -330,7 +436,7 @@ function runEnemyTurn(g: Game): Game {
       ng.eBoard = ng.eBoard.map((m) =>
         m.key === cur.key ? { ...m, canAttack: false } : m,
       );
-      ng.log = pushLog(ng.log, `🗡 ${cur.card.nameZh} 攻擊織者 ${cur.attack} 點`, "sys");
+      ng.log = pushLog(ng.log, `${cur.card.nameZh} 攻擊織者 ${cur.attack} 點`, "sys");
     }
     ng = checkWinner(ng);
   }
@@ -492,8 +598,12 @@ export default function PlayPage() {
             className={`w-full flex items-center justify-between rounded-xl border px-3 py-2 transition
               ${enemyTargetable ? "border-rose-400 bg-rose-950/40 hover:bg-rose-900/50 cursor-pointer" : "border-slate-800 bg-slate-900/50"}`}
           >
-            <span className="text-sm font-semibold">🏔 山林試煉（系統）</span>
-            <span className="text-rose-300 font-bold">❤ {game.enemyHp}/{HERO_HP}</span>
+            <span className="text-sm font-semibold flex items-center gap-1">
+              <IconMountain className="w-3.5 h-3.5 shrink-0" /> 山林試煉（系統）
+            </span>
+            <span className="text-rose-300 font-bold flex items-center gap-1">
+              <IconHeart className="w-3.5 h-3.5 shrink-0" /> {game.enemyHp}/{HERO_HP}
+            </span>
           </button>
         </section>
 
@@ -511,11 +621,16 @@ export default function PlayPage() {
                 className={`w-20 rounded-lg border-2 ${RARITY_COLOR[e.card.rarity]} bg-slate-800 p-1.5 text-center transition
                   ${enemyTargetable ? "hover:ring-2 hover:ring-rose-400 cursor-pointer" : ""}`}
               >
-                <div className="text-base">{THEME_EMOJI[e.card.theme]}</div>
+                <div className="text-base flex justify-center">
+                  {(() => {
+                    const ThemeIcon = THEME_ICON[e.card.theme];
+                    return <ThemeIcon className="w-4 h-4" />;
+                  })()}
+                </div>
                 <div className="text-[10px] font-semibold truncate">{e.card.nameZh}</div>
                 <div className="flex justify-between text-[11px] mt-0.5">
-                  <span className="text-amber-300">⚔{e.attack}</span>
-                  <span className="text-rose-300">❤{e.health}</span>
+                  <span className="text-amber-300 flex items-center gap-0.5"><IconSword className="w-3 h-3 shrink-0" />{e.attack}</span>
+                  <span className="text-rose-300 flex items-center gap-0.5"><IconHeart className="w-3 h-3 shrink-0" />{e.health}</span>
                 </div>
               </button>
             ))}
@@ -550,11 +665,16 @@ export default function PlayPage() {
                       可攻
                     </span>
                   )}
-                  <div className="text-base">{THEME_EMOJI[e.card.theme]}</div>
+                  <div className="text-base flex justify-center">
+                    {(() => {
+                      const ThemeIcon = THEME_ICON[e.card.theme];
+                      return <ThemeIcon className="w-4 h-4" />;
+                    })()}
+                  </div>
                   <div className="text-[10px] font-semibold truncate">{e.card.nameZh}</div>
                   <div className="flex justify-between text-[11px] mt-0.5">
-                    <span className="text-amber-300">⚔{e.attack}</span>
-                    <span className="text-rose-300">❤{e.health}</span>
+                    <span className="text-amber-300 flex items-center gap-0.5"><IconSword className="w-3 h-3 shrink-0" />{e.attack}</span>
+                    <span className="text-rose-300 flex items-center gap-0.5"><IconHeart className="w-3 h-3 shrink-0" />{e.health}</span>
                   </div>
                 </button>
               );
@@ -564,9 +684,13 @@ export default function PlayPage() {
 
         {/* 我方英雄 + 控制 */}
         <section className="mb-2 flex items-center justify-between rounded-xl border border-sky-400/40 bg-sky-950/30 px-3 py-2">
-          <span className="text-sm font-semibold">🧑 織者（你）</span>
+          <span className="text-sm font-semibold flex items-center gap-1">
+            <IconPerson className="w-3.5 h-3.5 shrink-0" /> 織者（你）
+          </span>
           <div className="flex items-center gap-3">
-            <span className="text-sky-300 font-bold">❤ {game.playerHp}/{HERO_HP}</span>
+            <span className="text-sky-300 font-bold flex items-center gap-1">
+              <IconHeart className="w-3.5 h-3.5 shrink-0" /> {game.playerHp}/{HERO_HP}
+            </span>
             <button
               onClick={endTurn}
               disabled={game.phase !== "player" || !!game.winner}
@@ -605,17 +729,24 @@ export default function PlayPage() {
                     ${playable ? "bg-slate-800 hover:-translate-y-1 hover:bg-slate-700" : "bg-slate-900 opacity-40 cursor-not-allowed"}`}
                 >
                   <div className="flex justify-between items-center">
-                    <span className="text-sky-300 font-bold text-sm">💎{c.cost}</span>
-                    <span className="text-base">{THEME_EMOJI[c.theme]}</span>
+                    <span className="text-sky-300 font-bold text-sm flex items-center gap-0.5">
+                      <IconGem className="w-3.5 h-3.5 shrink-0" />{c.cost}
+                    </span>
+                    <span className="text-base">
+                      {(() => {
+                        const ThemeIcon = THEME_ICON[c.theme];
+                        return <ThemeIcon className="w-4 h-4" />;
+                      })()}
+                    </span>
                   </div>
                   <div className="font-semibold text-xs mt-1 truncate">{c.nameZh}</div>
                   <div className="text-[9px] text-slate-400">
-                    {c.type === "minion" ? "隨從" : "法術"} · {"⭐".repeat(c.difficulty)}
+                    {c.type === "minion" ? "隨從" : "法術"} · {"★".repeat(c.difficulty)}
                   </div>
                   {c.type === "minion" ? (
                     <div className="flex justify-between text-[11px] mt-1">
-                      <span className="text-amber-300">⚔{c.attack}</span>
-                      <span className="text-rose-300">❤{c.health}</span>
+                      <span className="text-amber-300 flex items-center gap-0.5"><IconSword className="w-3 h-3 shrink-0" />{c.attack}</span>
+                      <span className="text-rose-300 flex items-center gap-0.5"><IconHeart className="w-3 h-3 shrink-0" />{c.health}</span>
                     </div>
                   ) : (
                     <div className="text-[9px] text-slate-300 mt-1 line-clamp-2">
@@ -684,8 +815,13 @@ export default function PlayPage() {
               })}
             </div>
             {revealed !== null && (
-              <p className="text-xs text-slate-300 mt-3">
-                {revealed === q.answer ? "✅ 答對！" : "❌ 答錯。"} {q.explanation}
+              <p className="text-xs text-slate-300 mt-3 flex items-start gap-1">
+                {revealed === q.answer ? (
+                  <IconCheck className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400" />
+                ) : (
+                  <IconCross className="w-3.5 h-3.5 shrink-0 mt-0.5 text-rose-400" />
+                )}
+                <span>{revealed === q.answer ? "答對！" : "答錯。"} {q.explanation}</span>
               </p>
             )}
           </div>
@@ -696,7 +832,13 @@ export default function PlayPage() {
       {game.winner && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50">
           <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-700 p-6 text-center">
-            <div className="text-4xl mb-2">{game.winner === "player" ? "🏔️" : "🌧️"}</div>
+            <div className="flex justify-center mb-2">
+              {game.winner === "player" ? (
+                <IconMountain className="w-10 h-10 text-emerald-400" />
+              ) : (
+                <IconRain className="w-10 h-10 text-slate-400" />
+              )}
+            </div>
             <h3 className="text-xl font-bold mb-1">
               {game.winner === "player" ? "通過山林試煉！" : "山林試煉未過"}
             </h3>
