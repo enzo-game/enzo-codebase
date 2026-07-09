@@ -93,6 +93,21 @@ const RES_IMG: Record<Resource, string> = {
   stone: "/images/journey/res-stone-v1.png",
   rope: "/images/journey/res-rope-v1.png",
 };
+// 資源金幣（ORDER-017 圖 + 決策#22 族語落字）：klokah 查證真實詞，標「示範·待核」；
+// mockup 原用詞 matu/sbalay/puni/lukus 經查證為誤（sbalay 且屬敏感詞），已排除。
+const COIN_IMG: Record<Resource, string> = {
+  food: "/images/journey/coins/coin-food-v1.png",
+  wood: "/images/journey/coins/coin-wood-v1.png",
+  stone: "/images/journey/coins/coin-stone-v1.png",
+  rope: "/images/journey/coins/coin-rope-v1.png",
+};
+// 對應 klokah 詞條 id（真實太魯閣語，含發音）：idaw 飯／qhuni 樹／btunux 石頭／gasil 繩索
+const RES_VOCAB: Record<Resource, string> = {
+  food: "21-01", // idaw 飯
+  wood: "08-03", // qhuni 樹
+  stone: "12-05", // btunux 石頭
+  rope: "09-15", // gasil 繩索
+};
 const NODE_IMG: Record<NodeType, string> = {
   start: "/images/journey/node-normal-v1.png",
   obstacle: "/images/journey/node-rockfall-v1.png",
@@ -598,12 +613,19 @@ export default function JourneyPage() {
         <section className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
           <StatBar label="壓力" value={game.pressure} max={game.maxPressure} color="bg-rose-500" invert icon={METER_PRESSURE} />
           <StatBar label="隊伍體力" value={game.teamHp} max={game.maxTeamHp} color="bg-emerald-500" icon={METER_STAMINA} />
-          <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-2 flex items-center justify-around gap-2 text-sm col-span-2">
+          <div className="relative rounded-lg border border-slate-800 bg-slate-900/50 p-2 pt-3 flex items-start justify-around gap-2 text-sm col-span-2">
+            {/* 族語落字（決策#22）：klokah 真實詞＋發音，整區標「示範·待核」待語言部終核 */}
+            <span className="absolute -top-2 right-2 rounded bg-slate-800 px-1.5 text-[9px] text-amber-300/90 border border-slate-700">
+              族語：示範·待核
+            </span>
             {(Object.keys(game.res) as Resource[]).map((r) => (
-              <span key={r} className="flex items-center gap-1" title={RES_NAME[r]}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={RES_IMG[r]} width={22} height={22} alt={RES_NAME[r]} className="inline-block" />
-                <span className="font-semibold">{game.res[r]}</span>
+              <span key={r} className="flex flex-col items-center gap-0.5" title={`${RES_NAME[r]}（示範·待核）`}>
+                <span className="flex items-center gap-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={COIN_IMG[r]} width={24} height={24} alt={RES_NAME[r]} className="inline-block" />
+                  <span className="font-semibold">{game.res[r]}</span>
+                </span>
+                <WordChip vocabId={RES_VOCAB[r]} />
               </span>
             ))}
           </div>
