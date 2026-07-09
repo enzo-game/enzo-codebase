@@ -272,6 +272,16 @@ export default function ProloguePage() {
     <main className="relative bg-slate-950 text-slate-100">
       <AmbientAudio />
 
+      {/* 氛圍特效層（scene-vfx）：微光粒子／山霧流動／祖靈光點。固定疊層，跨章節持續、效果極淡。 */}
+      <div className="scene-vfx" aria-hidden>
+        <div className="mist mist-1" />
+        <div className="mist mist-2" />
+        <div className="mist mist-3" />
+        <div className="spirit-light spirit-1" />
+        <div className="spirit-light spirit-2" />
+        <div className="spirit-light spirit-3" />
+      </div>
+
       <Link
         href="/journey"
         className="fixed right-4 top-4 z-50 rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-300 backdrop-blur transition hover:bg-slate-800 hover:text-white"
