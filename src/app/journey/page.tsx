@@ -567,6 +567,29 @@ function applyStreakBonus(ng: JGame): JGame {
   return ng;
 }
 
+// v4（ORDER-035）：族語總複習挑戰——司令回報答題量太少、題目被綁死在「這個節點剛好出現的詞」，
+// 希望能從完整詞庫（1092 真實詞，klokah.tw）隨機抽一整輪（10 題）練習，不受節點內容限制。
+// 免費、不佔行動點、隨時可打，答對率 ≥70% 送 1 行動點獎勵，鼓勵多練但不強迫。
+function applyChallengeResult(g: JGame, results: { vocabId: string; correct: boolean }[]): JGame {
+  const ng: JGame = { ...g, wordLog: [...g.wordLog, ...results] };
+  const total = results.length;
+  const correctCount = results.filter((r) => r.correct).length;
+  ng.correct += correctCount;
+  ng.wrong += total - correctCount;
+  if (total > 0 && correctCount / total >= 0.7) {
+    const cap = effectiveMaxAp(ng);
+    if (ng.ap < cap) {
+      ng.ap = Math.min(cap, ng.ap + 1);
+      ng.log = pushLog(ng.log, `📖 族語挑戰：${correctCount}/${total} 題答對，表現優異，額外行動點 +1！`, "good");
+    } else {
+      ng.log = pushLog(ng.log, `📖 族語挑戰：${correctCount}/${total} 題答對，表現優異！`, "good");
+    }
+  } else {
+    ng.log = pushLog(ng.log, `📖 族語挑戰：${correctCount}/${total} 題答對。`, "info");
+  }
+  return ng;
+}
+
 function playCard(g: JGame, card: JCard, correct: boolean): JGame {
   if (!canAfford(g, card)) return g;
   let ng: JGame = { ...g, res: { ...g.res }, nodes: g.nodes.map((n) => ({ ...n })) };
@@ -907,6 +930,51 @@ export default function JourneyPage() {
   const rate = total === 0 ? 0 : Math.round((game.correct / total) * 100);
   const rateLabel = total === 0 ? "—" : `${rate}%`;
 
+  // v4（ORDER-035）：族語總複習挑戰——10 題，從完整 1092 詞真實詞庫隨機抽（不重複），
+  // 跟節點內容無關，隨時可打，免費不佔行動點。
+  const CHALLENGE_SIZE = 10;
+  const [challenge, setChallenge] = useState<{ quizzes: Quiz[]; idx: number; results: { vocabId: string; correct: boolean }[] } | null>(
+    null,
+  );
+  const [challengeRevealed, setChallengeRevealed] = useState<number | null>(null);
+  const anyModalOpen =
+    !!pending || !!pendingAction || chapterCard !== null || storyCard !== null || showRules || confirmRestart || !!challenge;
+
+  function startChallenge() {
+    if (game.status !== "playing" || anyModalOpen) return;
+    const ids = new Set<string>();
+    while (ids.size < Math.min(CHALLENGE_SIZE, VOCAB.length)) {
+      ids.add(randomVocabId());
+    }
+    setChallenge({ quizzes: [...ids].map((id) => quizForVocab(id)), idx: 0, results: [] });
+    setChallengeRevealed(null);
+  }
+
+  function answerChallenge(optIdx: number) {
+    if (!challenge || challengeRevealed !== null) return;
+    const q = challenge.quizzes[challenge.idx];
+    const correct = optIdx === q.answer;
+    if (correct) sfxCorrect();
+    else sfxWrong();
+    setChallengeRevealed(optIdx);
+    setTimeout(() => playAudio(q.audioId), 400);
+  }
+
+  function nextChallenge() {
+    if (!challenge || challengeRevealed === null) return;
+    const q = challenge.quizzes[challenge.idx];
+    const correct = challengeRevealed === q.answer;
+    const results = [...challenge.results, { vocabId: q.audioId, correct }];
+    if (challenge.idx + 1 >= challenge.quizzes.length) {
+      setGame((g) => applyChallengeResult(g, results));
+      setChallenge(null);
+      setChallengeRevealed(null);
+    } else {
+      setChallenge({ ...challenge, idx: challenge.idx + 1, results });
+      setChallengeRevealed(null);
+    }
+  }
+
   function tryPlay(card: JCard) {
     if (!canAfford(game, card)) return;
     if (card.quiz) {
@@ -1009,6 +1077,8 @@ export default function JourneyPage() {
     setChapterCard(null);
     setSeenStories(new Set());
     setStoryCard(null);
+    setChallenge(null);
+    setChallengeRevealed(null);
   }
 
   // mount 前：SSR 與 client 首渲染皆輸出此骨架，確保 HTML 一致（避免 hydration mismatch）
@@ -1059,6 +1129,14 @@ export default function JourneyPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={ICON_HIT} width={14} height={14} alt="" />答題正確率 {rateLabel}
             </span>
+            <button
+              onClick={startChallenge}
+              disabled={game.status !== "playing" || anyModalOpen}
+              className="rounded bg-amber-700 hover:bg-amber-600 disabled:opacity-30 px-2 py-1 font-semibold"
+              title="從完整族語詞庫隨機抽 10 題，免費、不佔行動點"
+            >
+              📖 族語挑戰
+            </button>
             <button
               onClick={() => setShowRules(true)}
               className="rounded bg-slate-700 hover:bg-slate-600 px-2 py-1"
@@ -1500,6 +1578,63 @@ export default function JourneyPage() {
                   className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 text-xs font-bold"
                 >
                   繼續 ▶
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 族語總複習挑戰（v4，ORDER-035）：司令要求增加答題量，從完整 1092 詞真實詞庫隨機抽 10 題，
+          不受節點內容限制，免費、隨時可打，跟核心答題閘門是平行的獨立功能。 */}
+      {challenge && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-amber-700/60 p-5">
+            <div className="text-xs text-amber-400 mb-1 font-semibold">
+              📖 族語挑戰 · 第 {challenge.idx + 1}/{challenge.quizzes.length} 題
+            </div>
+            <h3 className="text-lg font-bold mb-1">{challenge.quizzes[challenge.idx].prompt}</h3>
+            <p className="text-[10px] text-amber-300/70 mb-3">{challenge.quizzes[challenge.idx].note}</p>
+            <div className="grid gap-2">
+              {challenge.quizzes[challenge.idx].options.map((opt, idx) => {
+                const q = challenge.quizzes[challenge.idx];
+                let cls = "bg-slate-800 hover:bg-slate-700";
+                if (challengeRevealed !== null) {
+                  if (idx === q.answer) cls = "bg-emerald-700";
+                  else if (idx === challengeRevealed) cls = "bg-rose-700";
+                  else cls = "bg-slate-800 opacity-60";
+                }
+                return (
+                  <button
+                    key={idx}
+                    disabled={challengeRevealed !== null}
+                    onClick={() => answerChallenge(idx)}
+                    className={`rounded-lg px-4 py-2 text-left ${cls}`}
+                  >
+                    {String.fromCharCode(65 + idx)}. {opt}
+                  </button>
+                );
+              })}
+            </div>
+            {challengeRevealed !== null && (
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-slate-300">
+                    {challengeRevealed === challenge.quizzes[challenge.idx].answer ? "✅ 答對！" : "❌ 答錯。"}
+                  </p>
+                  <button
+                    onClick={() => playAudio(challenge.quizzes[challenge.idx].audioId)}
+                    className="rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
+                    title="播放正解發音（原住民族語E樂園）"
+                  >
+                    🔊 聽發音
+                  </button>
+                </div>
+                <button
+                  onClick={nextChallenge}
+                  className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 text-xs font-bold"
+                >
+                  {challenge.idx + 1 >= challenge.quizzes.length ? "完成 🏁" : "下一題 ▶"}
                 </button>
               </div>
             )}
