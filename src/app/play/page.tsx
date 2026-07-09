@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { CARDS, Card, RARITY_COLOR, THEME_EMOJI } from "@/data/cards";
 import { questionFor } from "@/data/questions";
 import AmbientAudio from "@/components/AmbientAudio";
+import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose } from "@/lib/sfx";
 
 // ───────────────────────── 型別 ─────────────────────────
 
@@ -375,6 +376,13 @@ export default function PlayPage() {
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
+  // 終局音效：勝利 / 落敗（中性 UI 完成音，非族樂）
+  const winner = game.winner;
+  useEffect(() => {
+    if (winner === "player") sfxArrive();
+    else if (winner === "enemy") sfxLose();
+  }, [winner]);
+
   function reset() {
     setQuizCard(null);
     setRevealed(null);
@@ -394,9 +402,12 @@ export default function PlayPage() {
     if (!quizCard) return;
     const q = questionFor(quizCard.id);
     const isCorrect = q ? idx === q.answer : false;
+    if (isCorrect) sfxCorrect();
+    else sfxWrong();
     setRevealed(idx);
     const card = quizCard;
     setTimeout(() => {
+      sfxPlayCard();
       setGame((g) => playCard(g, card, isCorrect));
       setQuizCard(null);
       setRevealed(null);
