@@ -1216,11 +1216,13 @@ const BuildCanvas = forwardRef<
     if (!container) return;
 
     function initNodes(w: number, h: number) {
+      // 錨點座標對齊 repair-river-board.jpg 上「畫在圖裡」的四個金色光圈（ORDER-046：
+      // 底圖換成俯視溪谷實景圖，canvas 只疊互動層），改圖時要一併校正這組比例。
       stateRef.current.nodes = [
-        { id: "L1", x: w * 0.12, y: h * 0.4, fixed: true, anchor: true, side: "left", vx: 0, vy: 0 },
-        { id: "L2", x: w * 0.09, y: h * 0.62, fixed: true, anchor: true, side: "left", vx: 0, vy: 0 },
-        { id: "R1", x: w * 0.88, y: h * 0.4, fixed: true, anchor: true, side: "right", vx: 0, vy: 0 },
-        { id: "R2", x: w * 0.91, y: h * 0.62, fixed: true, anchor: true, side: "right", vx: 0, vy: 0 },
+        { id: "L1", x: w * 0.184, y: h * 0.237, fixed: true, anchor: true, side: "left", vx: 0, vy: 0 },
+        { id: "L2", x: w * 0.171, y: h * 0.674, fixed: true, anchor: true, side: "left", vx: 0, vy: 0 },
+        { id: "R1", x: w * 0.792, y: h * 0.231, fixed: true, anchor: true, side: "right", vx: 0, vy: 0 },
+        { id: "R2", x: w * 0.816, y: h * 0.663, fixed: true, anchor: true, side: "right", vx: 0, vy: 0 },
       ];
       stateRef.current.springs = [];
       stateRef.current.piers = [];
@@ -1257,13 +1259,14 @@ const BuildCanvas = forwardRef<
       const pos = getPos(e.clientX, e.clientY);
       const s = stateRef.current;
       if (toolRef.current === "stone") {
-        const riverTop = canvas!.height * 0.55;
-        const riverBottom = canvas!.height * 0.85;
-        if (pos.y > riverTop && pos.y < riverBottom) {
+        // 俯視圖：溪面約佔畫面中段（兩岸各留邊），頁岩樁只能放在溪面範圍
+        const inRiver =
+          pos.x > canvas!.width * 0.24 && pos.x < canvas!.width * 0.76 && pos.y > canvas!.height * 0.08 && pos.y < canvas!.height * 0.92;
+        if (inRiver) {
           if (!onUseMaterialRef.current("stone")) return;
           const id = "P" + Math.random().toString(36).slice(2);
           s.nodes.push({ id, x: pos.x, y: pos.y, fixed: true, anchor: false, vx: 0, vy: 0 });
-          s.piers.push({ x: pos.x, y: pos.y, width: 46, nodeId: id });
+          s.piers.push({ x: pos.x, y: pos.y, width: 28, nodeId: id });
         }
         return;
       }
@@ -1388,10 +1391,10 @@ const BuildCanvas = forwardRef<
     };
   }, []);
 
-  // 用專屬的定高外層容器包住 canvas，resize() 讀的是這層的 clientWidth/Height——
-  // 不能直接讓 canvas 的 parentElement 是整個彈窗卡片（否則量到的會是整張卡片的高度，不是畫布該有的高度）。
+  // ORDER-046：canvas 改為「透明互動疊層」，鋪滿呼叫端提供的相對定位容器
+  // （容器底下是 repair-river-board.jpg 俯視溪谷實景圖）。resize() 讀的是這層的尺寸。
   return (
-    <div className="h-56 w-full overflow-hidden rounded-lg bg-slate-950/60 sm:h-64">
+    <div className="absolute inset-0">
       <canvas ref={canvasRef} className="block h-full w-full touch-none" />
     </div>
   );
@@ -1414,47 +1417,24 @@ function draw(
   tool: "stone" | "wood" | "rope",
 ) {
   ctx.clearRect(0, 0, w, h);
+  // ORDER-046：背景改由底下的 repair-river-board.jpg 實景圖呈現，canvas 只畫互動元素
+  // （俯視視角：頁岩樁畫成圓形石砌墩座，非側視石柱）。
 
-  // 峽谷背景
-  const sky = ctx.createLinearGradient(0, 0, 0, h);
-  sky.addColorStop(0, "#0b1512");
-  sky.addColorStop(1, "#152a1d");
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, w, h);
-
-  ctx.fillStyle = "#243b2c";
-  ctx.beginPath();
-  ctx.moveTo(0, h * 0.4);
-  ctx.lineTo(w * 0.1, h * 0.38);
-  ctx.lineTo(w * 0.08, h * 0.6);
-  ctx.lineTo(0, h * 0.75);
-  ctx.closePath();
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(w, h * 0.4);
-  ctx.lineTo(w * 0.9, h * 0.38);
-  ctx.lineTo(w * 0.92, h * 0.6);
-  ctx.lineTo(w, h * 0.75);
-  ctx.closePath();
-  ctx.fill();
-
-  // 溪水
-  const water = ctx.createLinearGradient(0, h * 0.85, 0, h);
-  water.addColorStop(0, "#0e4650");
-  water.addColorStop(1, "#082a31");
-  ctx.fillStyle = water;
-  ctx.fillRect(0, h * 0.86, w, h * 0.14);
-
-  // 頁岩石柱
+  // 頁岩墩座（俯視）
   for (const pier of s.piers) {
-    ctx.fillStyle = "#475569";
-    ctx.strokeStyle = "#64748b";
-    ctx.lineWidth = 1;
-    const top = pier.y;
-    const bottom = h * 0.86;
+    const r = pier.width / 2;
     ctx.beginPath();
-    ctx.roundRect(pier.x - pier.width / 2, top, pier.width, bottom - top, 3);
+    ctx.arc(pier.x, pier.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(71, 85, 105, 0.92)";
     ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#94a3b8";
+    ctx.stroke();
+    // 內圈石紋
+    ctx.beginPath();
+    ctx.arc(pier.x, pier.y, r * 0.55, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
+    ctx.lineWidth = 1;
     ctx.stroke();
   }
 
@@ -1489,22 +1469,27 @@ function draw(
     ctx.stroke();
   }
 
-  // 節點
+  // 節點（ORDER-046：錨點改描邊光圈，讓底圖裡畫好的金圈透出來、canvas 只做強化與 hover 提示）
   for (const n of s.nodes) {
-    ctx.beginPath();
-    ctx.arc(n.x, n.y, n.anchor ? 7 : n.fixed ? 5 : 4, 0, Math.PI * 2);
     if (n.anchor) {
-      ctx.fillStyle = "#f59e0b";
-    } else if (n.fixed) {
-      ctx.fillStyle = "#94a3b8";
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, 9, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255, 213, 91, 0.9)";
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = "rgba(255, 188, 56, 0.8)";
+      ctx.shadowBlur = 8;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
     } else {
-      ctx.fillStyle = "#10b981";
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.fixed ? 5 : 4, 0, Math.PI * 2);
+      ctx.fillStyle = n.fixed ? "#94a3b8" : "#10b981";
+      ctx.fill();
     }
-    ctx.fill();
     if (s.hover === n && interactive) {
       ctx.beginPath();
-      ctx.arc(n.x, n.y, 12, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(251,191,36,0.6)";
+      ctx.arc(n.x, n.y, 13, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(251,191,36,0.65)";
       ctx.lineWidth = 2;
       ctx.stroke();
     }
@@ -2283,105 +2268,121 @@ export default function JourneyPage() {
         const node = game.nodes[game.idx];
         const score = buildScore(building);
         const tier = score >= 60 ? "safe" : score >= 35 ? "risky" : "weak";
-        const barColor = tier === "safe" ? "bg-emerald-500" : tier === "risky" ? "bg-amber-500" : "bg-rose-600";
         const textColor = tier === "safe" ? "text-emerald-400" : tier === "risky" ? "text-amber-400" : "text-rose-400";
         const interactive = !pendingAction && !crossing;
         return (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-            <div className="w-full max-w-lg rounded-2xl border border-amber-500/40 bg-slate-950/95 p-5">
-              <div className="text-xs text-amber-300 mb-1">修復路段 · 這次，換你們重新排一次路</div>
-              <h3 className="text-lg font-bold mb-2">{node.name}</h3>
-              <p className="text-xs text-slate-400 mb-3">
-                溪水沖垮了這段路。拖拉手邊的材料，把它重新接起來——頁岩固定樁可以直接點在河床上；
-                橫樑跟藤索則從一個節點拖到另一個節點，牽出連線。
-              </p>
+          <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/75 p-3 backdrop-blur-[6px] sm:p-6">
+            <div className="repair-modal w-full max-w-2xl px-5 py-6 sm:px-8 sm:py-7 my-4">
+              {/* 標題區（RPG 任務面板：分類小字＋大標＋說明） */}
+              <header className="relative z-[2] mb-4 text-center">
+                <p className={`${notoSansTC.className} mb-1.5 text-sm font-bold tracking-[0.08em] text-amber-300`}>
+                  修復路段 · 這次，換你們重新排一次路
+                </p>
+                <h3 className={`${notoSerifTC.className} repair-title text-3xl font-black sm:text-4xl`}>{node.name}</h3>
+                <p className="mx-auto mt-3 max-w-xl text-left text-xs leading-relaxed text-amber-100/70 sm:text-sm">
+                  溪水沖垮了這段路。拖拉手邊的材料，把它重新接起來——頁岩固定樁可以直接點在溪面上；
+                  橫樑跟藤索則從一個節點拖到另一個節點，牽出連線。
+                </p>
+              </header>
 
-              <div className="mb-2">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-slate-300">結構穩定度</span>
-                  <span className={`font-bold ${textColor}`}>{Math.min(100, score)}%</span>
+              {/* 結構穩定度 */}
+              <div className="relative z-[2] mb-3">
+                <div className="mb-1.5 flex items-center justify-between text-xs font-bold text-amber-100/85">
+                  <span>結構穩定度</span>
+                  <span className={`text-base ${textColor}`}>{Math.min(100, score)}%</span>
                 </div>
-                <div className="h-3 rounded-full bg-slate-800 overflow-hidden">
-                  <div className={`h-full ${barColor} transition-all`} style={{ width: `${Math.min(100, score)}%` }} />
+                <div className="h-3 overflow-hidden rounded-full bg-slate-500/25 shadow-[inset_0_2px_5px_rgba(0,0,0,0.45)]">
+                  <div
+                    className={`repair-progress-fill h-full rounded-full transition-all ${tier === "weak" ? "opacity-70" : ""}`}
+                    style={{ width: `${Math.min(100, score)}%` }}
+                  />
                 </div>
               </div>
 
-              {/* 拖拉建造畫布（v6，ORDER-040）：司令分享了一份 canvas 物理原型作參考，過關判定仍走
-                  已驗證的 resolveBuildTest，這裡只負責「動手建造」的互動與山羌過橋/摔落的過場動畫。 */}
-              <BuildCanvas ref={buildCanvasRef} tool={buildTool} onUseMaterial={addMaterial} interactive={interactive} />
-
-              <div className="mt-2 grid grid-cols-3 gap-2 mb-2 text-xs">
-                <button
-                  onClick={() => setBuildTool("stone")}
-                  disabled={game.res.stone < 1}
-                  className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-2 font-medium transition disabled:opacity-30 ${
-                    buildTool === "stone" ? "border-amber-500 bg-amber-950/30" : "border-slate-700 bg-slate-900/70 hover:bg-slate-800"
-                  }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={RES_IMG.stone} width={20} height={20} alt="" />
-                  頁岩樁
-                  <span className="text-slate-500">btunux・剩 {game.res.stone}</span>
-                </button>
-                <button
-                  onClick={() => setBuildTool("wood")}
-                  disabled={game.res.wood < 1}
-                  className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-2 font-medium transition disabled:opacity-30 ${
-                    buildTool === "wood" ? "border-amber-500 bg-amber-950/30" : "border-slate-700 bg-slate-900/70 hover:bg-slate-800"
-                  }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={RES_IMG.wood} width={20} height={20} alt="" />
-                  橫樑
-                  <span className="text-slate-500">qhuni・剩 {game.res.wood}</span>
-                </button>
-                <button
-                  onClick={() => setBuildTool("rope")}
-                  disabled={game.res.rope < 1}
-                  className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-2 font-medium transition disabled:opacity-30 ${
-                    buildTool === "rope" ? "border-amber-500 bg-amber-950/30" : "border-slate-700 bg-slate-900/70 hover:bg-slate-800"
-                  }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={RES_IMG.rope} width={20} height={20} alt="" />
-                  藤索
-                  <span className="text-slate-500">gasil・剩 {game.res.rope}</span>
-                </button>
+              {/* 大型互動操作區：俯視溪谷實景圖（ORDER-046 素材，司令 mockup 裁切、已過複核）
+                  ＋ 透明 canvas 疊層負責拖拉建造與山羌過場（v6 ORDER-040 邏輯不變） */}
+              <div className="relative z-[2] aspect-[803/338] w-full overflow-hidden rounded-xl border border-amber-500/50 shadow-[0_24px_42px_rgba(0,0,0,0.45),inset_0_0_38px_rgba(0,0,0,0.4)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/journey/repair/repair-river-board.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <BuildCanvas ref={buildCanvasRef} tool={buildTool} onUseMaterial={addMaterial} interactive={interactive} />
               </div>
-              <p className="text-[10px] text-slate-500 mb-3">
-                {buildTool === "stone" ? "點河床即可放置頁岩樁。" : "從一個節點拖拉到另一個點，放開就牽線。"}
+
+              <p className="relative z-[2] mt-3 text-center text-xs tracking-[0.06em] text-amber-200/80">
+                {buildTool === "stone" ? "點溪面即可放置頁岩樁" : "拖曳材料至節點或兩節點之間以搭建結構"}
               </p>
 
-              <p className="text-[10px] text-slate-500 mb-3 leading-relaxed">
-                {building.wood === 0
-                  ? "純疊石工法：省下橫樑木材，測試通過後有額外行動點獎勵。"
-                  : "架橫樑能更快墊高穩定度，但這次用了木材，沒有省料獎勵。"}
+              {/* 材料道具卡 */}
+              <div className="relative z-[2] mt-3 grid grid-cols-3 gap-2.5 sm:gap-4">
+                {(
+                  [
+                    { key: "stone" as const, name: "頁岩樁", word: "btunux", img: "/images/journey/repair/material-slate-pile.jpg", left: game.res.stone },
+                    { key: "wood" as const, name: "橫樑", word: "qhuni", img: "/images/journey/repair/material-wood-beam.jpg", left: game.res.wood },
+                    { key: "rope" as const, name: "藤索", word: "gasil", img: "/images/journey/repair/material-vine-rope.jpg", left: game.res.rope },
+                  ]
+                ).map((m) => (
+                  <button
+                    key={m.key}
+                    onClick={() => setBuildTool(m.key)}
+                    disabled={m.left < 1}
+                    className={`material-card rounded-2xl px-2 py-3 text-center disabled:opacity-35 sm:px-4 sm:py-4 ${
+                      buildTool === m.key ? "selected" : ""
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={m.img}
+                      alt=""
+                      className="mx-auto mb-1.5 h-12 w-12 rounded-lg object-cover drop-shadow-[0_10px_12px_rgba(0,0,0,0.45)] sm:h-16 sm:w-16"
+                    />
+                    <span className={`${notoSerifTC.className} block text-sm font-black tracking-[0.08em] text-amber-50 sm:text-lg`}>
+                      {m.name}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] text-sky-200/70 sm:text-sm">{m.word}</span>
+                    <span className="mt-1 block text-[11px] text-amber-200/90 sm:text-sm">
+                      剩餘 <b>{m.left}</b>
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* 說明框 */}
+              <div className="relative z-[2] mt-4 rounded-xl border border-teal-700/25 bg-teal-950/40 px-4 py-3 text-xs leading-relaxed text-amber-100/75">
+                <p>◈ 點溪面即可放置頁岩樁。</p>
+                <p className="mt-1">
+                  ◈{" "}
+                  {building.wood === 0
+                    ? "純疊石工法：省下橫樑木材，測試通過後有額外行動點獎勵。"
+                    : "架橫樑能更快墊高穩定度，但這次用了木材，沒有省料獎勵。"}
+                </p>
                 {building.stone > 8 && (
-                  <span className="inline-flex items-center gap-1">
+                  <p className="mt-1 inline-flex items-center gap-1 text-rose-300">
                     <IconAlert className="w-3 h-3 shrink-0" /> 石頭堆太密，可能擋住水路，測試時有風險——大自然的路，要留給水走。
-                  </span>
+                  </p>
                 )}
-              </p>
+              </div>
 
-              <div className="flex items-center justify-between gap-2">
+              {/* 底部操作 */}
+              <footer className="relative z-[2] mt-5 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <button
                   onClick={() => setBuilding(null)}
                   disabled={!interactive}
-                  className="rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-30 px-4 py-2 text-xs"
+                  className="repair-secondary-btn rounded-xl px-8 py-3 text-sm font-bold tracking-[0.08em] disabled:opacity-40"
                 >
-                  先不修了
+                  ✦ 先不修了
                 </button>
-                <div className="text-right">
-                  {building.rope < 1 && <p className="text-[10px] text-rose-400 mb-1">還沒綁緊固定，至少要用 1 個藤索。</p>}
+                <div className="text-left sm:text-right">
+                  {building.rope < 1 && (
+                    <p className="mb-1.5 text-xs font-bold text-rose-400">還沒綁緊固定，至少要用 1 個藤索。</p>
+                  )}
                   <button
                     onClick={startBuildTest}
                     disabled={building.rope < 1 || !interactive}
-                    className="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 px-4 py-2 text-xs font-bold"
+                    className="repair-primary-btn inline-flex w-full items-center justify-center gap-2 rounded-xl px-10 py-3 text-sm font-black tracking-[0.08em] sm:w-auto"
                   >
-                    <IconFootprint className="w-3.5 h-3.5 shrink-0" /> 測試通行
+                    <IconFootprint className="w-4 h-4 shrink-0" /> 測試通行
                   </button>
                 </div>
-              </div>
+              </footer>
             </div>
           </div>
         );
