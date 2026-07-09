@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CARDS, Card, RARITY_COLOR, THEME_EMOJI } from "@/data/cards";
 import { questionFor } from "@/data/questions";
+import AmbientAudio from "@/components/AmbientAudio";
 
 // ───────────────────────── 型別 ─────────────────────────
 
@@ -445,6 +446,7 @@ export default function PlayPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 text-slate-100 p-3 sm:p-5">
+      <AmbientAudio />
       <div className="max-w-5xl mx-auto">
         {/* 標題列 */}
         <header className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -457,7 +459,7 @@ export default function PlayPage() {
                 模式 B
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold">Enzo · 山林試煉（vs 系統）</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">峽谷行者 · 山林試煉（vs 系統）</h1>
             <p className="text-[11px] text-slate-400">
               出牌答對太魯閣族語題觸發加成。示範題庫為佔位資料，正式族語內容待語言部填入。
             </p>

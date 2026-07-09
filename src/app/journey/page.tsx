@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { vocab, audioUrl, distractors, ATTRIBUTION, SOURCE, SOURCE_URL } from "@/data/truku";
+import AmbientAudio from "@/components/AmbientAudio";
 
 /*
  * 模式 A · 山徑劇情（灰盒 MVP）
@@ -533,6 +534,7 @@ export default function JourneyPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-emerald-950 via-slate-950 to-slate-950 text-slate-100 flex">
+      <AmbientAudio />
       <SideRail active="journey" />
       <div className="flex-1 min-w-0 px-4 sm:px-6 py-6">
         <div className="max-w-5xl mx-auto">
@@ -545,7 +547,7 @@ export default function JourneyPage() {
               </Link>
               <span className="text-[10px] rounded-full bg-emerald-500/80 text-black px-2 py-0.5">模式 A</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold">Enzo · 山徑：修復山徑</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">峽谷行者 · 山徑：修復山徑</h1>
             <p className="text-[11px] text-slate-400">
               非戰鬥。答對族語題讓行動全額生效。族語詞彙與發音為真實太魯閣語資料。
             </p>
