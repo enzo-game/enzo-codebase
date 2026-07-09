@@ -921,43 +921,9 @@ export default function JourneyPage() {
           </div>
         </header>
 
-        {/* 頂部數值列（v2：壓力分級變色，危急時脈動警示） */}
-        <section className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-          <StatBar
-            label="壓力"
-            value={game.pressure}
-            max={game.maxPressure}
-            color={
-              pressureTier(game) === "critical" ? "bg-red-500" : pressureTier(game) === "tense" ? "bg-amber-500" : "bg-rose-500"
-            }
-            invert
-            icon={METER_PRESSURE}
-            pulse={pressureTier(game) === "critical"}
-            tag={pressureTier(game) === "critical" ? "危急" : pressureTier(game) === "tense" ? "緊張" : undefined}
-          />
-          <StatBar label="隊伍體力" value={game.teamHp} max={game.maxTeamHp} color="bg-emerald-500" icon={METER_STAMINA} />
-          <div className="relative rounded-lg border border-slate-800 bg-slate-900/50 p-2 pt-3 flex items-start justify-around gap-2 text-sm col-span-2">
-            {/* 族語落字（決策#22）：klokah 真實詞＋發音，整區標「示範·待核」待語言部終核 */}
-            <span className="absolute -top-2 right-2 rounded bg-slate-800 px-1.5 text-[9px] text-amber-300/90 border border-slate-700">
-              族語：示範·待核
-            </span>
-            {(Object.keys(game.res) as Resource[]).map((r) => (
-              <span key={r} className="flex flex-col items-center gap-0.5" title={`${RES_NAME[r]}（示範·待核）`}>
-                <span className="flex items-center gap-1">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={COIN_IMG[r]} width={24} height={24} alt={RES_NAME[r]} className="inline-block" />
-                  <span className="font-semibold">{game.res[r]}</span>
-                </span>
-                {/* 中文名稱為主要可見標籤（避免只藏在 title tooltip 裡看不到）；族語詞為輔助學習 */}
-                <span className="text-[10px] text-slate-400">{RES_NAME[r]}</span>
-                <WordChip vocabId={RES_VOCAB[r]} />
-              </span>
-            ))}
-          </div>
-        </section>
-
-        {/* 任務面板（v2：主線目標＋節點進度＋這一步＋可直接操作的行動按鈕＋支線＋連擊） */}
-        <section className="mb-3 rounded-xl border border-emerald-800/50 bg-emerald-950/25 p-3">
+        {/* 任務面板（v2：主線目標＋節點進度＋這一步＋可直接操作的行動按鈕＋支線＋連擊）
+            視覺層級修正：搬到統計數字前面，第一眼就是「該做什麼」，不是一堆數字（盲測發現原順序讓玩家迷路） */}
+        <section className="mb-3 rounded-xl border-2 border-emerald-600/70 bg-emerald-950/25 p-3 shadow-[0_0_24px_rgba(16,185,129,0.15)]">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="rounded bg-emerald-800/70 px-2 py-0.5 text-[11px] font-semibold text-emerald-50">主線</span>
@@ -1057,6 +1023,41 @@ export default function JourneyPage() {
                 🔥 連對 {game.streak}
               </span>
             )}
+          </div>
+        </section>
+
+        {/* 頂部數值列（v2：壓力分級變色，危急時脈動警示） */}
+        <section className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+          <StatBar
+            label="壓力"
+            value={game.pressure}
+            max={game.maxPressure}
+            color={
+              pressureTier(game) === "critical" ? "bg-red-500" : pressureTier(game) === "tense" ? "bg-amber-500" : "bg-rose-500"
+            }
+            invert
+            icon={METER_PRESSURE}
+            pulse={pressureTier(game) === "critical"}
+            tag={pressureTier(game) === "critical" ? "危急" : pressureTier(game) === "tense" ? "緊張" : undefined}
+          />
+          <StatBar label="隊伍體力" value={game.teamHp} max={game.maxTeamHp} color="bg-emerald-500" icon={METER_STAMINA} />
+          <div className="relative rounded-lg border border-slate-800 bg-slate-900/50 p-2 pt-3 flex items-start justify-around gap-2 text-sm col-span-2">
+            {/* 族語落字（決策#22）：klokah 真實詞＋發音，整區標「示範·待核」待語言部終核 */}
+            <span className="absolute -top-2 right-2 rounded bg-slate-800 px-1.5 text-[9px] text-amber-300/90 border border-slate-700">
+              族語：示範·待核
+            </span>
+            {(Object.keys(game.res) as Resource[]).map((r) => (
+              <span key={r} className="flex flex-col items-center gap-0.5" title={`${RES_NAME[r]}（示範·待核）`}>
+                <span className="flex items-center gap-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={COIN_IMG[r]} width={24} height={24} alt={RES_NAME[r]} className="inline-block" />
+                  <span className="font-semibold">{game.res[r]}</span>
+                </span>
+                {/* 中文名稱為主要可見標籤（避免只藏在 title tooltip 裡看不到）；族語詞為輔助學習 */}
+                <span className="text-[10px] text-slate-400">{RES_NAME[r]}</span>
+                <WordChip vocabId={RES_VOCAB[r]} />
+              </span>
+            ))}
           </div>
         </section>
 
