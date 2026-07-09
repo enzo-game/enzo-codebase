@@ -77,6 +77,7 @@ type JGame = {
   correct: number;
   wrong: number;
   streak: number; // 連續答對題數（v2 核心循環重構）
+  wordLog: { vocabId: string; correct: boolean }[]; // v4（ORDER-033）：逐題紀錄，供結局回顧「這次學了什麼」
 };
 
 type EventCard = {
@@ -332,6 +333,7 @@ function newGame(): JGame {
     correct: 0,
     wrong: 0,
     streak: 0,
+    wordLog: [],
   };
 }
 
@@ -441,11 +443,12 @@ function canHardClear(g: JGame): boolean {
 
 // v3（ORDER-031）：花資源硬清補答題閘門（答對全額清除／答錯半額，資源照樣扣——
 // 原本零門檻等於繞過族語題，違反模式 A 放行紅線）
-function hardClear(g: JGame, correct: boolean): JGame {
+function hardClear(g: JGame, correct: boolean, vocabId: string): JGame {
   if (!canHardClear(g)) return g;
   const cost = hardClearCost(g.nodes[g.idx]) as Partial<Record<Resource, number>>;
   const ng: JGame = { ...g, res: { ...g.res }, nodes: g.nodes.map((n) => ({ ...n })) };
   for (const [r, v] of Object.entries(cost)) ng.res[r as Resource] -= v ?? 0;
+  ng.wordLog = [...ng.wordLog, { vocabId, correct }];
   if (correct) {
     ng.correct += 1;
     ng.streak += 1;
@@ -471,7 +474,7 @@ function hardClear(g: JGame, correct: boolean): JGame {
 
 // 「快速通過」故意保留免答題（設計本意：花代價換省事的高風險捷徑），但代價調高（壓力+2→+4）
 // 「謹慎探勘」改為答題閘門：答對才有額外糧食，答錯仍清節點但沒有加碼
-function resolveEventChoice(g: JGame, choice: "fast" | "careful", correct?: boolean): JGame {
+function resolveEventChoice(g: JGame, choice: "fast" | "careful", correct?: boolean, vocabId?: string): JGame {
   const node = g.nodes[g.idx];
   if (g.status !== "playing" || !node || node.type !== "event" || node.cleared) return g;
   if (choice === "careful" && (g.res.wood < 1 || g.res.rope < 1)) return g;
@@ -484,6 +487,7 @@ function resolveEventChoice(g: JGame, choice: "fast" | "careful", correct?: bool
   } else {
     ng.res.wood -= 1;
     ng.res.rope -= 1;
+    if (vocabId) ng.wordLog = [...ng.wordLog, { vocabId, correct: !!correct }];
     if (correct) {
       ng.correct += 1;
       ng.streak += 1;
@@ -500,12 +504,13 @@ function resolveEventChoice(g: JGame, choice: "fast" | "careful", correct?: bool
 }
 
 // 補給答題閘門：答對 +3（維持既有30%變動加碼），答錯僅 +1（無加碼）
-function resolveSupplyChoice(g: JGame, resource: Resource, correct: boolean): JGame {
+function resolveSupplyChoice(g: JGame, resource: Resource, correct: boolean, vocabId: string): JGame {
   const node = g.nodes[g.idx];
   if (g.status !== "playing" || !node || node.type !== "supply" || node.cleared) return g;
   const ng: JGame = { ...g, res: { ...g.res }, nodes: g.nodes.map((n) => ({ ...n })) };
   const n2 = ng.nodes[ng.idx];
   n2.cleared = true;
+  ng.wordLog = [...ng.wordLog, { vocabId, correct }];
   if (correct) {
     ng.correct += 1;
     ng.streak += 1;
@@ -578,6 +583,7 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
   ng.hand = ng.hand.filter((c) => c.key !== card.key);
   ng.discard = [...ng.discard, card];
   if (card.quiz) {
+    ng.wordLog = [...ng.wordLog, { vocabId: card.vocabId, correct }];
     if (correct) {
       ng.correct += 1;
       ng.streak += 1;
@@ -888,7 +894,14 @@ export default function JourneyPage() {
     null,
   );
   const [actionRevealed, setActionRevealed] = useState<number | null>(null);
-  const actionQuiz = useMemo(() => (pendingAction ? quizForVocab(randomVocabId()) : null), [pendingAction]);
+  // v4（ORDER-033）：題目改綁「當前節點」的詞，而非全詞庫隨機——司令實測回報「毫無記憶點」，
+  // 隨機題跟眼前情境（節點故事剛講的東西）毫無關聯，答完就忘。改成問「這個節點」對應的詞，
+  // 讓題目與剛看到的故事／情境同一個詞，形成情境記憶錨點。
+  const currentNodeVocabId = game.nodes[game.idx]?.vocabId;
+  const actionQuiz = useMemo(
+    () => (pendingAction ? quizForVocab(currentNodeVocabId ?? randomVocabId()) : null),
+    [pendingAction, currentNodeVocabId],
+  );
 
   const total = game.correct + game.wrong;
   const rate = total === 0 ? 0 : Math.round((game.correct / total) * 100);
@@ -905,22 +918,28 @@ export default function JourneyPage() {
     }
   }
 
+  // v4（ORDER-033）：答題後不再自動 850ms 就結算關掉——原本的自動倒數等於鼓勵盲按，
+  // 揭曉當下自動播一次正解發音（視聽同步強化記憶），改由玩家自己按「繼續」才結算，
+  // 給足時間看清楚／聽清楚正解再往下走。
   function answer(optIdx: number) {
     if (!pending || !quiz) return;
     const correct = optIdx === quiz.answer;
     if (correct) sfxCorrect();
     else sfxWrong();
-    // 連擊獎勵預判：稍晚於答對音效播放，做出「更爽」的聲音層次
     const willStreak = correct ? game.streak + 1 : 0;
     if (willStreak > 0 && willStreak % 3 === 0) {
       setTimeout(() => sfxStreak(), 300);
     }
     setRevealed(optIdx);
-    setTimeout(() => {
-      setGame((g) => playCard(g, pending, correct));
-      setPending(null);
-      setRevealed(null);
-    }, 850);
+    setTimeout(() => playAudio(quiz.audioId), 400);
+  }
+
+  function confirmAnswer() {
+    if (!pending || revealed === null || !quiz) return;
+    const correct = revealed === quiz.answer;
+    setGame((g) => playCard(g, pending, correct));
+    setPending(null);
+    setRevealed(null);
   }
 
   function doAdvance() {
@@ -962,19 +981,23 @@ export default function JourneyPage() {
       setTimeout(() => sfxStreak(), 300);
     }
     setActionRevealed(optIdx);
-    setTimeout(() => {
-      const action = pendingAction;
-      if (action.kind === "hardClear") {
-        setGame((g) => hardClear(g, correct));
-      } else if (action.kind === "eventCareful") {
-        setGame((g) => resolveEventChoice(g, "careful", correct));
-      } else if (action.kind === "supply" && action.resource) {
-        const resource = action.resource;
-        setGame((g) => resolveSupplyChoice(g, resource, correct));
-      }
-      setPendingAction(null);
-      setActionRevealed(null);
-    }, 850);
+    setTimeout(() => playAudio(actionQuiz.audioId), 400);
+  }
+
+  function confirmActionAnswer() {
+    if (!pendingAction || actionRevealed === null || !actionQuiz) return;
+    const correct = actionRevealed === actionQuiz.answer;
+    const vocabId = actionQuiz.audioId;
+    if (pendingAction.kind === "hardClear") {
+      setGame((g) => hardClear(g, correct, vocabId));
+    } else if (pendingAction.kind === "eventCareful") {
+      setGame((g) => resolveEventChoice(g, "careful", correct, vocabId));
+    } else if (pendingAction.kind === "supply" && pendingAction.resource) {
+      const resource = pendingAction.resource;
+      setGame((g) => resolveSupplyChoice(g, resource, correct, vocabId));
+    }
+    setPendingAction(null);
+    setActionRevealed(null);
   }
 
   function restart() {
@@ -1401,16 +1424,24 @@ export default function JourneyPage() {
               })}
             </div>
             {revealed !== null && (
-              <div className="mt-3 flex items-center gap-2">
-                <p className="text-xs text-slate-300">
-                  {revealed === quiz.answer ? "✅ 答對！行動全額生效。" : "❌ 答錯，行動以半額生效。"}
-                </p>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-slate-300">
+                    {revealed === quiz.answer ? "✅ 答對！行動全額生效。" : "❌ 答錯，行動以半額生效。"}
+                  </p>
+                  <button
+                    onClick={() => playAudio(quiz.audioId)}
+                    className="rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
+                    title="播放正解發音（原住民族語E樂園）"
+                  >
+                    🔊 聽發音
+                  </button>
+                </div>
                 <button
-                  onClick={() => playAudio(quiz.audioId)}
-                  className="rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
-                  title="播放正解發音（原住民族語E樂園）"
+                  onClick={confirmAnswer}
+                  className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 text-xs font-bold"
                 >
-                  🔊 聽發音
+                  繼續 ▶
                 </button>
               </div>
             )}
@@ -1451,16 +1482,24 @@ export default function JourneyPage() {
               })}
             </div>
             {actionRevealed !== null && (
-              <div className="mt-3 flex items-center gap-2">
-                <p className="text-xs text-slate-300">
-                  {actionRevealed === actionQuiz.answer ? "✅ 答對！全額生效。" : "❌ 答錯，半額生效。"}
-                </p>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-slate-300">
+                    {actionRevealed === actionQuiz.answer ? "✅ 答對！全額生效。" : "❌ 答錯，半額生效。"}
+                  </p>
+                  <button
+                    onClick={() => playAudio(actionQuiz.audioId)}
+                    className="rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
+                    title="播放正解發音（原住民族語E樂園）"
+                  >
+                    🔊 聽發音
+                  </button>
+                </div>
                 <button
-                  onClick={() => playAudio(actionQuiz.audioId)}
-                  className="rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
-                  title="播放正解發音（原住民族語E樂園）"
+                  onClick={confirmActionAnswer}
+                  className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 text-xs font-bold"
                 >
-                  🔊 聽發音
+                  繼續 ▶
                 </button>
               </div>
             )}
@@ -1569,10 +1608,13 @@ export default function JourneyPage() {
         </div>
       )}
 
-      {/* 勝負彈窗 */}
+      {/* 勝負彈窗（v4，ORDER-033 加「這趟學了什麼」詞彙回顧——司令實測回報通關後毫無記憶點，
+          原本只顯示正確率數字，玩家看完就關掉，沒有具體「我學了哪些詞」的畫面停留。
+          改列出這局實際考過的每個詞（去重，取最後一次作答結果），中文＋族語＋可重播發音，
+          在離開前給一次完整的視覺＋聽覺總覽。 */}
       {game.status !== "playing" && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-700 p-6 text-center">
+          <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl bg-slate-900 border border-slate-700 p-6 text-center">
             <div className="text-4xl mb-2">{game.status === "won" ? "🏔🌈" : "🌧"}</div>
             <h3 className="text-xl font-bold mb-1">
               {game.status === "won" ? "安全抵達部落！" : "未能抵達部落"}
@@ -1586,6 +1628,45 @@ export default function JourneyPage() {
                     ? "隊伍體力耗盡。"
                     : "任務天數耗盡，尚未抵達。"}
             </p>
+
+            {(() => {
+              const byId = new Map<string, boolean>();
+              for (const { vocabId, correct } of game.wordLog) byId.set(vocabId, correct);
+              const words = [...byId.entries()];
+              if (words.length === 0) return null;
+              return (
+                <div className="mb-4 rounded-xl border border-slate-700 bg-slate-950/60 p-3 text-left">
+                  <div className="text-xs uppercase tracking-wider text-emerald-400 font-semibold mb-2">
+                    這趟學了什麼（{words.filter(([, ok]) => ok).length}/{words.length} 詞答對）
+                  </div>
+                  <div className="grid gap-1.5 max-h-56 overflow-y-auto pr-1">
+                    {words.map(([vocabId, ok]) => {
+                      const entry = vocab(vocabId);
+                      return (
+                        <div
+                          key={vocabId}
+                          className="flex items-center justify-between gap-2 rounded-lg bg-slate-900/70 px-2.5 py-1.5"
+                        >
+                          <span className="text-xs">
+                            {ok ? "✅" : "❌"} {entry.chinese}
+                            <span className="text-slate-400"> · </span>
+                            <span className="font-semibold">{entry.word}</span>
+                          </span>
+                          <button
+                            onClick={() => playAudio(vocabId)}
+                            className="shrink-0 rounded bg-sky-700 hover:bg-sky-600 px-2 py-0.5 text-[10px]"
+                            title="播放發音（原住民族語E樂園）"
+                          >
+                            🔊
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="flex gap-2 justify-center">
               <button
                 onClick={restart}
