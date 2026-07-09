@@ -9,23 +9,25 @@ type Accent = "emerald" | "sky";
 
 const ACCENT: Record<
   Accent,
-  { ring: string; hover: string; text: string; chip: string; bg: string; cta: string }
+  { ring: string; hover: string; text: string; chip: string; bg: string; cta: string; glow: string }
 > = {
   emerald: {
     ring: "border-emerald-800/50",
-    hover: "hover:border-emerald-500/80",
+    hover: "hover:border-emerald-400/90",
     text: "text-emerald-300",
     chip: "bg-lime-400/90 text-black",
     bg: "from-emerald-950/90 via-slate-950/75 to-slate-950/55",
     cta: "bg-emerald-800/80 hover:bg-emerald-700 text-emerald-50",
+    glow: "bg-emerald-500/30",
   },
   sky: {
     ring: "border-sky-800/50",
-    hover: "hover:border-sky-500/80",
+    hover: "hover:border-sky-400/90",
     text: "text-sky-300",
     chip: "bg-sky-400/90 text-black",
     bg: "from-sky-950/90 via-slate-950/75 to-slate-950/55",
     cta: "bg-sky-800/80 hover:bg-sky-700 text-sky-50",
+    glow: "bg-sky-500/30",
   },
 };
 
@@ -39,6 +41,7 @@ function ModeCard({
   desc,
   cta,
   accent,
+  order,
 }: {
   href: string;
   emblemSrc: string;
@@ -49,24 +52,31 @@ function ModeCard({
   desc: string;
   cta: string;
   accent: Accent;
+  order: 1 | 2;
 }) {
   const a = ACCENT[accent];
   return (
-    <Link
-      href={href}
-      className={`group relative flex min-h-[320px] flex-col overflow-hidden rounded-2xl border ${a.ring} ${a.hover} transition-colors`}
-    >
-      {/* 卡底插畫（ORDER-016）＋深色漸層 overlay 確保可讀 */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={bgSrc}
-        alt=""
+    <div className={`anim-card ${order === 1 ? "anim-card-1" : "anim-card-2"} relative`}>
+      {/* 卡背後呼吸光暈（hover 加亮） */}
+      <div
+        className={`glow-breathe pointer-events-none absolute -inset-2 rounded-3xl blur-2xl transition-opacity duration-500 group-hover:opacity-100 ${a.glow}`}
         aria-hidden
-        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
       />
-      <div className={`absolute inset-0 bg-gradient-to-t ${a.bg}`} />
+      <Link
+        href={href}
+        className={`group shine relative flex min-h-[320px] flex-col overflow-hidden rounded-2xl border ${a.ring} ${a.hover} transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl`}
+      >
+        {/* 卡底插畫（ORDER-016）＋深色漸層 overlay 確保可讀 */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={bgSrc}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+        />
+        <div className={`absolute inset-0 bg-gradient-to-t ${a.bg}`} />
 
-      <div className="relative flex flex-1 flex-col p-6">
+        <div className="relative flex flex-1 flex-col p-6">
         <span
           className={`absolute right-4 top-4 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${a.chip}`}
         >
@@ -91,10 +101,11 @@ function ModeCard({
           className={`mt-auto inline-flex w-fit items-center gap-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${a.cta}`}
         >
           {cta}
-          <span className="transition-transform group-hover:translate-x-0.5">▸</span>
+          <span className="transition-transform group-hover:translate-x-1">▸</span>
         </span>
-      </div>
-    </Link>
+        </div>
+      </Link>
+    </div>
   );
 }
 
@@ -102,13 +113,17 @@ function FeatureCard({
   emblemSrc,
   title,
   desc,
+  order,
 }: {
   emblemSrc: string;
   title: string;
   desc: string;
+  order: 1 | 2 | 3;
 }) {
   return (
-    <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-4">
+    <div
+      className={`anim-feature anim-feature-${order} rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 transition-colors duration-300 hover:border-slate-600 hover:bg-slate-900/70`}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={emblemSrc}
@@ -148,7 +163,7 @@ export default function Home() {
             alt="峽谷行者 Canyon Walker"
             width={320}
             height={330}
-            className="mx-auto w-56 sm:w-72 h-auto drop-shadow-[0_4px_24px_rgba(0,0,0,0.6)]"
+            className="anim-logo mx-auto w-56 sm:w-72 h-auto drop-shadow-[0_4px_24px_rgba(0,0,0,0.6)]"
           />
           <h1 className="sr-only">峽谷行者 Canyon Walker</h1>
           {/* 中性分隔飾（非菱形）：線 · 圓點 · 線 */}
@@ -157,18 +172,13 @@ export default function Home() {
             <span className="h-1.5 w-1.5 rounded-full bg-amber-500/70" />
             <span className="h-px w-16 bg-gradient-to-l from-transparent to-slate-600" />
           </div>
-          <p className="mt-4 text-lg text-amber-100/90">
-            原民 Truku 爐石式卡牌遊戲 · 族語教學
-          </p>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-slate-400">
-            出牌時答對太魯閣族語題目，即可觸發卡牌的族語加成。學得越好，打得越強。
-          </p>
         </header>
 
         {/* 雙模式大卡 */}
         <div className="mt-10 grid gap-5 sm:grid-cols-2">
           <ModeCard
             href="/journey"
+            order={1}
             accent="emerald"
             emblemSrc="/images/home/emblem-mode-a-mountain-v1.png"
             bgSrc="/images/home/home-mode-a-forest-path-v1.jpg"
@@ -180,6 +190,7 @@ export default function Home() {
           />
           <ModeCard
             href="/play"
+            order={2}
             accent="sky"
             emblemSrc="/images/home/emblem-mode-b-cards-v1.png"
             bgSrc="/images/home/home-mode-b-arena-v1.jpg"
@@ -194,17 +205,20 @@ export default function Home() {
         {/* 三特色 */}
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           <FeatureCard
+            order={1}
             emblemSrc="/images/home/feature-cards-v1.png"
             title="爐石式對戰"
             desc="法力曲線、隨從與法術、戰場出牌。"
           />
           <FeatureCard
+            order={2}
             emblemSrc="/images/home/feature-language-v1.png"
             title="族語答題加成"
             desc="答對得加成，答錯揭示正解，正向學習。"
           />
           {/* 註：原稿此格為「Truku 文化主題／祖靈、圖紋」，屬文化避免清單；改中性自然主題，待 enzo-culture 核定正式呈現。 */}
           <FeatureCard
+            order={3}
             emblemSrc="/images/home/feature-nature-v1.png"
             title="山林主題"
             desc="山徑、溪流、部落與自然素材，貼近在地情境。"

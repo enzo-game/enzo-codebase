@@ -24,3 +24,108 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ───── 入口動態（landing 模式卡）───── */
+
+/* 入場：淡入 + 上浮 */
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 持續：極輕微上下浮動（呼吸感） */
+@keyframes floatBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* 持續：光暈明暗呼吸 */
+@keyframes glowBreathe {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+/* logo 進場淡入放大 */
+.anim-logo {
+  animation: riseIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 模式卡：入場後持續浮動 */
+.anim-card {
+  opacity: 0;
+  animation:
+    riseIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both,
+    floatBob 6s ease-in-out infinite;
+}
+.anim-card-1 {
+  animation-delay: 0.15s, 0.9s;
+}
+.anim-card-2 {
+  animation-delay: 0.32s, 1.2s;
+}
+
+/* 卡背後呼吸光暈 */
+.glow-breathe {
+  animation: glowBreathe 5s ease-in-out infinite;
+}
+
+/* 特色卡入場（無持續浮動，避免整頁晃） */
+.anim-feature {
+  opacity: 0;
+  animation: riseIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.anim-feature-1 {
+  animation-delay: 0.5s;
+}
+.anim-feature-2 {
+  animation-delay: 0.62s;
+}
+.anim-feature-3 {
+  animation-delay: 0.74s;
+}
+
+/* hover 光掃過（shine sweep）——放在卡片上的裝飾層 */
+.shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.14) 48%,
+    transparent 66%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.7s ease;
+  pointer-events: none;
+}
+.group:hover .shine::after {
+  transform: translateX(120%);
+}
+
+/* 尊重使用者的減少動態偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .anim-logo,
+  .anim-card,
+  .anim-feature,
+  .glow-breathe {
+    animation: none;
+    opacity: 1;
+  }
+}
