@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { vocab, audioUrl, distractors, ATTRIBUTION, SOURCE, SOURCE_URL } from "@/data/truku";
 import AmbientAudio from "@/components/AmbientAudio";
+import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose } from "@/lib/sfx";
 
 /*
  * 模式 A · 山徑劇情（灰盒 MVP）
@@ -487,6 +488,12 @@ export default function JourneyPage() {
     setMounted(true);
   }, []);
 
+  // 終局音效：抵達部落 / 未能抵達（中性 UI 完成音，非族樂）
+  useEffect(() => {
+    if (game.status === "won") sfxArrive();
+    else if (game.status === "lost") sfxLose();
+  }, [game.status]);
+
   const quiz = useMemo(() => (pending && pending.quiz ? quizFor(pending) : null), [pending]);
   const total = game.correct + game.wrong;
   const rate = total === 0 ? 0 : Math.round((game.correct / total) * 100);
@@ -498,6 +505,7 @@ export default function JourneyPage() {
       setRevealed(null);
       setPending(card);
     } else {
+      sfxPlayCard();
       setGame((g) => playCard(g, card, true));
     }
   }
@@ -505,6 +513,8 @@ export default function JourneyPage() {
   function answer(optIdx: number) {
     if (!pending || !quiz) return;
     const correct = optIdx === quiz.answer;
+    if (correct) sfxCorrect();
+    else sfxWrong();
     setRevealed(optIdx);
     setTimeout(() => {
       setGame((g) => playCard(g, pending, correct));
