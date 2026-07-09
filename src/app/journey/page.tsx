@@ -78,6 +78,7 @@ type JGame = {
   wrong: number;
   streak: number; // 連續答對題數（v2 核心循環重構）
   wordLog: { vocabId: string; correct: boolean }[]; // v4（ORDER-033）：逐題紀錄，供結局回顧「這次學了什麼」
+  trialedNodes: string[]; // v7（ORDER-042）：已做過「族語試煉」的節點 id（每節點限一次）
 };
 
 type EventCard = {
@@ -509,6 +510,7 @@ function newGame(): JGame {
     wrong: 0,
     streak: 0,
     wordLog: [],
+    trialedNodes: [],
   };
 }
 
@@ -792,27 +794,39 @@ function applyStreakBonus(ng: JGame): JGame {
   return ng;
 }
 
-// v4（ORDER-035）：族語總複習挑戰——司令回報答題量太少、題目被綁死在「這個節點剛好出現的詞」，
-// 希望能從完整詞庫（1092 真實詞，klokah.tw）隨機抽一整輪（10 題）練習，不受節點內容限制。
-// 免費、不佔行動點、隨時可打，答對率 ≥70% 送 1 行動點獎勵，鼓勵多練但不強迫。
-function applyChallengeResult(g: JGame, results: { vocabId: string; correct: boolean }[]): JGame {
-  const ng: JGame = { ...g, wordLog: [...g.wordLog, ...results] };
+// v7（ORDER-042）：族語試煉改綁節點——司令回饋「族語的挑戰不是在上面啦，他要跟節點有關係」，
+// 並分享 TRPG 概念文（節點＝一幕遭遇場景，語言檢定要內嵌在場景裡，不是懸浮的旁支功能）。
+// 原本標題列的「族語挑戰」（全詞庫隨機 10 題、跟情境無關）拆掉，改成每個節點一次的「族語試煉」：
+// 3 題（第 1 題固定是該節點自己的詞，其餘從全詞庫抽），像 TRPG 的技能檢定——
+// 通過（≥2/3）依節點型別給情境化獎勵：障礙/吊橋未清 → 阻礙 -1（邊做邊念，手更穩）；
+// 其他情況 → 壓力 -1（隊伍沿路練語，心安腳穩）。未通過不懲罰，只記錄。
+// 文化備註：檢定的敘事框架是「隊伍自己沿路練習詞彙」，刻意不用 TRPG 常見的「翻譯古文碑刻」
+// 之類裝置——太魯閣族傳統上沒有文字系統，發明碑文等於捏造文化，屬紅線。
+function applyNodeTrial(g: JGame, nodeId: string, results: { vocabId: string; correct: boolean }[]): JGame {
+  const ng: JGame = { ...g, wordLog: [...g.wordLog, ...results], nodes: g.nodes.map((n) => ({ ...n })), trialedNodes: [...g.trialedNodes, nodeId] };
   const total = results.length;
   const correctCount = results.filter((r) => r.correct).length;
   ng.correct += correctCount;
   ng.wrong += total - correctCount;
-  if (total > 0 && correctCount / total >= 0.7) {
-    const cap = effectiveMaxAp(ng);
-    if (ng.ap < cap) {
-      ng.ap = Math.min(cap, ng.ap + 1);
-      ng.log = pushLog(ng.log, `📖 族語挑戰：${correctCount}/${total} 題答對，表現優異，額外行動點 +1！`, "good");
+  const passed = total > 0 && correctCount / total >= 2 / 3;
+  const node = ng.nodes[ng.idx];
+  if (passed) {
+    if (node && !node.cleared && node.obstacle > 0) {
+      node.obstacle -= 1;
+      if (node.obstacle === 0) node.cleared = true;
+      ng.log = pushLog(
+        ng.log,
+        `✓ 族語試煉 ${correctCount}/${total}：邊做邊念，手更穩——「${node.name}」阻礙 -1（剩 ${node.obstacle}）。`,
+        "good",
+      );
     } else {
-      ng.log = pushLog(ng.log, `📖 族語挑戰：${correctCount}/${total} 題答對，表現優異！`, "good");
+      ng.pressure = Math.max(0, ng.pressure - 1);
+      ng.log = pushLog(ng.log, `✓ 族語試煉 ${correctCount}/${total}：隊伍沿路練語，心安腳穩，壓力 -1。`, "good");
     }
   } else {
-    ng.log = pushLog(ng.log, `📖 族語挑戰：${correctCount}/${total} 題答對。`, "info");
+    ng.log = pushLog(ng.log, `族語試煉 ${correctCount}/${total}：這幾個詞還不熟，路上再多念幾次。`, "info");
   }
-  return ng;
+  return settle(ng);
 }
 
 function playCard(g: JGame, card: JCard, correct: boolean): JGame {
@@ -1591,10 +1605,10 @@ export default function JourneyPage() {
   const rate = total === 0 ? 0 : Math.round((game.correct / total) * 100);
   const rateLabel = total === 0 ? "—" : `${rate}%`;
 
-  // v4（ORDER-035）：族語總複習挑戰——10 題，從完整 1092 詞真實詞庫隨機抽（不重複），
-  // 跟節點內容無關，隨時可打，免費不佔行動點。
-  const CHALLENGE_SIZE = 10;
-  const [challenge, setChallenge] = useState<{ quizzes: Quiz[]; idx: number; results: { vocabId: string; correct: boolean }[] } | null>(
+  // v7（ORDER-042）：族語試煉——綁節點的 TRPG 式檢定（每節點一次，3 題：節點自己的詞 + 2 題全詞庫抽），
+  // 取代原本掛在標題列、跟情境無關的全域挑戰。詞庫仍為完整 1092 真實詞（klokah.tw）。
+  const TRIAL_SIZE = 3;
+  const [challenge, setChallenge] = useState<{ quizzes: Quiz[]; idx: number; results: { vocabId: string; correct: boolean }[]; nodeId: string } | null>(
     null,
   );
   const [challengeRevealed, setChallengeRevealed] = useState<number | null>(null);
@@ -1631,13 +1645,15 @@ export default function JourneyPage() {
     setPendingAction({ kind: "buildTest" });
   }
 
-  function startChallenge() {
-    if (game.status !== "playing" || anyModalOpen) return;
-    const ids = new Set<string>();
-    while (ids.size < Math.min(CHALLENGE_SIZE, VOCAB.length)) {
+  function startNodeTrial() {
+    const node = game.nodes[game.idx];
+    if (game.status !== "playing" || anyModalOpen || !node || game.trialedNodes.includes(node.id)) return;
+    // 第 1 題固定考該節點自己的詞（情境錨點），其餘從全詞庫抽、不與已選重複
+    const ids = new Set<string>([node.vocabId]);
+    while (ids.size < Math.min(TRIAL_SIZE, VOCAB.length)) {
       ids.add(randomVocabId());
     }
-    setChallenge({ quizzes: [...ids].map((id) => quizForVocab(id)), idx: 0, results: [] });
+    setChallenge({ quizzes: [...ids].map((id) => quizForVocab(id)), idx: 0, results: [], nodeId: node.id });
     setChallengeRevealed(null);
   }
 
@@ -1657,7 +1673,8 @@ export default function JourneyPage() {
     const correct = challengeRevealed === q.answer;
     const results = [...challenge.results, { vocabId: q.audioId, correct }];
     if (challenge.idx + 1 >= challenge.quizzes.length) {
-      setGame((g) => applyChallengeResult(g, results));
+      const nodeId = challenge.nodeId;
+      setGame((g) => applyNodeTrial(g, nodeId, results));
       setChallenge(null);
       setChallengeRevealed(null);
     } else {
@@ -1839,16 +1856,6 @@ export default function JourneyPage() {
               <img src={ICON_HIT} width={14} height={14} alt="" />答題正確率 {rateLabel}
             </span>
             <button
-              onClick={startChallenge}
-              disabled={game.status !== "playing" || anyModalOpen}
-              className="rounded bg-amber-700 hover:bg-amber-600 disabled:opacity-30 px-2 py-1 font-semibold"
-              title="從完整族語詞庫隨機抽 10 題，免費、不佔行動點"
-            >
-              <span className="inline-flex items-center gap-1">
-                <IconBook className="w-3.5 h-3.5 shrink-0" /> 族語挑戰
-              </span>
-            </button>
-            <button
               onClick={() => setShowRules(true)}
               className="rounded bg-slate-700 hover:bg-slate-600 px-2 py-1"
             >
@@ -1956,6 +1963,18 @@ export default function JourneyPage() {
                       </button>
                     ))}
                   </div>
+                )}
+
+                {/* 族語試煉（v7，ORDER-042）：綁節點的 TRPG 式語言檢定——每個路段一次，
+                    3 題（含該節點自己的詞），通過依情境給獎勵。跟著場景走，不是懸浮功能。 */}
+                {game.status === "playing" && !game.trialedNodes.includes(node.id) && (
+                  <button
+                    onClick={startNodeTrial}
+                    disabled={anyModalOpen}
+                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-sky-700/60 bg-sky-950/30 hover:bg-sky-900/30 disabled:opacity-30 px-3 py-2 text-sm font-semibold text-sky-200 transition"
+                  >
+                    <IconBook className="w-4 h-4 shrink-0" /> 族語試煉（本路段一次：{node.cleared || node.obstacle === 0 ? "通過則壓力 -1" : "通過則阻礙 -1"}）
+                  </button>
                 )}
               </div>
             );
@@ -2443,13 +2462,12 @@ export default function JourneyPage() {
         </div>
       )}
 
-      {/* 族語總複習挑戰（v4，ORDER-035）：司令要求增加答題量，從完整 1092 詞真實詞庫隨機抽 10 題，
-          不受節點內容限制，免費、隨時可打，跟核心答題閘門是平行的獨立功能。 */}
+      {/* 族語試煉（v7，ORDER-042）：綁節點的 TRPG 式語言檢定，每節點一次，3 題（含節點自己的詞）。 */}
       {challenge && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-amber-700/60 p-5">
-            <div className="flex items-center gap-1.5 text-xs text-amber-400 mb-1 font-semibold">
-              <IconBook className="w-3.5 h-3.5 shrink-0" /> 族語挑戰 · 第 {challenge.idx + 1}/{challenge.quizzes.length} 題
+          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-sky-700/60 p-5">
+            <div className="flex items-center gap-1.5 text-xs text-sky-400 mb-1 font-semibold">
+              <IconBook className="w-3.5 h-3.5 shrink-0" /> 族語試煉 · {game.nodes[game.idx]?.name} · 第 {challenge.idx + 1}/{challenge.quizzes.length} 題
             </div>
             <h3 className="text-lg font-bold mb-1">{challenge.quizzes[challenge.idx].prompt}</h3>
             <p className="text-[10px] text-amber-300/70 mb-3">{challenge.quizzes[challenge.idx].note}</p>
@@ -2533,7 +2551,7 @@ export default function JourneyPage() {
               </li>
               <li className="flex gap-2">
                 <IconBook className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
-                <span>標題列的<b>「族語挑戰」</b>隨時可打，免費不佔行動點，從完整詞庫隨機抽 10 題練習，答對率高送行動點獎勵。</span>
+                <span>每個路段都有一次<b>「族語試煉」</b>：3 題（含這個路段自己的詞），通過（答對 2 題以上）依情境給獎勵——路段有阻礙時阻礙 -1，否則壓力 -1。免費、不佔行動點。</span>
               </li>
               <li className="flex gap-2">
                 <IconFlame className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
