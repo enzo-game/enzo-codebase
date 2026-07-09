@@ -489,6 +489,84 @@ function playAudio(id: string | null) {
   }
 }
 
+// ───────────────────────── 任務引導（mode-a-quests-v1，Calypso）─────────────────────────
+
+// 目前這一步的「狀況」＋「該做什麼」（依當前節點型別與狀態）
+// 各節點狀態下「能推進」所需的行動牌效果
+function neededEffects(n: PathNode): EffectId[] {
+  if (!n.cleared && n.type === "obstacle") return ["clearStone", "coopClear"];
+  if (!n.cleared && n.type === "bridge") return ["buildBridge", "coopClear"];
+  return ["scout"]; // 已清 / start / event / supply / destination → 巡路前進
+}
+
+function stepHint(g: JGame): { situation: string; todo: string } {
+  if (g.status === "won") return { situation: "抵達部落！", todo: "隊伍平安返家，任務完成。" };
+  if (g.status === "lost") return { situation: "任務失敗", todo: "點「重新開始」再試一次。" };
+  const n = g.nodes[g.idx];
+  const last = g.idx >= g.nodes.length - 1;
+  // 手牌沒有可推進的行動牌 → 提示紮營重抽；否則行動點用完 → 提示紮營
+  const need = neededEffects(n);
+  const hasCard = g.hand.some((c) => need.includes(c.effect));
+  const apNote = !hasCard
+    ? "　手牌沒有可用的行動牌 → 點「紮營」換日重抽。"
+    : g.ap <= 0
+      ? "　行動點用完了 → 點「紮營」換日、補行動點。"
+      : "";
+  let s: { situation: string; todo: string };
+  switch (n.type) {
+    case "start":
+      s = { situation: "立霧溪口・出發點", todo: "出「巡路」前進到下一段山徑。" };
+      break;
+    case "obstacle":
+      s = n.cleared
+        ? { situation: "落石已清除", todo: "出「巡路」前進。" }
+        : { situation: `落石擋道（剩 ${n.obstacle} 點）`, todo: "出「搬石」或「共同搬運」清除落石；阻礙歸零後再「巡路」前進。" };
+      break;
+    case "bridge":
+      s = n.cleared
+        ? { situation: "吊橋已完成", todo: "出「巡路」過橋前進。" }
+        : { situation: "峽谷吊橋斷裂", todo: "出「搭橋」（需木材1・繩索1，答對才成功）或「共同搬運」修復；完成後「巡路」前進。" };
+      break;
+    case "event":
+      s = n.cleared
+        ? { situation: "林間捷徑・已通過", todo: "出「巡路」前進。" }
+        : { situation: "林間捷徑", todo: "出「巡路」通過（順利通過壓力 -1）。" };
+      break;
+    case "supply":
+      s = { situation: "山腰營地・補給點", todo: n.cleared ? "已補給。出「巡路」繼續。" : "出「巡路」續行（抵達即自動補給）。" };
+      break;
+    case "destination":
+      s = { situation: last ? "部落・終點在望" : "部落", todo: "出「巡路」抵達，帶所有人回家。" };
+      break;
+    default:
+      s = { situation: n.name, todo: "出「巡路」前進。" };
+  }
+  return { situation: s.situation, todo: s.todo + apNote };
+}
+
+type SideQuest = { label: string; note: string; state: "ok" | "fail" | "pending" };
+
+function sideQuests(g: JGame): SideQuest[] {
+  const won = g.status === "won";
+  return [
+    {
+      label: "零失誤",
+      note: "全程族語不答錯",
+      state: g.wrong === 0 ? "ok" : "fail",
+    },
+    {
+      label: "神速返鄉",
+      note: "第 5 日前抵達",
+      state: g.day > 5 ? "fail" : won ? "ok" : "pending",
+    },
+    {
+      label: "糧草無虞",
+      note: won ? "抵達時糧食 ≥ 4" : "糧食保持 ≥ 4",
+      state: g.res.food >= 4 ? "ok" : won ? "fail" : "pending",
+    },
+  ];
+}
+
 export default function JourneyPage() {
   const [game, setGame] = useState<JGame>(() => newGame());
   const [pending, setPending] = useState<JCard | null>(null);
@@ -626,6 +704,44 @@ export default function JourneyPage() {
                   <span className="font-semibold">{game.res[r]}</span>
                 </span>
                 <WordChip vocabId={RES_VOCAB[r]} />
+              </span>
+            ))}
+          </div>
+        </section>
+
+        {/* 任務面板（mode-a-quests-v1）：主線目標＋節點進度＋這一步該做什麼＋支線 */}
+        <section className="mb-3 rounded-xl border border-emerald-800/50 bg-emerald-950/25 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="rounded bg-emerald-800/70 px-2 py-0.5 text-[11px] font-semibold text-emerald-50">主線</span>
+              <span className="text-sm font-semibold">修復山徑 · 返回部落</span>
+            </div>
+            <span className="text-[11px] text-slate-400">
+              節點 {game.idx}/{game.nodes.length - 1} · 第 {game.day}/{MAX_DAY} 日
+            </span>
+          </div>
+          {(() => {
+            const hint = stepHint(game);
+            return (
+              <div className="mt-2 rounded-lg bg-slate-950/50 p-2.5">
+                <div className="text-[11px] uppercase tracking-wider text-emerald-400/80">這一步</div>
+                <div className="mt-0.5 text-sm font-medium text-emerald-100">{hint.situation}</div>
+                <div className="mt-1 text-xs leading-relaxed text-slate-300">{hint.todo}</div>
+              </div>
+            );
+          })()}
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="text-[11px] text-slate-500">支線</span>
+            {sideQuests(game).map((q) => (
+              <span
+                key={q.label}
+                title={q.note}
+                className={`inline-flex items-center gap-1 text-[11px] ${
+                  q.state === "ok" ? "text-emerald-300" : q.state === "fail" ? "text-slate-600 line-through" : "text-slate-400"
+                }`}
+              >
+                <span>{q.state === "ok" ? "✓" : q.state === "fail" ? "✕" : "○"}</span>
+                {q.label}
               </span>
             ))}
           </div>
