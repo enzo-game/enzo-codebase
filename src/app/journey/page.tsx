@@ -88,6 +88,167 @@ type EventCard = {
   desc: string;
 };
 
+// ───────────────────────── 圖示（v6，ORDER-039：全面移除表情符號）─────────────────────────
+// 司令要求「要有圖啊，我們NO EMOJI」——全站不用彩色 emoji 圖形字元，一律用線稿 SVG 圖示或既有已核准
+// 圖片素材（RES_IMG/場景圖）。統一 24×24 viewBox、currentColor 描邊，可用 text-* class 跟著文字變色，
+// 不需要外部生圖（不受 Codex 產出進度限制）。✓ ✕ ○ ★ ▶ ◀ 等純排版符號（非彩色 emoji）維持不變。
+type IconProps = { className?: string };
+function IconCheck({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 12.5l5 5L20 6" />
+    </svg>
+  );
+}
+function IconCross({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 5l14 14M19 5L5 19" />
+    </svg>
+  );
+}
+function IconSpeaker({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 9v6h4l5 4V5L8 9H4z" />
+      <path d="M16.3 8.7a5 5 0 010 6.6" />
+      <path d="M19 6a9 9 0 010 12" />
+    </svg>
+  );
+}
+function IconFlame({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2.5c1 3.2-2.2 4.3-2.2 7.3a4.2 4.2 0 108.4 0c0-1-.5-1.8-.5-1.8.6 3.8-1.4 4.8-1.4 4.8 1.7-4-1.1-7.2-4.3-10.3z" />
+    </svg>
+  );
+}
+function IconMoon({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 14.5A8.5 8.5 0 1110.5 4a7 7 0 009.5 10.5z" />
+    </svg>
+  );
+}
+function IconFootprint({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <ellipse cx="9" cy="8" rx="3" ry="4" />
+      <ellipse cx="15" cy="16" rx="3" ry="4" />
+    </svg>
+  );
+}
+function IconPackage({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 8l9-5 9 5-9 5-9-5z" />
+      <path d="M3 8v9l9 5 9-5V8" />
+      <path d="M12 13v9" />
+    </svg>
+  );
+}
+function IconHammer({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14.5 6.5l3.5 3.5-3 3-3.5-3.5z" />
+      <path d="M15.5 5.3l3.6-1.6 1.7 1.7-1.6 3.6" />
+      <path d="M12.5 9.5L4 18l2 2 8.5-8.5" />
+    </svg>
+  );
+}
+function IconPickaxe({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 6c4-3 9-3 13 0-2 4-6 7-10 8" />
+      <path d="M9 14l-5 6" />
+    </svg>
+  );
+}
+function IconRun({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="14.5" cy="4.5" r="1.6" />
+      <path d="M9 20l2-5-3-2 1-5 4 1 2 3 3 1" />
+      <path d="M13 13l3 2-1 5" />
+    </svg>
+  );
+}
+function IconSearch({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="M20 20l-4.5-4.5" />
+    </svg>
+  );
+}
+function IconQuestion({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.3 9.3a2.7 2.7 0 115.2.9c0 1.9-2.5 1.9-2.5 3.8" />
+      <circle cx="12" cy="17.3" r="0.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+function IconBook({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 5c3-1.4 6-1.4 8 0v14c-2-1.4-5-1.4-8 0z" />
+      <path d="M20 5c-3-1.4-6-1.4-8 0v14c2-1.4 5-1.4 8 0z" />
+    </svg>
+  );
+}
+function IconMountain({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 19l6-11 4 6 2-3 6 8z" />
+    </svg>
+  );
+}
+function IconRain({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 15.5a4 4 0 01.5-8 5 5 0 019.4 2.1A3.5 3.5 0 0116 17H8" />
+      <path d="M8 19l-1 2M12 19l-1 2M16 19l-1 2" />
+    </svg>
+  );
+}
+function IconGauge({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 15a8 8 0 0116 0" />
+      <path d="M12 15l4-4" />
+      <path d="M12 15h.01" />
+    </svg>
+  );
+}
+function IconFlag({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 3v18" />
+      <path d="M5 4.5l13 3-13 3z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+function IconTarget({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+function IconAlert({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l9.5 17H2.5z" />
+      <path d="M12 9.5V14" />
+      <circle cx="12" cy="17" r="0.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 // ───────────────────────── 常數 ─────────────────────────
 
 const MAX_DAY = 7;
@@ -414,9 +575,9 @@ function enterNode(g: JGame): JGame {
   if (node.type === "start" || node.type === "destination") {
     node.cleared = true;
   } else if (node.type === "event") {
-    ng.log = pushLog(ng.log, `❓ 抵達「${node.name}」：請選擇如何通過。`, "sys");
+    ng.log = pushLog(ng.log, `抵達「${node.name}」：請選擇如何通過。`, "sys");
   } else if (node.type === "supply") {
-    ng.log = pushLog(ng.log, `📦 抵達「${node.name}」：請選擇要補給的資源。`, "sys");
+    ng.log = pushLog(ng.log, `抵達「${node.name}」：請選擇要補給的資源。`, "sys");
   }
   return ng;
 }
@@ -474,12 +635,12 @@ function hardClear(g: JGame, correct: boolean, vocabId: string): JGame {
   if (correct) {
     node.obstacle = 0;
     node.cleared = true;
-    ng.log = pushLog(ng.log, `✅ 答對｜花資源硬清：「${node.name}」已可通行。`, "good");
+    ng.log = pushLog(ng.log, `✓ 答對｜花資源硬清：「${node.name}」已可通行。`, "good");
   } else {
     const half = Math.ceil(node.obstacle / 2);
     node.obstacle = half;
     if (node.obstacle === 0) node.cleared = true;
-    ng.log = pushLog(ng.log, `❌ 答錯｜花資源硬清：資源已耗，僅清一半（剩 ${node.obstacle}）。`, "info");
+    ng.log = pushLog(ng.log, `✕ 答錯｜花資源硬清：資源已耗，僅清一半（剩 ${node.obstacle}）。`, "info");
   }
   return settle(applyStreakBonus(ng));
 }
@@ -497,7 +658,7 @@ function resolveEventChoice(g: JGame, choice: "fast" | "careful", correct?: bool
   n2.cleared = true;
   if (choice === "fast") {
     ng.pressure = Math.min(ng.maxPressure, ng.pressure + 4);
-    ng.log = pushLog(ng.log, `🏃 「${n2.name}」快速通過：壓力 +4。`, "bad");
+    ng.log = pushLog(ng.log, `「${n2.name}」快速通過：壓力 +4。`, "bad");
   } else {
     ng.res.wood -= 1;
     ng.res.rope -= 1;
@@ -506,11 +667,11 @@ function resolveEventChoice(g: JGame, choice: "fast" | "careful", correct?: bool
       ng.correct += 1;
       ng.streak += 1;
       ng.res.food += 1;
-      ng.log = pushLog(ng.log, `✅ 答對｜「${n2.name}」謹慎探勘：耗木材1・繩索1，沿途採得糧食 +1。`, "good");
+      ng.log = pushLog(ng.log, `✓ 答對｜「${n2.name}」謹慎探勘：耗木材1・繩索1，沿途採得糧食 +1。`, "good");
     } else {
       ng.wrong += 1;
       ng.streak = 0;
-      ng.log = pushLog(ng.log, `❌ 答錯｜「${n2.name}」謹慎探勘：耗木材1・繩索1，沒能多找到什麼。`, "info");
+      ng.log = pushLog(ng.log, `✕ 答錯｜「${n2.name}」謹慎探勘：耗木材1・繩索1，沒能多找到什麼。`, "info");
     }
     ng = applyStreakBonus(ng);
   }
@@ -535,17 +696,17 @@ function resolveSupplyChoice(g: JGame, resource: Resource, correct: boolean, voc
       ng.res[bonus] += 1;
       ng.log = pushLog(
         ng.log,
-        `✅ 答對｜「${n2.name}」補給：${RES_NAME[resource]} +3，意外多撿到 ${RES_NAME[bonus]} +1！`,
+        `✓ 答對｜「${n2.name}」補給：${RES_NAME[resource]} +3，意外多撿到 ${RES_NAME[bonus]} +1！`,
         "good",
       );
     } else {
-      ng.log = pushLog(ng.log, `✅ 答對｜「${n2.name}」補給：${RES_NAME[resource]} +3。`, "good");
+      ng.log = pushLog(ng.log, `✓ 答對｜「${n2.name}」補給：${RES_NAME[resource]} +3。`, "good");
     }
   } else {
     ng.wrong += 1;
     ng.streak = 0;
     ng.res[resource] += 1;
-    ng.log = pushLog(ng.log, `❌ 答錯｜「${n2.name}」補給：${RES_NAME[resource]} +1。`, "info");
+    ng.log = pushLog(ng.log, `✕ 答錯｜「${n2.name}」補給：${RES_NAME[resource]} +1。`, "info");
   }
   return settle(applyStreakBonus(ng));
 }
@@ -588,14 +749,14 @@ function resolveBuildTest(g: JGame, b: BuildMaterials, quizCorrect: boolean, voc
     if (b.wood === 0) {
       const cap = effectiveMaxAp(ng);
       if (ng.ap < cap) ng.ap = Math.min(cap, ng.ap + 1);
-      ng.log = pushLog(ng.log, `✅ 「${n2.name}」重新排好了路——全程沒砍一根木材，工法巧思獎勵：行動點 +1！`, "good");
+      ng.log = pushLog(ng.log, `✓ 「${n2.name}」重新排好了路——全程沒砍一根木材，工法巧思獎勵：行動點 +1！`, "good");
     } else {
-      ng.log = pushLog(ng.log, `✅ 「${n2.name}」重新排好了路，隊伍安全通過。`, "good");
+      ng.log = pushLog(ng.log, `✓ 「${n2.name}」重新排好了路，隊伍安全通過。`, "good");
     }
   } else if (envPenalty) {
-    ng.log = pushLog(ng.log, `🌊 石頭堆太密擋住了水路，溪水暴漲沖毀了部分結構，得再加固一次。`, "bad");
+    ng.log = pushLog(ng.log, `石頭堆太密擋住了水路，溪水暴漲沖毀了部分結構，得再加固一次。`, "bad");
   } else {
-    ng.log = pushLog(ng.log, `❌ 結構還不夠穩，山羌走到一半又跳了回來，得再加固一次。`, "info");
+    ng.log = pushLog(ng.log, `✕ 結構還不夠穩，山羌走到一半又跳了回來，得再加固一次。`, "info");
   }
   return settle(applyStreakBonus(ng));
 }
@@ -623,9 +784,9 @@ function applyStreakBonus(ng: JGame): JGame {
     const cap = effectiveMaxAp(ng);
     if (ng.ap < cap) {
       ng.ap = Math.min(cap, ng.ap + 1);
-      ng.log = pushLog(ng.log, `🔥 連對 ${ng.streak} 題！順風而行，行動點 +1。`, "good");
+      ng.log = pushLog(ng.log, `連對 ${ng.streak} 題！順風而行，行動點 +1。`, "good");
     } else {
-      ng.log = pushLog(ng.log, `🔥 連對 ${ng.streak} 題！順風而行。`, "good");
+      ng.log = pushLog(ng.log, `連對 ${ng.streak} 題！順風而行。`, "good");
     }
   }
   return ng;
@@ -683,7 +844,7 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
   }
 
   const node = ng.nodes[ng.idx];
-  const tag = card.quiz ? (correct ? "✅ 答對" : "❌ 答錯") : "▶";
+  const tag = card.quiz ? (correct ? "✓ 答對" : "✕ 答錯") : "▶";
 
   switch (card.effect) {
     case "scout": {
@@ -780,16 +941,16 @@ function camp(g: JGame): JGame {
   if (ng.res.food < 0) {
     ng.res.food = 0;
     ng.teamHp = Math.max(0, ng.teamHp - 2);
-    ng.log = pushLog(ng.log, `🌙 紮營：糧食不足，隊伍體力 -2。`, "bad");
+    ng.log = pushLog(ng.log, `紮營：糧食不足，隊伍體力 -2。`, "bad");
   } else {
-    ng.log = pushLog(ng.log, `🌙 紮營：消耗 ${foodCost} 糧食（剩 ${ng.res.food}）。`, "sys");
+    ng.log = pushLog(ng.log, `紮營：消耗 ${foodCost} 糧食（剩 ${ng.res.food}）。`, "sys");
   }
 
   // 未處理的路段阻礙 → 壓力 +1
   const node = ng.nodes[ng.idx];
   if (node && !node.cleared) {
     ng.pressure = Math.min(ng.maxPressure, ng.pressure + 1);
-    ng.log = pushLog(ng.log, `⚠ 「${node.name}」尚未通行，壓力 +1。`, "bad");
+    ng.log = pushLog(ng.log, `「${node.name}」尚未通行，壓力 +1。`, "bad");
   }
 
   // 進入下一日
@@ -803,14 +964,14 @@ function camp(g: JGame): JGame {
   ng.pressure = Math.max(0, Math.min(ng.maxPressure, ng.pressure + ev.pressure));
   ng.log = pushLog(
     ng.log,
-    `📅 第 ${ng.day} 日｜事件「${ev.name}」（${ev.kind}）：壓力 ${ev.pressure >= 0 ? "+" : ""}${ev.pressure}。${ev.desc}`,
+    `第 ${ng.day} 日｜事件「${ev.name}」（${ev.kind}）：壓力 ${ev.pressure >= 0 ? "+" : ""}${ev.pressure}。${ev.desc}`,
     ev.pressure > 0 ? "bad" : "good",
   );
 
   // 危急（壓力≥8）：行動點上限收緊，套用今日事件後的最終壓力值判定
   ng.ap = Math.min(ng.ap, effectiveMaxAp(ng));
   if (pressureTier(ng) === "critical") {
-    ng.log = pushLog(ng.log, "⚠ 情勢危急：行動點上限收緊為 2。", "bad");
+    ng.log = pushLog(ng.log, "情勢危急：行動點上限收緊為 2。", "bad");
   }
 
   // 補牌至手牌上限
@@ -1233,7 +1394,9 @@ export default function JourneyPage() {
               className="rounded bg-amber-700 hover:bg-amber-600 disabled:opacity-30 px-2 py-1 font-semibold"
               title="從完整族語詞庫隨機抽 10 題，免費、不佔行動點"
             >
-              📖 族語挑戰
+              <span className="inline-flex items-center gap-1">
+                <IconBook className="w-3.5 h-3.5 shrink-0" /> 族語挑戰
+              </span>
             </button>
             <button
               onClick={() => setShowRules(true)}
@@ -1291,9 +1454,9 @@ export default function JourneyPage() {
                   <button
                     onClick={doHardClear}
                     disabled={!canGoHardClear}
-                    className="mt-2 w-full rounded-lg border border-amber-600/60 bg-amber-950/30 hover:bg-amber-900/40 disabled:opacity-30 px-3 py-2 text-sm font-semibold text-amber-200 transition"
+                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-600/60 bg-amber-950/30 hover:bg-amber-900/40 disabled:opacity-30 px-3 py-2 text-sm font-semibold text-amber-200 transition"
                   >
-                    ⛏ 花資源硬清（木材×2・繩索×2）
+                    <IconPickaxe className="w-4 h-4 shrink-0" /> 花資源硬清（木材×2・繩索×2）
                   </button>
                 )}
 
@@ -1303,9 +1466,9 @@ export default function JourneyPage() {
                   <button
                     onClick={() => setBuilding({ stone: 0, wood: 0, rope: 0 })}
                     disabled={anyModalOpen}
-                    className="mt-2 w-full rounded-lg border border-amber-600/60 bg-amber-950/30 hover:bg-amber-900/40 disabled:opacity-30 px-3 py-2 text-sm font-semibold text-amber-200 transition"
+                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-600/60 bg-amber-950/30 hover:bg-amber-900/40 disabled:opacity-30 px-3 py-2 text-sm font-semibold text-amber-200 transition"
                   >
-                    🏗 修復路段（動手疊石架橋）
+                    <IconHammer className="w-4 h-4 shrink-0" /> 修復路段（動手疊石架橋）
                   </button>
                 )}
 
@@ -1314,16 +1477,16 @@ export default function JourneyPage() {
                   <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <button
                       onClick={() => doEventChoice("fast")}
-                      className="rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 px-3 py-2 text-xs font-medium transition"
+                      className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 px-3 py-2 text-xs font-medium transition"
                     >
-                      🏃 快速通過（壓力 +2）
+                      <IconRun className="w-3.5 h-3.5 shrink-0" /> 快速通過（壓力 +2）
                     </button>
                     <button
                       onClick={() => doEventChoice("careful")}
                       disabled={game.res.wood < 1 || game.res.rope < 1}
-                      className="rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-3 py-2 text-xs font-medium transition"
+                      className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-3 py-2 text-xs font-medium transition"
                     >
-                      🔍 謹慎探勘（耗木材1・繩索1，換糧食+1）
+                      <IconSearch className="w-3.5 h-3.5 shrink-0" /> 謹慎探勘（耗木材1・繩索1，換糧食+1）
                     </button>
                   </div>
                 )}
@@ -1363,7 +1526,7 @@ export default function JourneyPage() {
             ))}
             {game.streak > 0 && (
               <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300">
-                🔥 連對 {game.streak}
+                <IconFlame className="w-3.5 h-3.5 shrink-0" /> 連對 {game.streak}
               </span>
             )}
           </div>
@@ -1517,9 +1680,9 @@ export default function JourneyPage() {
             <button
               onClick={() => setGame((g) => camp(g))}
               disabled={game.status !== "playing"}
-              className="rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 px-3 py-1 text-sm font-medium"
+              className="flex items-center gap-1.5 rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 px-3 py-1 text-sm font-medium"
             >
-              🌙 紮營（收束今日）
+              <IconMoon className="w-3.5 h-3.5 shrink-0" /> 紮營（收束今日）
             </button>
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1545,8 +1708,9 @@ export default function JourneyPage() {
                     <img src={art} alt={c.name} className="w-full h-16 object-cover rounded-lg mb-2" />
                   )}
                   <div className="flex justify-between items-center">
-                    <span className="text-sky-300 font-bold text-sm">
-                      🎯{eff}
+                    <span className="inline-flex items-center gap-1 text-sky-300 font-bold text-sm">
+                      <IconTarget className="w-3.5 h-3.5 shrink-0" />
+                      {eff}
                       {eff !== c.cost && <span className="text-emerald-400 text-[10px]"> (原{c.cost})</span>}
                     </span>
                     <span className="text-[10px] text-slate-400">{cardTypeLabel(c.type)}</span>
@@ -1615,15 +1779,20 @@ export default function JourneyPage() {
             {revealed !== null && (
               <div className="mt-3 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <p className="text-xs text-slate-300">
-                    {revealed === quiz.answer ? "✅ 答對！行動全額生效。" : "❌ 答錯，行動以半額生效。"}
+                  <p className="inline-flex items-center gap-1 text-xs text-slate-300">
+                    {revealed === quiz.answer ? (
+                      <IconCheck className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                    ) : (
+                      <IconCross className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+                    )}
+                    {revealed === quiz.answer ? "答對！行動全額生效。" : "答錯，行動以半額生效。"}
                   </p>
                   <button
                     onClick={() => playAudio(quiz.audioId)}
-                    className="rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
+                    className="flex items-center gap-1 rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
                     title="播放正解發音（原住民族語E樂園）"
                   >
-                    🔊 聽發音
+                    <IconSpeaker className="w-3.5 h-3.5 shrink-0" /> 聽發音
                   </button>
                 </div>
                 <button
@@ -1740,28 +1909,31 @@ export default function JourneyPage() {
                 <button
                   onClick={() => addMaterial("stone")}
                   disabled={game.res.stone < 1}
-                  className="rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-2 py-2 font-medium transition"
+                  className="flex flex-col items-center gap-1 rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-2 py-2 font-medium transition"
                 >
-                  🪨 疊頁岩
-                  <br />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={RES_IMG.stone} width={20} height={20} alt="" />
+                  疊頁岩
                   <span className="text-slate-500">btunux・剩 {game.res.stone}</span>
                 </button>
                 <button
                   onClick={() => addMaterial("wood")}
                   disabled={game.res.wood < 1}
-                  className="rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-2 py-2 font-medium transition"
+                  className="flex flex-col items-center gap-1 rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-2 py-2 font-medium transition"
                 >
-                  🪵 架橫樑
-                  <br />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={RES_IMG.wood} width={20} height={20} alt="" />
+                  架橫樑
                   <span className="text-slate-500">qhuni・剩 {game.res.wood}</span>
                 </button>
                 <button
                   onClick={() => addMaterial("rope")}
                   disabled={game.res.rope < 1}
-                  className="rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-2 py-2 font-medium transition"
+                  className="flex flex-col items-center gap-1 rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-2 py-2 font-medium transition"
                 >
-                  🪢 綁藤索
-                  <br />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={RES_IMG.rope} width={20} height={20} alt="" />
+                  綁藤索
                   <span className="text-slate-500">gasil・剩 {game.res.rope}</span>
                 </button>
               </div>
@@ -1770,7 +1942,11 @@ export default function JourneyPage() {
                 {building.wood === 0
                   ? "純疊石工法：省下橫樑木材，測試通過後有額外行動點獎勵。"
                   : "架橫樑能更快墊高穩定度，但這次用了木材，沒有省料獎勵。"}
-                {building.stone > 8 && " ⚠️ 石頭堆太密，可能擋住水路，測試時有風險——大自然的路，要留給水走。"}
+                {building.stone > 8 && (
+                  <span className="inline-flex items-center gap-1">
+                    <IconAlert className="w-3 h-3 shrink-0" /> 石頭堆太密，可能擋住水路，測試時有風險——大自然的路，要留給水走。
+                  </span>
+                )}
               </p>
 
               <div className="flex items-center justify-between gap-2">
@@ -1785,9 +1961,9 @@ export default function JourneyPage() {
                   <button
                     onClick={startBuildTest}
                     disabled={building.rope < 1}
-                    className="rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 px-4 py-2 text-xs font-bold"
+                    className="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 px-4 py-2 text-xs font-bold"
                   >
-                    🚶 測試通行
+                    <IconFootprint className="w-3.5 h-3.5 shrink-0" /> 測試通行
                   </button>
                 </div>
               </div>
@@ -1831,28 +2007,39 @@ export default function JourneyPage() {
             {actionRevealed !== null && (
               <div className="mt-3 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <p className="text-xs text-slate-300">
+                  <p className="inline-flex items-center gap-1 text-xs text-slate-300">
+                    {actionRevealed === actionQuiz.answer ? (
+                      <IconCheck className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                    ) : (
+                      <IconCross className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+                    )}
                     {pendingAction.kind === "buildTest"
                       ? actionRevealed === actionQuiz.answer
-                        ? "✅ 答對！穩定度 +15。"
-                        : "❌ 答錯，沒有加成。"
+                        ? "答對！穩定度 +15。"
+                        : "答錯，沒有加成。"
                       : actionRevealed === actionQuiz.answer
-                        ? "✅ 答對！全額生效。"
-                        : "❌ 答錯，半額生效。"}
+                        ? "答對！全額生效。"
+                        : "答錯，半額生效。"}
                   </p>
                   <button
                     onClick={() => playAudio(actionQuiz.audioId)}
-                    className="rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
+                    className="flex items-center gap-1 rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
                     title="播放正解發音（原住民族語E樂園）"
                   >
-                    🔊 聽發音
+                    <IconSpeaker className="w-3.5 h-3.5 shrink-0" /> 聽發音
                   </button>
                 </div>
                 <button
                   onClick={confirmActionAnswer}
-                  className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 text-xs font-bold"
+                  className="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 text-xs font-bold"
                 >
-                  {pendingAction.kind === "buildTest" ? "測試通行 🚶" : "繼續 ▶"}
+                  {pendingAction.kind === "buildTest" ? (
+                    <>
+                      <IconFootprint className="w-3.5 h-3.5 shrink-0" /> 測試通行
+                    </>
+                  ) : (
+                    "繼續 ▶"
+                  )}
                 </button>
               </div>
             )}
@@ -1865,8 +2052,8 @@ export default function JourneyPage() {
       {challenge && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
           <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-amber-700/60 p-5">
-            <div className="text-xs text-amber-400 mb-1 font-semibold">
-              📖 族語挑戰 · 第 {challenge.idx + 1}/{challenge.quizzes.length} 題
+            <div className="flex items-center gap-1.5 text-xs text-amber-400 mb-1 font-semibold">
+              <IconBook className="w-3.5 h-3.5 shrink-0" /> 族語挑戰 · 第 {challenge.idx + 1}/{challenge.quizzes.length} 題
             </div>
             <h3 className="text-lg font-bold mb-1">{challenge.quizzes[challenge.idx].prompt}</h3>
             <p className="text-[10px] text-amber-300/70 mb-3">{challenge.quizzes[challenge.idx].note}</p>
@@ -1894,22 +2081,33 @@ export default function JourneyPage() {
             {challengeRevealed !== null && (
               <div className="mt-3 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <p className="text-xs text-slate-300">
-                    {challengeRevealed === challenge.quizzes[challenge.idx].answer ? "✅ 答對！" : "❌ 答錯。"}
+                  <p className="inline-flex items-center gap-1 text-xs text-slate-300">
+                    {challengeRevealed === challenge.quizzes[challenge.idx].answer ? (
+                      <IconCheck className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                    ) : (
+                      <IconCross className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+                    )}
+                    {challengeRevealed === challenge.quizzes[challenge.idx].answer ? "答對！" : "答錯。"}
                   </p>
                   <button
                     onClick={() => playAudio(challenge.quizzes[challenge.idx].audioId)}
-                    className="rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
+                    className="flex items-center gap-1 rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
                     title="播放正解發音（原住民族語E樂園）"
                   >
-                    🔊 聽發音
+                    <IconSpeaker className="w-3.5 h-3.5 shrink-0" /> 聽發音
                   </button>
                 </div>
                 <button
                   onClick={nextChallenge}
-                  className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 text-xs font-bold"
+                  className="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 text-xs font-bold"
                 >
-                  {challenge.idx + 1 >= challenge.quizzes.length ? "完成 🏁" : "下一題 ▶"}
+                  {challenge.idx + 1 >= challenge.quizzes.length ? (
+                    <>
+                      <IconFlag className="w-3.5 h-3.5 shrink-0" /> 完成
+                    </>
+                  ) : (
+                    "下一題 ▶"
+                  )}
                 </button>
               </div>
             )}
@@ -1923,17 +2121,44 @@ export default function JourneyPage() {
           <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-5 text-sm">
             <h3 className="text-lg font-bold mb-3">怎麼玩 · 勝敗條件</h3>
             <ul className="space-y-2 text-slate-300">
-              <li>🎯 <b>目標</b>：在第 {MAX_DAY} 日結束前，帶隊伍抵達終點「部落」。</li>
+              <li className="flex gap-2">
+                <IconFlag className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                <span><b>目標</b>：在第 {MAX_DAY} 日結束前，帶隊伍抵達終點「部落」。</span>
+              </li>
               <li>▶ 路段清除後，隨時可點常駐的<b>「前進」</b>（花 1 行動點）走到下一段，不需要特定卡牌。</li>
-              <li>🏗 落石路段是<b>動手建造</b>：點「修復路段」，用頁岩／橫樑／藤索疊出穩定度（至少要 1 藤索才能測試），或直接打「搬石」／「共同搬運」牌快速清除。純疊石不用木材完工有額外行動點獎勵。</li>
-              <li>🃏 吊橋可以打行動／協作牌清除，也可以花<b>雙倍資源「硬清」</b>——都要先答族語題，答對全額答錯半額，硬清只是省行動點、不是省答題。</li>
-              <li>❓ 林間捷徑是<b>真選擇</b>：「快速通過」不用答題但壓力 +4（高風險捷徑）；「謹慎探勘」要答題換糧食。山腰營地要補哪一種資源也要先答題，答對 +3、答錯僅 +1。</li>
-              <li>📖 標題列的<b>「族語挑戰」</b>隨時可打，免費不佔行動點，從完整詞庫隨機抽 10 題練習，答對率高送行動點獎勵。</li>
-              <li>🔥 連續答對 3 題族語題會觸發<b>「順風」</b>，補 1 行動點。</li>
-              <li>🌡 <b>壓力分級</b>：5 分以上「緊張」（紮營消耗糧食變 2）；8 分以上「危急」（行動點上限收緊為 2）。</li>
-              <li>🌙 <b>紮營</b>收束當日：消耗糧食（見上）；糧食不足則隊伍體力 -2；當前路段未通行則壓力 +1。</li>
-              <li>💥 <b>失敗條件</b>：壓力達 {10}（被迫折返）、或隊伍體力歸 0（耗盡）、或第 {MAX_DAY} 日結束仍未抵達。</li>
-              <li>📦 資源：<b>糧食</b>（紮營消耗）、<b>木材／繩索</b>（搭橋）、<b>石材</b>（硬清落石）——資源列圖示下方的族語詞是真實太魯閣語，可點喇叭聽發音。</li>
+              <li className="flex gap-2">
+                <IconHammer className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                <span>落石路段是<b>動手建造</b>：點「修復路段」，用頁岩／橫樑／藤索疊出穩定度（至少要 1 藤索才能測試），或直接打「搬石」／「共同搬運」牌快速清除。純疊石不用木材完工有額外行動點獎勵。</span>
+              </li>
+              <li>吊橋可以打行動／協作牌清除，也可以花<b>雙倍資源「硬清」</b>——都要先答族語題，答對全額答錯半額，硬清只是省行動點、不是省答題。</li>
+              <li className="flex gap-2">
+                <IconQuestion className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                <span>林間捷徑是<b>真選擇</b>：「快速通過」不用答題但壓力 +4（高風險捷徑）；「謹慎探勘」要答題換糧食。山腰營地要補哪一種資源也要先答題，答對 +3、答錯僅 +1。</span>
+              </li>
+              <li className="flex gap-2">
+                <IconBook className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                <span>標題列的<b>「族語挑戰」</b>隨時可打，免費不佔行動點，從完整詞庫隨機抽 10 題練習，答對率高送行動點獎勵。</span>
+              </li>
+              <li className="flex gap-2">
+                <IconFlame className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                <span>連續答對 3 題族語題會觸發<b>「順風」</b>，補 1 行動點。</span>
+              </li>
+              <li className="flex gap-2">
+                <IconGauge className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                <span><b>壓力分級</b>：5 分以上「緊張」（紮營消耗糧食變 2）；8 分以上「危急」（行動點上限收緊為 2）。</span>
+              </li>
+              <li className="flex gap-2">
+                <IconMoon className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                <span><b>紮營</b>收束當日：消耗糧食（見上）；糧食不足則隊伍體力 -2；當前路段未通行則壓力 +1。</span>
+              </li>
+              <li className="flex gap-2">
+                <IconAlert className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                <span><b>失敗條件</b>：壓力達 {10}（被迫折返）、或隊伍體力歸 0（耗盡）、或第 {MAX_DAY} 日結束仍未抵達。</span>
+              </li>
+              <li className="flex gap-2">
+                <IconPackage className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                <span>資源：<b>糧食</b>（紮營消耗）、<b>木材／繩索</b>（搭橋）、<b>石材</b>（硬清落石）——資源列圖示下方的族語詞是真實太魯閣語，可點喇叭聽發音。</span>
+              </li>
             </ul>
             <div className="text-right mt-4">
               <button
@@ -2041,7 +2266,13 @@ export default function JourneyPage() {
       {game.status !== "playing" && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
           <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl bg-slate-900 border border-slate-700 p-6 text-center">
-            <div className="text-4xl mb-2">{game.status === "won" ? "🏔🌈" : "🌧"}</div>
+            <div className="flex justify-center mb-2">
+              {game.status === "won" ? (
+                <IconMountain className="w-10 h-10 text-emerald-400" />
+              ) : (
+                <IconRain className="w-10 h-10 text-slate-400" />
+              )}
+            </div>
             <h3 className="text-xl font-bold mb-1">
               {game.status === "won" ? "安全抵達部落！" : "未能抵達部落"}
             </h3>
@@ -2073,8 +2304,13 @@ export default function JourneyPage() {
                           key={vocabId}
                           className="flex items-center justify-between gap-2 rounded-lg bg-slate-900/70 px-2.5 py-1.5"
                         >
-                          <span className="text-xs">
-                            {ok ? "✅" : "❌"} {entry.chinese}
+                          <span className="inline-flex items-center gap-1 text-xs">
+                            {ok ? (
+                              <IconCheck className="w-3 h-3 shrink-0 text-emerald-400" />
+                            ) : (
+                              <IconCross className="w-3 h-3 shrink-0 text-rose-400" />
+                            )}
+                            {entry.chinese}
                             <span className="text-slate-400"> · </span>
                             <span className="font-semibold">{entry.word}</span>
                           </span>
@@ -2083,7 +2319,7 @@ export default function JourneyPage() {
                             className="shrink-0 rounded bg-sky-700 hover:bg-sky-600 px-2 py-0.5 text-[10px]"
                             title="播放發音（原住民族語E樂園）"
                           >
-                            🔊
+                            <IconSpeaker className="w-3 h-3 shrink-0" />
                           </button>
                         </div>
                       );
@@ -2223,9 +2459,9 @@ function WordChip({ vocabId }: { vocabId: string }) {
               playAudio(vocabId);
             }
           }}
-          className="cursor-pointer rounded px-1 text-sky-300/90 hover:bg-slate-700/60"
+          className="inline-flex cursor-pointer items-center rounded px-1 text-sky-300/90 hover:bg-slate-700/60"
         >
-          🔊
+          <IconSpeaker className="w-3 h-3 shrink-0" />
         </span>
       )}
     </span>

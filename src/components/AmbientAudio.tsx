@@ -17,6 +17,25 @@ import { useEffect, useRef, useState } from "react";
 
 type WindowWithWebkit = Window & { webkitAudioContext?: typeof AudioContext };
 
+// 線稿 SVG 圖示（無 emoji，ORDER-039）：喇叭開／喇叭靜音
+function IconSpeakerOn() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 9v6h4l5 4V5L8 9H4z" />
+      <path d="M16.3 8.7a5 5 0 010 6.6" />
+      <path d="M19 6a9 9 0 010 12" />
+    </svg>
+  );
+}
+function IconSpeakerOff() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 9v6h4l5 4V5L8 9H4z" />
+      <path d="M16 9l5 6M21 9l-5 6" />
+    </svg>
+  );
+}
+
 export default function AmbientAudio() {
   const [on, setOn] = useState(false);
   const ctxRef = useRef<AudioContext | null>(null);
@@ -163,7 +182,7 @@ export default function AmbientAudio() {
       title={on ? "環境配樂：開（點擊靜音）" : "環境配樂：關（點擊播放）"}
       className="fixed bottom-4 right-4 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-slate-700 bg-slate-900/80 text-lg shadow-lg backdrop-blur transition hover:bg-slate-800"
     >
-      <span aria-hidden>{on ? "🔊" : "🔈"}</span>
+      <span aria-hidden>{on ? <IconSpeakerOn /> : <IconSpeakerOff />}</span>
     </button>
   );
 }
