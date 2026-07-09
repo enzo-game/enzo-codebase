@@ -9,10 +9,10 @@ import AmbientAudio from "@/components/AmbientAudio";
  * ─────────────────────────────────────────────
  * 電影式滾動敘事，逐字打字進場，帶玩家進入「模式 A 山徑」的動機與世界。
  *
- * 文化守門（Themis）：本序幕為**中性情境敘事**（風雨斷路 → 帶隊修復山徑 → 平安返家），
- * 神秘氛圍走「自然的神秘」（霧、夜、峽谷、看不見的山）。
- * **不觸碰任何族群之神話／祖靈／彩虹橋（Hakaw Utux）／紋面／祭儀**，不自造族語。
- * 若日後要放具文化根據的正統敘事，須真人族人／族語老師提供並複核。
+ * 敘事：融入 5 則**有出處**的太魯閣族傳說（Pusu Qhuni 石生起源／大洪水／射日／
+ * 彩虹橋 Hakaw Utux 意象／巨人）。來源見 enzo-culture/references/truku-legends-sourced.md，
+ * 司令 2026-07-09 核准。忠於文獻改編、標注出處；彩虹橋僅取「連結此世與祖先」之意象，
+ * 不演出審判／獵首／紋面等神聖細節。族語專名待 Mnemosyne 對拼寫。
  */
 
 type Chapter = {
@@ -25,23 +25,27 @@ type Chapter = {
 
 const CHAPTERS: Chapter[] = [
   {
+    // Pusu Qhuni 石生起源
     bg: "/images/home/home-bg-night-mountains-v1.jpg",
-    title: "風雨過後，山徑斷了。",
-    sub: "一條回家的路，要靠你一段一段接回來。",
+    kicker: "序 · 根",
+    title: "很久以前，\n祖先從半石半木的聖木裡誕生。",
+    sub: "那聖木叫 Pusu Qhuni——我們的起點。",
     dim: "bg-slate-950/72",
   },
   {
+    // 大洪水回聲
     bg: "/images/journey/scene/scene-rockfall-v1.png",
     kicker: "壹 · 斷路",
-    title: "溪水暴漲的那一夜，\n通往部落的路，碎成了好幾段。",
+    title: "風雨像遠古那場大洪水，\n山河重整，路碎成好幾段。",
     sub: "落石封住峽口，吊橋垮了一半，霧壓在稜線上。",
     dim: "bg-slate-950/74",
   },
   {
+    // 射日：世代接力遠征
     bg: "/images/home/home-mode-a-forest-path-v1.jpg",
-    kicker: "貳 · 啟程",
-    title: "你不能等。\n隊伍在山的這頭，家在另一頭。",
-    sub: "揹上能帶的——糧食、木、石、繩，一步一步往前。",
+    kicker: "貳 · 遠行",
+    title: "祖先曾為了射下灼烤大地的太陽，\n世代接力，遠行不歸。",
+    sub: "今天，換你帶著隊伍上路——把每一個人帶回家。",
     dim: "bg-slate-950/70",
   },
   {
@@ -59,9 +63,11 @@ const CHAPTERS: Chapter[] = [
     dim: "bg-slate-950/72",
   },
   {
+    // 彩虹橋 Hakaw Utux（僅意象）
     bg: "/images/journey/scene/scene-village-v1.png",
-    kicker: "終",
-    title: "把每一個人，\n平安帶回部落。",
+    kicker: "終 · 彩虹橋",
+    title: "抵達部落時，天邊一道彩虹橋，\n連著此世與祖先。",
+    sub: "把每一個人，平安帶回部落。",
     dim: "bg-slate-950/55",
   },
 ];
@@ -280,7 +286,8 @@ export default function ProloguePage() {
 
         <div className="bg-slate-950 px-6 py-6 text-center">
           <p className="mx-auto max-w-xl text-[11px] leading-relaxed text-slate-600">
-            本序幕為遊戲情境敘事，不代表任何族群之神話、傳說或祭儀；族語與文化內容之正式版本，複核進行中。
+            傳說依據：原住民族委員會、臺灣原住民族事典、維基百科等公開文獻，忠於記載改編。
+            彩虹橋僅取「連結此世與祖先」之意象。族語專名與文化用法複核進行中，歡迎族人指正。
           </p>
         </div>
       </div>
