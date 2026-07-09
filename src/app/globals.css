@@ -326,6 +326,25 @@ body {
   }
 }
 
+/* ───── 修復路段剖面圖（/journey 建造小遊戲，ORDER-038）───── */
+
+/* 新放入的材料（頁岩/橫樑/藤索）彈入動畫：只有新掛載的 SVG 元素會播放，已存在的不會重播 */
+@keyframes buildPop {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.build-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: buildPop 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* 尊重使用者的減少動態偏好 */
 @media (prefers-reduced-motion: reduce) {
   .anim-logo,
@@ -336,7 +355,8 @@ body {
   .scroll-hint,
   .scene-vfx::before,
   .scene-vfx .mist,
-  .scene-vfx .spirit-light {
+  .scene-vfx .spirit-light,
+  .build-pop {
     animation: none;
     opacity: 1;
   }
