@@ -22,7 +22,7 @@ const notoSansTC = Noto_Sans_TC({ weight: ["400", "500"], subsets: ["latin"], di
 // ───────────────────────── 型別 ─────────────────────────
 
 type Resource = "food" | "wood" | "stone" | "rope";
-type NodeType = "start" | "obstacle" | "bridge" | "event" | "supply" | "destination";
+type NodeType = "start" | "obstacle" | "bridge" | "event" | "supply" | "destination" | "hazard";
 type CardType = "action" | "coop" | "supply" | "watch" | "weave";
 type EffectId =
   | "scout"
@@ -31,15 +31,22 @@ type EffectId =
   | "coopClear"
   | "gatherFood"
   | "reduceStress"
-  | "weaveMark";
+  | "weaveMark"
+  | "braceWind"
+  | "shelterBrace";
+
+// ORDER-050（P2 第二關）：環境危害（ENVIRONMENT_HAZARD，來自 mode-survival-expansion-chapters-v2-full.json 第一章）
+// clearThreshold＝節點 obstacle 點數；ongoingPenalty＝未清除時每次紮營（日末）持續扣的代價。
+type HazardPenalty = { kind: "hp" | "pressure"; amount: number; text: string };
 
 type PathNode = {
   id: string;
   name: string;
   vocabId: string; // 對應真實太魯閣語詞（klokah trv=33）
   type: NodeType;
-  obstacle: number; // 需清除的阻礙點數（bridge：1 = 未搭建）
+  obstacle: number; // 需清除的阻礙點數（bridge：1 = 未搭建；hazard：clearThreshold）
   cleared: boolean;
+  hazard?: HazardPenalty; // 僅 hazard 節點：未清除時每次紮營套用的持續懲罰
 };
 
 type JCard = {
@@ -56,7 +63,10 @@ type JCard = {
 
 type LogEntry = { key: string; text: string; tone: "good" | "bad" | "sys" | "info" };
 
+type LevelId = "l1" | "l2";
+
 type JGame = {
+  levelId: LevelId; // ORDER-050：本局所屬關卡（天數上限、節點、牌庫、事件池皆依關卡設定）
   day: number;
   ap: number;
   maxAp: number;
@@ -253,10 +263,12 @@ function IconAlert({ className = "w-4 h-4" }: IconProps) {
 
 // ───────────────────────── 常數 ─────────────────────────
 
-// ORDER-048（P1 收緊）：天數 7→6、起始糧 6→4——依 mode-a-review-v2-boredom 診斷，
-// 原本資源從不吃緊、時限幾乎不會觸發，所有選擇都不痛。
-const MAX_DAY = 6;
+// ORDER-048（P1 收緊）：第一關天數 7→6、起始糧 6→4——依 mode-a-review-v2-boredom 診斷。
+// ORDER-050（P2）：天數上限改為「關卡設定」（見 LEVELS），不再是全域常數。
 const HAND_LIMIT = 5;
+// 解鎖與關卡記憶（localStorage key；僅在 client mount 後讀寫，避免 SSR 觸碰 window）
+const LS_LEVEL2_UNLOCKED = "cw_level2_unlocked";
+const LS_LAST_LEVEL = "cw_journey_level";
 const RES_NAME: Record<Resource, string> = { food: "糧食", wood: "木材", stone: "石材", rope: "繩索" };
 // 美術素材（ORDER-015，Codex 生圖，已過 enzo-culture 複核）
 const RES_IMG: Record<Resource, string> = {
@@ -287,6 +299,7 @@ const NODE_IMG: Record<NodeType, string> = {
   event: "/images/journey/node-event-v1.png",
   supply: "/images/journey/node-supply-v1.png",
   destination: "/images/journey/node-destination-v1.png",
+  hazard: "/images/journey/node-event-v1.png", // ORDER-050：環境危害沿用事件節點圖（風雨警示氛圍，免新生圖）
 };
 const MAP_BASE = "/images/journey/board-journey-map-base-v1.jpg";
 
@@ -298,6 +311,7 @@ const SCENE_IMG: Record<NodeType, string> = {
   event: "/images/journey/scene/scene-forest-v1.png",
   supply: "/images/journey/scene/scene-camp-v1.png",
   destination: "/images/journey/scene/scene-village-v1.png",
+  hazard: "/images/journey/scene/scene-forest-v1.png", // ORDER-050：風雨危害沿用林霧場景
 };
 
 // 行動籤卡面（ORDER-017）：以效果 id 對應（weaveMark 織圖無專屬卡面，維持純文字）
@@ -338,7 +352,7 @@ const FRAME_DIVIDER = "/images/journey/frames/frame-divider-v1.png";
 // 讓「先講故事」跟「玩的時候」是同一套架構，不是進了山徑就與序幕脫節。
 type ChapterMeta = { kicker: string; title: string; sub: string; nodeStart: number; nodeEnd: number };
 
-const CHAPTERS: ChapterMeta[] = [
+const CHAPTERS_L1: ChapterMeta[] = [
   {
     kicker: "壹 · 斷路",
     title: "溪水暴漲的那一夜，路碎成了好幾段。",
@@ -362,10 +376,41 @@ const CHAPTERS: ChapterMeta[] = [
   },
 ];
 
-function chapterForIdx(idx: number): { chapter: ChapterMeta; index: number } {
-  const i = CHAPTERS.findIndex((c) => idx >= c.nodeStart && idx <= c.nodeEnd);
-  const index = i === -1 ? CHAPTERS.length - 1 : i;
-  return { chapter: CHAPTERS[index], index };
+// ORDER-050（P2 第二關）：《風雨的稜線》章節——文字取材自 mode-survival-expansion-chapters-v2-full.json
+// 第一章（環境生存壓力主題），不新編傳說，只用設計文件既有的敘事語句與中性場景描述。
+const CHAPTERS_L2: ChapterMeta[] = [
+  {
+    kicker: "壹 · 風起",
+    title: "山上的風暴從不跟人商量。",
+    sub: "雲層壓得很低，稜線在霧裡忽隱忽現。趁風雨全面來襲之前，帶隊伍上稜線。",
+    nodeStart: 0,
+    nodeEnd: 1,
+  },
+  {
+    kicker: "貳 · 稜線",
+    title: "稜線是雷雨最愛的獵場。",
+    sub: "崩坡、雷擊、亂流——環境危害不清除，就會在每個夜裡持續消耗你的隊伍。",
+    nodeStart: 2,
+    nodeEnd: 4,
+  },
+  {
+    kicker: "終 · 背風",
+    title: "只要有一點火星，其他人的眼神就會亮起來。",
+    sub: "翻過最後一段稜線，找到背風的凹地——把隊伍完整地帶下山。",
+    nodeStart: 5,
+    nodeEnd: 6,
+  },
+];
+
+function chaptersOf(levelId: LevelId): ChapterMeta[] {
+  return levelId === "l2" ? CHAPTERS_L2 : CHAPTERS_L1;
+}
+
+function chapterForIdx(levelId: LevelId, idx: number): { chapter: ChapterMeta; index: number } {
+  const chapters = chaptersOf(levelId);
+  const i = chapters.findIndex((c) => idx >= c.nodeStart && idx <= c.nodeEnd);
+  const index = i === -1 ? chapters.length - 1 : i;
+  return { chapter: chapters[index], index };
 }
 
 const uid = () => Math.random().toString(36).slice(2);
@@ -396,7 +441,15 @@ const CARD_POOL: Omit<JCard, "key">[] = [
   { name: "守望", vocabId: "28-03", cost: 2, type: "watch", effect: "reduceStress", quiz: true, desc: "降低壓力：答對 -3、答錯 -1。" },
 ];
 
-function buildDeck(): JCard[] {
+// ORDER-050（P2 第二關）：《風雨的稜線》專屬行動牌——改編自設計文件第一章 RESOLVE_ACTION
+// （c1_resolve_bracewind／c1_resolve_shelterbrace），對「環境危害」節點清除進度。
+// vocabId 皆為 klokah 已驗證真實詞：bgihur 風（10-04）／bling dgiyaq 山洞（10-18）。
+const CARD_POOL_L2: Omit<JCard, "key">[] = [
+  { name: "頂風前行", vocabId: "10-04", cost: 2, type: "action", effect: "braceWind", quiz: true, desc: "清除環境危害：答對 -2、答錯 -1。" },
+  { name: "架設臨時遮蔽", vocabId: "10-18", cost: 2, type: "coop", effect: "shelterBrace", quiz: true, costRes: { wood: 1 }, desc: "清除環境危害：答對 -2 且壓力 -1、答錯 -1（耗木材1）。" },
+];
+
+function buildDeck(levelId: LevelId): JCard[] {
   const counts: Record<EffectId, number> = {
     scout: 3,
     clearStone: 3,
@@ -405,9 +458,14 @@ function buildDeck(): JCard[] {
     gatherFood: 2,
     reduceStress: 2,
     weaveMark: 2,
+    braceWind: 3,
+    shelterBrace: 2,
   };
   const deck: JCard[] = [];
-  for (const proto of CARD_POOL) {
+  // 第二關沒有吊橋節點，「搭橋」抽掉不佔牌庫；改混入危害清除牌（頂風前行／架設臨時遮蔽）
+  const protos =
+    levelId === "l2" ? [...CARD_POOL.filter((c) => c.effect !== "buildBridge"), ...CARD_POOL_L2] : CARD_POOL;
+  for (const proto of protos) {
     const n = counts[proto.effect] ?? 1;
     for (let i = 0; i < n; i++) deck.push({ ...proto, key: uid() });
   }
@@ -425,7 +483,7 @@ const EVENT_NODE_POOL: { name: string; vocabId: string }[] = [
 // v3（ORDER-030）：節點故事——依 enzo-game-design/docs/mode-a-chapter-story-v1.md，
 // 融入已核准的太魯閣族傳說（大洪水/射日/巨人馬威/彩虹橋意象），依節點 vocabId 對應。
 // 事件節點（林間捷徑/倒木擋道/岔路口）隨機池，各配一段故事，維持一致性。
-const NODE_STORY: Record<string, string> = {
+const NODE_STORY_L1: Record<string, string> = {
   "10-07": "出發前，老人家只交代一句話：「路斷了，就一段一段修。別想著一次到家。」你把繩子重新繫緊，看了隊伍一眼——該上路了。",
   "12-05": "這段路，三天前還在。溪水漲得比記憶中的任何一次都高，把整片山壁沖鬆，落石堆得比人高。老人家說，這樣的大水，祖先也遇過一次——那次，山河整個重新排過。這次，換你們重新排一次路。",
   "12-07": "吊橋斷了一半，垂在溪谷上晃。傳說中射日的祖先，也是這樣一段一段把不可能的距離走完的——出發的人揹著孩子，沿路種下小米，等到射日成功，早已是後代的事了。這座橋，你們也接得完。",
@@ -439,7 +497,7 @@ const NODE_STORY: Record<string, string> = {
 // v5（ORDER-037）：故事卡配圖——沿用 ORDER-017 已通過 enzo-culture 複核的 6 張節點場景圖
 // （review-order-016-017-ui-art.md，🟢×6 PASS，無人物無圖騰），不用等 ORDER-034 新一批 Codex 生圖，
 // 現有已核准素材就能立刻讓每張故事卡都有圖。林間三個事件變體（林間捷徑/倒木擋道/岔路口）共用同一張林霧場景。
-const NODE_STORY_IMG: Record<string, string> = {
+const NODE_STORY_IMG_L1: Record<string, string> = {
   "10-07": "/images/journey/stories/scene-start-v1.jpg",
   "12-05": "/images/journey/stories/scene-rockfall-v1.jpg",
   "12-07": "/images/journey/stories/scene-bridge-v1.jpg",
@@ -450,7 +508,68 @@ const NODE_STORY_IMG: Record<string, string> = {
   "24-04": "/images/journey/stories/scene-village-v1.jpg",
 };
 
-function buildNodes(): PathNode[] {
+// ─────────── ORDER-050（P2）：第二關《風雨的稜線》節點資料 ───────────
+// 依 mode-survival-expansion-chapters-v2-full.json 第一章改編：
+// 環境危害池 3 抽 2（暴風雨／雷擊／側風亂流，各帶 clearThreshold 與紮營時的 ongoingPenalty）、
+// 事件節點池 3 抽 1（碎石坡／雲霧牆／雷擊稜線，套用既有 event 節點的快速通過/謹慎探勘取捨）。
+// vocabId 全為 klokah 已驗證真實詞。原設計「凍僵的手指壓力卡」機制（手牌壓力卡）超出現有引擎，
+// 改編為等價的持續體力損耗（見 hazard.text）。
+type HazardProto = { name: string; vocabId: string; threshold: number; hazard: HazardPenalty };
+
+const HAZARD_POOL_L2: HazardProto[] = [
+  {
+    name: "突發性高山暴風雨",
+    vocabId: "11-21", // bgihur paru 颱風
+    threshold: 4,
+    hazard: { kind: "hp", amount: 2, text: "雨水穿透外衣帶走體溫，隊伍體力 -2" },
+  },
+  {
+    name: "劈裂山巔的雷擊",
+    vocabId: "11-10", // bruwa 雷
+    threshold: 3,
+    hazard: { kind: "hp", amount: 3, text: "雷擊風險持續逼近，隊伍體力 -3" },
+  },
+  {
+    name: "側風亂流",
+    vocabId: "10-04", // bgihur 風
+    threshold: 3,
+    hazard: { kind: "pressure", amount: 2, text: "側風不斷把人推離路線，壓力 +2" },
+  },
+];
+
+const EVENT_NODE_POOL_L2: { name: string; vocabId: string }[] = [
+  { name: "崩塌的碎石坡", vocabId: "34-16" }, // msunu 崩落
+  { name: "突至的雲霧牆", vocabId: "11-12" }, // rulung 雲
+  { name: "雷擊稜線", vocabId: "11-10" }, // bruwa 雷
+];
+
+// 第二關節點故事：文字取材自設計文件第一章的 flavorText／description（環境描述，非傳說），
+// 連接句為中性場景敘述，不新編傳說、不觸文化紅線詞。
+const NODE_STORY_L2: Record<string, string> = {
+  "10-22": "雲層壓得很低，稜線在霧裡忽隱忽現。老人家看了天色只說：「要走就趁現在，風雨不會等人。」高山上的極端氣候是所有旅人最平等的考驗——把裝備綁緊，該上稜線了。",
+  "11-21": "山上的風暴從不跟人商量。當雨水穿透外衣，帶走體溫只需要幾分鐘。在暴雨與狂風面前，隊伍的體能與意志被剝離到只剩最純粹的生存本能——不把這陣風雨撐過去，夜裡它會一點一點消耗所有人。",
+  "11-10": "風突然停了，空氣裡有一股燒焦的味道。你數不到三秒，天就裂開了一道白光。稜線是雷雨最愛的獵場——聽到雷聲已經太晚，真正該注意的是那股皮膚發麻的靜電感。",
+  "10-04": "風不是從前面來的，是從側面硬生生把人推開。你必須整個人斜著身子走。稜線上的側風比迎面風更危險——它不會讓你停下，只會悄悄把你推向你以為安全的方向。",
+  "34-16": "前方必經的獵路因昨夜的暴雨發生了土石崩塌，大量鬆動的碎石正不斷沿著峭壁滑落。強行通過伴隨著墜落的風險；繞道則要多花時間，而風暴將至。",
+  "11-12": "一整片雲霧毫無預警地從山谷湧上，能見度瞬間降到不足一公尺。隊伍必須決定：手拉手摸索前進，還是停下來等霧散。",
+  "12-11": "昨夜的暴雨把整段路埋進了石堆裡，鬆動的石塊還在滲水。帶著故障的路況上稜線更危險——得把這段路重新排出來。",
+  "11-17": "找到一處背風的凹地。濕木頭很難點著，但只要有一點火星，其他人的眼神就會亮起來。幾根樹枝、一塊防水布，勉強能擋住最兇的那陣風。夠了，暫時夠了。",
+  "10-12": "風勢在山腳邊終於小了下來。回頭看，稜線還埋在鉛灰色的雲裡。每個人都濕透了，但每個人都在。把隊伍完整地帶下山——這就是這趟路最重要的事。",
+};
+
+const NODE_STORY_IMG_L2: Record<string, string> = {
+  "10-22": "/images/journey/stories/scene-start-v1.jpg",
+  "11-21": "/images/journey/stories/scene-forest-v1.jpg",
+  "11-10": "/images/journey/stories/scene-forest-v1.jpg",
+  "10-04": "/images/journey/stories/scene-forest-v1.jpg",
+  "34-16": "/images/journey/stories/scene-rockfall-v1.jpg",
+  "11-12": "/images/journey/stories/scene-forest-v1.jpg",
+  "12-11": "/images/journey/stories/scene-rockfall-v1.jpg",
+  "11-17": "/images/journey/stories/scene-camp-v1.jpg",
+  // 10-12（山腳終點）刻意不配圖：既有場景圖無「下山背風谷地」的合適素材，故事卡容忍缺圖
+};
+
+function buildNodesL1(): PathNode[] {
   // vocabId：河流10-07 石頭12-05 橋樑12-07 家12-01 部落24-04
   const ev = EVENT_NODE_POOL[Math.floor(Math.random() * EVENT_NODE_POOL.length)];
   return [
@@ -460,6 +579,33 @@ function buildNodes(): PathNode[] {
     { id: "n3", name: ev.name, vocabId: ev.vocabId, type: "event", obstacle: 0, cleared: false },
     { id: "n4", name: "山腰營地", vocabId: "12-01", type: "supply", obstacle: 0, cleared: false },
     { id: "n5", name: "部落（目的地）", vocabId: "24-04", type: "destination", obstacle: 0, cleared: false },
+  ];
+}
+
+// 第二關地圖：7 節點，危害池 3 抽 2、事件池 3 抽 1（依設計文件 poolConfig 的隨機抽取精神），
+// 重玩時稜線上的危害組合不同。事件節點避開與已抽危害同 vocabId（故事卡以 vocabId 為鍵）。
+function buildNodesL2(): PathNode[] {
+  const hazards = shuffle(HAZARD_POOL_L2).slice(0, 2);
+  const usedVocab = new Set(hazards.map((h) => h.vocabId));
+  const evPool = EVENT_NODE_POOL_L2.filter((e) => !usedVocab.has(e.vocabId));
+  const ev = evPool[Math.floor(Math.random() * evPool.length)];
+  const mkHazard = (i: number, h: HazardProto): PathNode => ({
+    id: `m${i}`,
+    name: h.name,
+    vocabId: h.vocabId,
+    type: "hazard",
+    obstacle: h.threshold,
+    cleared: false,
+    hazard: h.hazard,
+  });
+  return [
+    { id: "m0", name: "稜線登山口（起點）", vocabId: "10-22", type: "start", obstacle: 0, cleared: true },
+    mkHazard(1, hazards[0]),
+    { id: "m2", name: ev.name, vocabId: ev.vocabId, type: "event", obstacle: 0, cleared: false },
+    { id: "m3", name: "崩落的石堆", vocabId: "12-11", type: "obstacle", obstacle: 3, cleared: false },
+    mkHazard(4, hazards[1]),
+    { id: "m5", name: "背風凹地（營地）", vocabId: "11-17", type: "supply", obstacle: 0, cleared: false },
+    { id: "m6", name: "山腳背風處（目的地）", vocabId: "10-12", type: "destination", obstacle: 0, cleared: false },
   ];
 }
 
@@ -481,11 +627,94 @@ const EVENTS: EventCard[] = [
   { name: "隊伍互相打氣", vocabId: "34-05", kind: "正面", pressure: -1, desc: "疲憊時互相扶持一把，士氣回升不少。" },
 ];
 
+// ORDER-050（P2）：第二關紮營事件池加料——改編自設計文件第一章 CampRest 事件與天候描述
+// （檢查裝備受潮／雷雨將至），vocabId 皆為 klokah 已驗證真實詞。
+const EVENTS_L2: EventCard[] = [
+  ...EVENTS,
+  { name: "裝備受潮", vocabId: "32-17", kind: "天候", pressure: 1, desc: "雨水滲進行囊，部分裝備又濕又重，行動更費力。" }, // mhuriq 濕的
+  { name: "雷聲逼近", vocabId: "11-10", kind: "天候", pressure: 1, desc: "遠方天空開始閃爍白光，雷聲的間隔越來越短。" }, // bruwa 雷
+  { name: "雨勢漸歇", vocabId: "11-31", kind: "正面", pressure: -1, desc: "雨停了一陣，隊伍抓緊空檔整裝趕路。" }, // msuwal 雨停
+];
+
+// ───────────────────────── 關卡設定（ORDER-050，P2：第二關上線）─────────────────────────
+// 依 mode-a-review-v2-boredom P2：只有一關「玩一次就見底」是無聊的根因，第二關啟用
+// mode-survival-expansion-chapters-v2-full.json 第一章《風雨的稜線》。第一關維持原樣不動。
+type LevelConfig = {
+  id: LevelId;
+  name: string; // 關卡名（標題列／主線面板用）
+  pickLabel: string; // 關卡選擇卡標籤
+  pickDesc: string;
+  maxDay: number;
+  startRes: Record<Resource, number>;
+  buildNodes: () => PathNode[];
+  events: EventCard[];
+  chapters: ChapterMeta[];
+  nodeStory: Record<string, string>;
+  nodeStoryImg: Record<string, string>;
+  startEvent: EventCard;
+  startLog: string;
+  mainQuest: string; // 主線面板標題
+};
+
+const LEVELS: Record<LevelId, LevelConfig> = {
+  l1: {
+    id: "l1",
+    name: "修復山徑",
+    pickLabel: "第一關 · 修復山徑",
+    pickDesc: "溪水沖斷了回部落的路，一段一段修好它。",
+    maxDay: 6,
+    startRes: { food: 4, wood: 3, stone: 2, rope: 2 },
+    buildNodes: buildNodesL1,
+    events: EVENTS,
+    chapters: CHAPTERS_L1,
+    nodeStory: NODE_STORY_L1,
+    nodeStoryImg: NODE_STORY_IMG_L1,
+    startEvent: {
+      name: "啟程",
+      vocabId: "10-01", // 道路 elug
+      kind: "啟程",
+      pressure: 0,
+      desc: "隊伍自立霧溪口出發，目標是安全返回部落。前方山徑待你逐段修復通行。",
+    },
+    startLog: "第 1 日：隊伍自立霧溪口啟程。",
+    mainQuest: "修復山徑 · 返回部落",
+  },
+  l2: {
+    id: "l2",
+    name: "風雨的稜線",
+    pickLabel: "第二關 · 風雨的稜線",
+    pickDesc: "暴風雨正面撲向稜線——環境危害不清除，每晚都會消耗隊伍。",
+    // 7 節點、兩個多點數危害＋3 點石堆：比第一關多一天，但經濟更緊（糧 3、木 2）
+    maxDay: 7,
+    startRes: { food: 3, wood: 2, stone: 2, rope: 2 },
+    buildNodes: buildNodesL2,
+    events: EVENTS_L2,
+    chapters: CHAPTERS_L2,
+    nodeStory: NODE_STORY_L2,
+    nodeStoryImg: NODE_STORY_IMG_L2,
+    startEvent: {
+      name: "風雨將至",
+      vocabId: "11-21", // bgihur paru 颱風
+      kind: "啟程",
+      pressure: 0,
+      desc: "雲層壓低，風勢漸強。隊伍要趕在風暴最猛的時刻之前翻過稜線，抵達山腳的背風處。",
+    },
+    startLog: "第 1 日：隊伍自稜線登山口出發，天色不太對勁。",
+    mainQuest: "翻越稜線 · 帶隊下山",
+  },
+};
+
+function levelCfg(g: JGame): LevelConfig {
+  return LEVELS[g.levelId];
+}
+
 // ───────────────────────── 初始化 ─────────────────────────
 
-function newGame(): JGame {
-  const deck = buildDeck();
+function newGame(levelId: LevelId): JGame {
+  const cfg = LEVELS[levelId];
+  const deck = buildDeck(levelId);
   return {
+    levelId,
     day: 1,
     ap: 3,
     maxAp: 3,
@@ -493,22 +722,16 @@ function newGame(): JGame {
     maxPressure: 10,
     teamHp: 12,
     maxTeamHp: 12,
-    res: { food: 4, wood: 3, stone: 2, rope: 2 },
-    nodes: buildNodes(),
+    res: { ...cfg.startRes },
+    nodes: cfg.buildNodes(),
     idx: 0,
     hand: deck.slice(0, HAND_LIMIT),
     deck: deck.slice(HAND_LIMIT),
     discard: [],
-    event: {
-      name: "啟程",
-      vocabId: "10-01", // 道路 elug
-      kind: "啟程",
-      pressure: 0,
-      desc: "隊伍自立霧溪口出發，目標是安全返回部落。前方山徑待你逐段修復通行。",
-    },
+    event: cfg.startEvent,
     coopDiscount: 0,
     status: "playing",
-    log: pushLog([], "第 1 日：隊伍自立霧溪口啟程。", "sys"),
+    log: pushLog([], cfg.startLog, "sys"),
     correct: 0,
     wrong: 0,
     streak: 0,
@@ -567,7 +790,7 @@ function settle(g: JGame): JGame {
     ng.status = "won";
   } else if (ng.pressure >= ng.maxPressure || ng.teamHp <= 0) {
     ng.status = "lost";
-  } else if (ng.day > MAX_DAY) {
+  } else if (ng.day > levelCfg(ng).maxDay) {
     ng.status = "lost";
   }
   return ng;
@@ -584,6 +807,8 @@ function enterNode(g: JGame): JGame {
     ng.log = pushLog(ng.log, `抵達「${node.name}」：請選擇如何通過。`, "sys");
   } else if (node.type === "supply") {
     ng.log = pushLog(ng.log, `抵達「${node.name}」：請選擇要補給的資源。`, "sys");
+  } else if (node.type === "hazard") {
+    ng.log = pushLog(ng.log, `環境危害「${node.name}」擋在前方（${node.obstacle} 點）：不清除，每次紮營都會付出代價。`, "bad");
   }
   return ng;
 }
@@ -617,6 +842,8 @@ function advance(g: JGame): JGame {
 function hardClearCost(n: PathNode): Partial<Record<Resource, number>> | null {
   if (n.type === "obstacle" && !n.cleared) return { stone: 2 };
   if (n.type === "bridge" && !n.cleared) return { wood: 2, rope: 2 };
+  // ORDER-050：環境危害的資源解——花料架起足夠堅固的遮蔽硬撐過去（比照橋段的雙資源代價）
+  if (n.type === "hazard" && !n.cleared) return { wood: 2, rope: 2 };
   return null;
 }
 
@@ -935,7 +1162,7 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
     case "coopClear": {
       const full = ng.teamHp < 5 ? 2 : 3;
       const amt = correct ? full : 1;
-      if (node && (node.type === "obstacle" || node.type === "bridge") && !node.cleared) {
+      if (node && (node.type === "obstacle" || node.type === "bridge" || node.type === "hazard") && !node.cleared) {
         node.obstacle = Math.max(0, node.obstacle - amt);
         if (node.obstacle === 0) node.cleared = true;
         ng.log = pushLog(ng.log, `${tag}｜共同搬運：協力清除 ${amt}（剩 ${node.obstacle}）。`, correct ? "good" : "info");
@@ -968,6 +1195,34 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
       ng.log = pushLog(ng.log, `${tag}｜分工合作：壓力 -${amt}，下一張牌行動點 -1。`, correct ? "good" : "info");
       break;
     }
+    // ORDER-050（P2 第二關）：環境危害清除牌（改編自設計文件第一章 RESOLVE_ACTION）
+    case "braceWind": {
+      const amt = correct ? 2 : 1;
+      if (node && node.type === "hazard" && !node.cleared) {
+        node.obstacle = Math.max(0, node.obstacle - amt);
+        if (node.obstacle === 0) node.cleared = true;
+        ng.log = pushLog(ng.log, `${tag}｜頂風前行：低頭用肩膀頂住風，危害 -${amt}（剩 ${node.obstacle}）。`, correct ? "good" : "info");
+      } else {
+        ng.log = pushLog(ng.log, `${tag}｜頂風前行：此處沒有環境危害。`, "bad");
+      }
+      break;
+    }
+    case "shelterBrace": {
+      const amt = correct ? 2 : 1;
+      if (node && node.type === "hazard" && !node.cleared) {
+        node.obstacle = Math.max(0, node.obstacle - amt);
+        if (node.obstacle === 0) node.cleared = true;
+        if (correct) {
+          ng.pressure = Math.max(0, ng.pressure - 1);
+          ng.log = pushLog(ng.log, `${tag}｜架設臨時遮蔽：撐起一角擋住最猛的那陣，危害 -${amt}（剩 ${node.obstacle}），壓力 -1。`, "good");
+        } else {
+          ng.log = pushLog(ng.log, `${tag}｜架設臨時遮蔽：勉強撐起，危害 -${amt}（剩 ${node.obstacle}）。`, "info");
+        }
+      } else {
+        ng.log = pushLog(ng.log, `${tag}｜架設臨時遮蔽：此處沒有環境危害。`, "bad");
+      }
+      break;
+    }
   }
 
   return settle(applyStreakBonus(ng));
@@ -990,11 +1245,21 @@ function camp(g: JGame): JGame {
     ng.log = pushLog(ng.log, `紮營：消耗 ${foodCost} 糧食（剩 ${ng.res.food}）。`, "sys");
   }
 
-  // 未處理的路段阻礙 → 壓力 +1
+  // 未處理的路段阻礙 → 壓力 +1；環境危害（ORDER-050，P2）→ 套用該危害的 ongoingPenalty
+  // （設計文件第一章：ENVIRONMENT_HAZARD 未清除，每回合結束持續付出代價——取代一般的 +1 壓力）
   const node = ng.nodes[ng.idx];
   if (node && !node.cleared) {
-    ng.pressure = Math.min(ng.maxPressure, ng.pressure + 1);
-    ng.log = pushLog(ng.log, `「${node.name}」尚未通行，壓力 +1。`, "bad");
+    if (node.type === "hazard" && node.hazard) {
+      if (node.hazard.kind === "hp") {
+        ng.teamHp = Math.max(0, ng.teamHp - node.hazard.amount);
+      } else {
+        ng.pressure = Math.min(ng.maxPressure, ng.pressure + node.hazard.amount);
+      }
+      ng.log = pushLog(ng.log, `環境危害「${node.name}」未清除，整夜肆虐：${node.hazard.text}。`, "bad");
+    } else {
+      ng.pressure = Math.min(ng.maxPressure, ng.pressure + 1);
+      ng.log = pushLog(ng.log, `「${node.name}」尚未通行，壓力 +1。`, "bad");
+    }
   }
 
   // 進入下一日
@@ -1002,8 +1267,9 @@ function camp(g: JGame): JGame {
   ng.ap = ng.maxAp;
   ng.coopDiscount = 0;
 
-  // 翻新事件
-  const ev = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+  // 翻新事件（事件池依關卡設定：第二關加入風雨主題事件）
+  const pool = levelCfg(ng).events;
+  const ev = pool[Math.floor(Math.random() * pool.length)];
   ng.event = ev;
   ng.pressure = Math.max(0, Math.min(ng.maxPressure, ng.pressure + ev.pressure));
   ng.log = pushLog(
@@ -1053,11 +1319,15 @@ function playAudio(id: string | null) {
 function neededEffects(n: PathNode): EffectId[] {
   if (!n.cleared && n.type === "obstacle") return ["clearStone", "coopClear"];
   if (!n.cleared && n.type === "bridge") return ["buildBridge", "coopClear"];
+  if (!n.cleared && n.type === "hazard") return ["braceWind", "shelterBrace", "coopClear"];
   return [];
 }
 
 function stepHint(g: JGame): { situation: string; todo: string } {
-  if (g.status === "won") return { situation: "抵達部落！", todo: "隊伍平安返家，任務完成。" };
+  if (g.status === "won")
+    return g.levelId === "l2"
+      ? { situation: "抵達山腳背風處！", todo: "隊伍完整地下了山，任務完成。" }
+      : { situation: "抵達部落！", todo: "隊伍平安返家，任務完成。" };
   if (g.status === "lost") return { situation: "任務失敗", todo: "點「重新開始」再試一次。" };
   const n = g.nodes[g.idx];
   const last = g.idx >= g.nodes.length - 1;
@@ -1087,8 +1357,20 @@ function stepHint(g: JGame): { situation: string; todo: string } {
       break;
     }
     case "start":
-      s = { situation: "立霧溪口・出發點", todo: "點「前進」出發。" };
+      s = { situation: `${n.name.replace("（起點）", "")}・出發點`, todo: "點「前進」出發。" };
       break;
+    case "hazard": {
+      // ORDER-050（P2）：環境危害節點——不清除就每晚吃 ongoingPenalty，提示要講清楚代價
+      if (n.cleared) {
+        s = { situation: `${n.name}・已平息`, todo: "點「前進」。" };
+      } else {
+        s = {
+          situation: `環境危害：${n.name}（剩 ${n.obstacle} 點）`,
+          todo: `出「頂風前行」／「架設臨時遮蔽」／「共同搬運」清除，或花資源架遮蔽硬撐（木材×2・繩索×2）。不清除的話，每次紮營：${n.hazard?.text ?? "持續付出代價"}。`,
+        };
+      }
+      break;
+    }
     case "event":
       s = n.cleared
         ? { situation: `${n.name}・已通過`, todo: "點「前進」。" }
@@ -1096,11 +1378,11 @@ function stepHint(g: JGame): { situation: string; todo: string } {
       break;
     case "supply":
       s = n.cleared
-        ? { situation: "山腰營地・已補給", todo: "點「前進」。" }
-        : { situation: "山腰營地・補給點", todo: "選一項資源，補給 +3。" };
+        ? { situation: `${n.name}・已補給`, todo: "點「前進」。" }
+        : { situation: `${n.name}・補給點`, todo: "選一項資源，補給 +3。" };
       break;
     case "destination":
-      s = { situation: last ? "部落・終點在望" : "部落", todo: "點「前進」抵達，帶所有人回家。" };
+      s = { situation: last ? `${n.name.replace("（目的地）", "")}・終點在望` : n.name, todo: "點「前進」抵達，帶所有人回家。" };
       break;
     default:
       s = { situation: n.name, todo: "點「前進」。" };
@@ -1112,6 +1394,7 @@ type SideQuest = { label: string; note: string; state: "ok" | "fail" | "pending"
 
 function sideQuests(g: JGame): SideQuest[] {
   const won = g.status === "won";
+  const speedDay = levelCfg(g).maxDay - 1; // 天數上限依關卡設定（ORDER-050）
   return [
     {
       label: "零失誤",
@@ -1119,9 +1402,9 @@ function sideQuests(g: JGame): SideQuest[] {
       state: g.wrong === 0 ? "ok" : "fail",
     },
     {
-      label: "神速返鄉",
-      note: "第 5 日前抵達",
-      state: g.day > 5 ? "fail" : won ? "ok" : "pending",
+      label: g.levelId === "l2" ? "搶在風暴前" : "神速返鄉",
+      note: `第 ${speedDay} 日前抵達`,
+      state: g.day > speedDay ? "fail" : won ? "ok" : "pending",
     },
     {
       label: "糧草無虞",
@@ -1550,37 +1833,62 @@ function draw(
 }
 
 export default function JourneyPage() {
-  const [game, setGame] = useState<JGame>(() => newGame());
+  const [game, setGame] = useState<JGame>(() => newGame("l1"));
   const [pending, setPending] = useState<JCard | null>(null);
   const [revealed, setRevealed] = useState<number | null>(null);
   const [showRules, setShowRules] = useState(false);
   const [confirmRestart, setConfirmRestart] = useState(false);
+  // ORDER-050（P2）：第二關解鎖狀態（localStorage，僅 client mount 後讀寫——SSR 無 window）
+  const [level2Unlocked, setLevel2Unlocked] = useState(false);
   // newGame() 內含 Math.random()（洗牌／隨機事件／uid），須在 client mount 後才渲染，
   // 否則 SSR 與 client 首次渲染的牌序不一致 → hydration mismatch。
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // mount 後讀取解鎖狀態與上次選擇的關卡（皆在 client 端，SSR 期間不觸碰 localStorage）
+    let unlocked = false;
+    try {
+      unlocked = localStorage.getItem(LS_LEVEL2_UNLOCKED) === "1";
+      /* eslint-disable react-hooks/set-state-in-effect */
+      if (unlocked) setLevel2Unlocked(true);
+      if (unlocked && localStorage.getItem(LS_LAST_LEVEL) === "l2") setGame(newGame("l2"));
+    } catch {
+      /* localStorage 不可用（隱私模式等）：維持預設第一關 */
+    }
     setMounted(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
-  // 終局音效：抵達部落 / 未能抵達（中性 UI 完成音，非族樂）
+  // 終局音效：抵達終點 / 未能抵達（中性 UI 完成音，非族樂）
   useEffect(() => {
     if (game.status === "won") sfxArrive();
     else if (game.status === "lost") sfxLose();
   }, [game.status]);
+
+  // ORDER-050（P2）：第一關通關 → 解鎖第二關（localStorage 記錄，跨場次保留）
+  useEffect(() => {
+    if (game.status === "won" && game.levelId === "l1") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLevel2Unlocked(true);
+      try {
+        localStorage.setItem(LS_LEVEL2_UNLOCKED, "1");
+      } catch {
+        /* 忽略寫入失敗 */
+      }
+    }
+  }, [game.status, game.levelId]);
 
   // 章節標題卡（v2）：idx 進入新章節的第一個節點時顯示，銜接 /prologue 的章節架構
   const [chapterCard, setChapterCard] = useState<number | null>(null);
   const [seenChapters, setSeenChapters] = useState<number>(-1);
   useEffect(() => {
     if (!mounted) return;
-    const { index } = chapterForIdx(game.idx);
-    if (game.nodes[game.idx]?.type !== undefined && index !== seenChapters && CHAPTERS[index].nodeStart === game.idx) {
+    const { index } = chapterForIdx(game.levelId, game.idx);
+    if (game.nodes[game.idx]?.type !== undefined && index !== seenChapters && chaptersOf(game.levelId)[index].nodeStart === game.idx) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setChapterCard(index);
       setSeenChapters(index);
     }
-  }, [mounted, game.idx, game.nodes, seenChapters]);
+  }, [mounted, game.levelId, game.idx, game.nodes, seenChapters]);
 
   // 節點故事過場卡：抵達有 NODE_STORY 的節點時，彈出跟章節卡同樣的全螢幕過場（司令指示「一張一張卡」比較好看，
   // 取代原本埋在面板裡的斜體小字）。依賴 chapterCard 才觸發，讓章節卡與故事卡不會同時疊加——
@@ -1591,13 +1899,13 @@ export default function JourneyPage() {
     if (!mounted || chapterCard !== null) return;
     const node = game.nodes[game.idx];
     if (!node) return;
-    const story = NODE_STORY[node.vocabId];
+    const story = levelCfg(game).nodeStory[node.vocabId];
     if (story && !seenStories.has(node.vocabId)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setStoryCard(node.vocabId);
       setSeenStories((prev) => new Set(prev).add(node.vocabId));
     }
-  }, [mounted, chapterCard, game.idx, game.nodes, seenStories]);
+  }, [mounted, chapterCard, game, seenStories]);
 
   const quiz = useMemo(() => (pending && pending.quiz ? quizFor(pending) : null), [pending]);
 
@@ -1806,8 +2114,16 @@ export default function JourneyPage() {
     setActionRevealed(null);
   }
 
-  function restart() {
-    setGame(newGame());
+  function restart(levelId?: LevelId) {
+    const target = levelId ?? game.levelId;
+    if (levelId) {
+      try {
+        localStorage.setItem(LS_LAST_LEVEL, levelId);
+      } catch {
+        /* 忽略寫入失敗 */
+      }
+    }
+    setGame(newGame(target));
     setPending(null);
     setRevealed(null);
     setConfirmRestart(false);
@@ -1849,7 +2165,7 @@ export default function JourneyPage() {
               </Link>
               <span className="text-[10px] rounded-full bg-emerald-500/80 text-black px-2 py-0.5">模式 A</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold">峽谷行者 · 山徑：修復山徑</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">峽谷行者 · 山徑：{levelCfg(game).name}</h1>
             <p className="text-[11px] text-slate-400">
               非戰鬥。答對族語題讓行動全額生效。族語詞彙與發音為真實太魯閣語資料。
             </p>
@@ -1857,7 +2173,7 @@ export default function JourneyPage() {
           <div className="flex items-center gap-2 text-xs">
             <span className="rounded bg-slate-800 px-2 py-1 inline-flex items-center gap-1">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={ICON_DAY} width={14} height={14} alt="" />第 {game.day}/{MAX_DAY} 日
+              <img src={ICON_DAY} width={14} height={14} alt="" />第 {game.day}/{levelCfg(game).maxDay} 日
             </span>
             <span className="rounded bg-sky-900/60 px-2 py-1 inline-flex items-center gap-1">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1886,16 +2202,56 @@ export default function JourneyPage() {
           </div>
         </header>
 
+        {/* 關卡選擇（ORDER-050，P2）：兩張精簡卡——第一關通關後解鎖第二關（localStorage 記錄），
+            切換＝直接開新局（進度不保留，與「重新開始」同語意）。 */}
+        <section className="mb-3 grid grid-cols-2 gap-2">
+          {(Object.keys(LEVELS) as LevelId[]).map((lid) => {
+            const cfg = LEVELS[lid];
+            const active = game.levelId === lid;
+            const locked = lid === "l2" && !level2Unlocked;
+            return (
+              <button
+                key={lid}
+                onClick={() => {
+                  if (locked || active) return;
+                  restart(lid);
+                }}
+                disabled={locked}
+                className={`rounded-xl border-2 p-3 text-left transition ${
+                  active
+                    ? "border-emerald-400 bg-emerald-950/50"
+                    : locked
+                      ? "border-slate-800 bg-slate-900/40 opacity-60 cursor-not-allowed"
+                      : "border-slate-700 bg-slate-900/60 hover:border-emerald-600/70 hover:bg-slate-800/70"
+                }`}
+                title={locked ? "通關第一關解鎖" : cfg.pickDesc}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-bold">{cfg.pickLabel}</span>
+                  {active ? (
+                    <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-emerald-50">進行中</span>
+                  ) : locked ? (
+                    <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">未解鎖</span>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-[11px] leading-snug text-slate-400">
+                  {locked ? "未解鎖 · 通關第一關解鎖" : cfg.pickDesc}
+                </p>
+              </button>
+            );
+          })}
+        </section>
+
         {/* 任務面板（v3，ORDER-030）：主線目標＋節點進度＋節點故事＋這一步＋可直接操作的行動按鈕＋支線＋連擊
             視覺層級修正：搬到統計數字前面，第一眼就是「該做什麼」；面板整體放大字級（司令實測回報還是太小看不清） */}
         <section className="mb-3 rounded-2xl border-4 border-emerald-500/80 bg-emerald-950/30 p-4 shadow-[0_0_32px_rgba(16,185,129,0.25)]">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="rounded bg-emerald-700 px-2.5 py-1 text-xs font-bold text-emerald-50">主線</span>
-              <span className="text-base font-bold">修復山徑 · 返回部落</span>
+              <span className="text-base font-bold">{levelCfg(game).mainQuest}</span>
             </div>
             <span className="text-xs text-slate-300">
-              節點 {game.idx}/{game.nodes.length - 1} · 第 {game.day}/{MAX_DAY} 日
+              節點 {game.idx}/{game.nodes.length - 1} · 第 {game.day}/{levelCfg(game).maxDay} 日
             </span>
           </div>
           {(() => {
@@ -1922,13 +2278,14 @@ export default function JourneyPage() {
 
                 {/* 花資源硬清：bridge 未清時的替代方案（v3：一樣要答題，答對全額答錯半額）。
                     obstacle（落石）改走下面的「修復路段」動手建造玩法（v5，ORDER-036）。 */}
-                {game.status === "playing" && !node.cleared && node.type === "bridge" && (
+                {game.status === "playing" && !node.cleared && (node.type === "bridge" || node.type === "hazard") && (
                   <button
                     onClick={doHardClear}
                     disabled={!canGoHardClear}
                     className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-600/60 bg-amber-950/30 hover:bg-amber-900/40 disabled:opacity-30 px-3 py-2 text-sm font-semibold text-amber-200 transition"
                   >
-                    <IconPickaxe className="w-4 h-4 shrink-0" /> 花資源硬清（木材×2・繩索×2）
+                    <IconPickaxe className="w-4 h-4 shrink-0" />{" "}
+                    {node.type === "hazard" ? "花資源架遮蔽硬撐（木材×2・繩索×2）" : "花資源硬清（木材×2・繩索×2）"}
                   </button>
                 )}
 
@@ -2065,7 +2422,7 @@ export default function JourneyPage() {
         <section className="mb-3">
           <div className="mb-1 flex items-center gap-2">
             <span className={`${notoSansTC.className} rounded-full border border-amber-500/30 bg-amber-950/30 px-2 py-0.5 text-[10px] tracking-[0.2em] text-amber-300/90`}>
-              {chapterForIdx(game.idx).chapter.kicker}
+              {chapterForIdx(game.levelId, game.idx).chapter.kicker}
             </span>
           </div>
           <SectionHeading>山徑路線</SectionHeading>
@@ -2116,9 +2473,17 @@ export default function JourneyPage() {
                       <div className="flex justify-center">
                         <WordChip vocabId={n.vocabId} />
                       </div>
-                      {n.type === "obstacle" || n.type === "bridge" ? (
+                      {n.type === "obstacle" || n.type === "bridge" || n.type === "hazard" ? (
                         <div className={`text-[11px] mt-1 ${n.cleared ? "text-emerald-400" : "text-rose-300"}`}>
-                          {n.cleared ? "已通行" : n.type === "bridge" ? "待搭橋" : `阻礙 ${n.obstacle}`}
+                          {n.cleared
+                            ? n.type === "hazard"
+                              ? "已平息"
+                              : "已通行"
+                            : n.type === "bridge"
+                              ? "待搭橋"
+                              : n.type === "hazard"
+                                ? `危害 ${n.obstacle}`
+                                : `阻礙 ${n.obstacle}`}
                         </div>
                       ) : (
                         <div className="text-[11px] mt-1 text-slate-500">{n.cleared ? "可通行" : here ? "在此" : "？未探索"}</div>
@@ -2568,7 +2933,7 @@ export default function JourneyPage() {
             <ul className="space-y-2 text-slate-300">
               <li className="flex gap-2">
                 <IconFlag className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
-                <span><b>目標</b>：在第 {MAX_DAY} 日結束前，帶隊伍抵達終點「部落」。</span>
+                <span><b>目標</b>：在第 {levelCfg(game).maxDay} 日結束前，帶隊伍抵達終點「{game.nodes[game.nodes.length - 1]?.name.replace("（目的地）", "")}」。</span>
               </li>
               <li>▶ 路段清除後，隨時可點常駐的<b>「前進」</b>（花 1 行動點）走到下一段，不需要特定卡牌。</li>
               <li className="flex gap-2">
@@ -2580,6 +2945,12 @@ export default function JourneyPage() {
                 <IconQuestion className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
                 <span>林間捷徑是<b>真選擇</b>：「快速通過」不用答題但壓力 +4，且兩個路段後路況會回頭反噬（壓力再 +2）；「謹慎探勘」要答題換糧食。山腰營地要補哪一種資源也要先答題，答對 +3、答錯僅 +1。</span>
               </li>
+              {game.levelId === "l2" && (
+                <li className="flex gap-2">
+                  <IconRain className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                  <span>第二關限定・<b>環境危害</b>：暴風雨／雷擊／側風擋在路上，要用「頂風前行」「架設臨時遮蔽」「共同搬運」或花資源架遮蔽清除。<b>不清除的話，每次紮營都會持續付出代價</b>（扣體力或加壓力，依危害而異）。</span>
+                </li>
+              )}
               <li className="flex gap-2">
                 <IconBook className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
                 <span>每個路段都有一次<b>「族語試煉」</b>：3 題（含這個路段自己的詞），通過（答對 2 題以上）依情境給獎勵——路段有阻礙時阻礙 -1，否則壓力 -1。免費、不佔行動點。</span>
@@ -2598,7 +2969,7 @@ export default function JourneyPage() {
               </li>
               <li className="flex gap-2">
                 <IconAlert className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
-                <span><b>失敗條件</b>：壓力達 {10}（被迫折返）、或隊伍體力歸 0（耗盡）、或第 {MAX_DAY} 日結束仍未抵達。</span>
+                <span><b>失敗條件</b>：壓力達 {10}（被迫折返）、或隊伍體力歸 0（耗盡）、或第 {levelCfg(game).maxDay} 日結束仍未抵達。</span>
               </li>
               <li className="flex gap-2">
                 <IconPackage className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
@@ -2625,7 +2996,7 @@ export default function JourneyPage() {
             <p className="text-xs text-slate-400 mb-4">目前進度會全部重置，無法復原。</p>
             <div className="flex gap-2 justify-center">
               <button
-                onClick={restart}
+                onClick={() => restart()}
                 className="rounded-full bg-rose-600 hover:bg-rose-500 px-4 py-2 text-sm font-semibold"
               >
                 確定重來
@@ -2650,12 +3021,12 @@ export default function JourneyPage() {
             <div
               className={`${notoSansTC.className} mb-4 inline-block rounded-full border border-amber-500/40 bg-amber-950/30 px-3 py-1 text-xs tracking-[0.3em] text-amber-300/90`}
             >
-              {CHAPTERS[chapterCard].kicker}
+              {chaptersOf(game.levelId)[chapterCard].kicker}
             </div>
             <div className={`${notoSerifTC.className} text-xl font-bold leading-snug text-amber-50 sm:text-2xl`}>
-              {CHAPTERS[chapterCard].title}
+              {chaptersOf(game.levelId)[chapterCard].title}
             </div>
-            <p className={`${notoSansTC.className} mt-4 text-sm leading-relaxed text-slate-300`}>{CHAPTERS[chapterCard].sub}</p>
+            <p className={`${notoSansTC.className} mt-4 text-sm leading-relaxed text-slate-300`}>{chaptersOf(game.levelId)[chapterCard].sub}</p>
             <button
               onClick={() => setChapterCard(null)}
               className={`${notoSerifTC.className} mt-6 rounded-lg border-2 border-amber-500/60 bg-gradient-to-b from-[#32251766] to-[#0f1218f0] px-8 py-2.5 text-sm font-bold tracking-[0.15em] text-amber-100 transition hover:-translate-y-0.5 hover:border-amber-300/90`}
@@ -2673,11 +3044,11 @@ export default function JourneyPage() {
       {chapterCard === null && storyCard !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl border border-amber-500/30 bg-slate-950/95 shadow-2xl">
-            {NODE_STORY_IMG[storyCard] && (
+            {levelCfg(game).nodeStoryImg[storyCard] && (
               <div className="relative h-40 sm:h-48 w-full overflow-hidden rounded-t-2xl">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={NODE_STORY_IMG[storyCard]}
+                  src={levelCfg(game).nodeStoryImg[storyCard]}
                   alt=""
                   className="h-full w-full object-cover"
                 />
@@ -2691,7 +3062,7 @@ export default function JourneyPage() {
                 這裡的故事
               </div>
               <p className={`${notoSansTC.className} text-left text-sm leading-relaxed text-slate-200 whitespace-pre-line`}>
-                {NODE_STORY[storyCard]}
+                {levelCfg(game).nodeStory[storyCard]}
               </p>
               <button
                 onClick={() => setStoryCard(null)}
@@ -2719,7 +3090,13 @@ export default function JourneyPage() {
               )}
             </div>
             <h3 className="text-xl font-bold mb-1">
-              {game.status === "won" ? "安全抵達部落！" : "未能抵達部落"}
+              {game.status === "won"
+                ? game.levelId === "l2"
+                  ? "安全下了稜線！"
+                  : "安全抵達部落！"
+                : game.levelId === "l2"
+                  ? "未能翻過稜線"
+                  : "未能抵達部落"}
             </h3>
             <p className="text-sm text-slate-400 mb-4">
               {game.status === "won"
@@ -2730,6 +3107,16 @@ export default function JourneyPage() {
                     ? "隊伍體力耗盡。"
                     : "任務天數耗盡，尚未抵達。"}
             </p>
+
+            {/* ORDER-050（P2）：第一關通關 → 下一關預告鉤子＋直接前進第二關 */}
+            {game.status === "won" && game.levelId === "l1" && level2Unlocked && (
+              <div className="mb-4 rounded-xl border border-sky-700/50 bg-sky-950/30 p-3 text-left">
+                <div className="text-xs uppercase tracking-wider text-sky-400 font-semibold mb-1">下一關預告</div>
+                <p className="text-xs leading-relaxed text-slate-300">
+                  第二關《風雨的稜線》已解鎖——暴風雨正面撲向稜線，環境危害不清除，每晚都會消耗你的隊伍。
+                </p>
+              </div>
+            )}
 
             {(() => {
               const byId = new Map<string, boolean>();
@@ -2774,9 +3161,17 @@ export default function JourneyPage() {
               );
             })()}
 
-            <div className="flex gap-2 justify-center">
+            <div className="flex gap-2 justify-center flex-wrap">
+              {game.status === "won" && game.levelId === "l1" && level2Unlocked && (
+                <button
+                  onClick={() => restart("l2")}
+                  className="rounded-full bg-sky-600 hover:bg-sky-500 px-5 py-2 text-sm font-semibold"
+                >
+                  前進第二關 ▶
+                </button>
+              )}
               <button
-                onClick={restart}
+                onClick={() => restart()}
                 className="rounded-full bg-emerald-600 hover:bg-emerald-500 px-5 py-2 text-sm font-semibold"
               >
                 再走一次
