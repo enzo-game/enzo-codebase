@@ -23,6 +23,7 @@ import {
   endOfTurnEffects,
   hasValidTarget,
   makeQuiz,
+  mulligan,
   newGame,
   playCardResolved,
   pushLog,
@@ -34,6 +35,8 @@ import {
 
 // 卡名用襯線字（比照 /journey 的標題字），像收藏卡的名條
 const notoSerifTC = Noto_Serif_TC({ weight: ["700"], subsets: ["latin"], display: "swap" });
+
+const DIFF_ZH: Record<Difficulty, string> = { easy: "簡單", normal: "普通", hard: "困難" };
 
 
 // ───────────────────────── 圖示（比照 /journey ORDER-039：全面移除表情符號）─────────────────────────
@@ -282,16 +285,25 @@ export default function PlayPage() {
   const [showRules, setShowRules] = useState(false);
   // 電腦難度：預設普通，記憶上次選擇。切換即刻套用（影響下一個系統回合）。
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
+  // 耐玩循環：開局換牌、連勝計數、認輸確認
+  const [mulliganPhase, setMulliganPhase] = useState(false);
+  const [mulliganSel, setMulliganSel] = useState<Set<number>>(new Set());
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [confirmConcede, setConfirmConcede] = useState(false);
 
   useEffect(() => {
     // 刻意的客戶端 mount 初始化：newGame() 內含 Math.random()，須在 client 產生以避免 SSR/CSR hydration 不一致
     /* eslint-disable react-hooks/set-state-in-effect */
     setMounted(true);
     setGame(newGame());
+    setMulliganPhase(true);
     try {
       if (!localStorage.getItem("enzo-play-rules-seen")) setShowRules(true);
       const d = localStorage.getItem("enzo-play-difficulty");
       if (d === "easy" || d === "normal" || d === "hard") setDifficulty(d);
+      const best = Number(localStorage.getItem("enzo-play-best-streak"));
+      if (Number.isFinite(best) && best > 0) setBestStreak(best);
     } catch {
       setShowRules(true); // localStorage 不可用（隱私模式）時仍給第一次說明
     }
@@ -310,8 +322,28 @@ export default function PlayPage() {
   // 終局音效：勝利 / 落敗（中性 UI 完成音，非族樂）
   const winner = game.winner;
   useEffect(() => {
-    if (winner === "player") sfxArrive();
-    else if (winner === "enemy") sfxLose();
+    if (!winner) return;
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (winner === "player") {
+      sfxArrive();
+      setStreak((s) => {
+        const next = s + 1;
+        setBestStreak((b) => {
+          const best = Math.max(b, next);
+          try {
+            localStorage.setItem("enzo-play-best-streak", String(best));
+          } catch {
+            /* 記不住就算了 */
+          }
+          return best;
+        });
+        return next;
+      });
+    } else if (winner === "enemy") {
+      sfxLose();
+      setStreak(0);
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [winner]);
 
   // ── 打擊感（ORDER-065）：以「前後盤面差異」推導浮動傷害數字、受擊震動、登場音 ──
@@ -376,6 +408,13 @@ export default function PlayPage() {
     return () => clearTimeout(t);
   }, [heroShake]);
 
+  // 認輸確認：3 秒未再點就取消「確定認輸？」狀態，避免卡在待確認
+  useEffect(() => {
+    if (!confirmConcede) return;
+    const t = setTimeout(() => setConfirmConcede(false), 3000);
+    return () => clearTimeout(t);
+  }, [confirmConcede]);
+
   const hitKeys = new Set(
     floats.filter((f) => f.anchor !== "heroEnemy" && f.anchor !== "heroPlayer").map((f) => f.anchor),
   );
@@ -386,7 +425,40 @@ export default function PlayPage() {
     setRevealed(null);
     setSelected(null);
     setPending(null);
+    setConfirmConcede(false);
+    setMulliganSel(new Set());
     setGame(newGame());
+    setMulliganPhase(true);
+  }
+
+  // 開局換牌：把選取的牌洗回牌庫、重抽等量，然後進入對戰
+  function toggleMulligan(i: number) {
+    setMulliganSel((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  }
+  function confirmMulligan() {
+    const idx = [...mulliganSel];
+    if (idx.length > 0) setGame((g) => mulligan(g, idx));
+    setMulliganSel(new Set());
+    setMulliganPhase(false);
+  }
+
+  // 認輸：直接判系統獲勝（會觸發連勝歸零）。二次點擊確認，避免誤觸。
+  function concede() {
+    if (game.winner) return;
+    if (!confirmConcede) {
+      setConfirmConcede(true);
+      return;
+    }
+    setConfirmConcede(false);
+    setQuiz(null);
+    setPending(null);
+    setSelected(null);
+    setGame((g) => ({ ...g, winner: "enemy", phase: "over" }));
   }
 
   function changeDifficulty(d: Difficulty) {
@@ -399,7 +471,7 @@ export default function PlayPage() {
   }
 
   function tryPlay(card: Card) {
-    if (game.phase !== "player" || game.winner || pending || quiz) return;
+    if (game.phase !== "player" || game.winner || pending || quiz || mulliganPhase) return;
     if (card.cost > game.pMana) return;
     if (card.type === "minion" && game.pBoard.length >= BOARD_MAX) {
       setGame((g) => ({ ...g, log: pushLog(g.log, "戰場已滿（上限 7 個隨從）。", "info") }));
@@ -494,7 +566,7 @@ export default function PlayPage() {
   }
 
   function endTurn() {
-    if (game.phase !== "player" || game.winner || pending || quiz) return;
+    if (game.phase !== "player" || game.winner || pending || quiz || mulliganPhase) return;
     setSelected(null);
     setGame((g) => {
       const afterEot = checkWinner(endOfTurnEffects(g, "player"));
@@ -590,6 +662,22 @@ export default function PlayPage() {
               法力 {game.pMana}/{game.pMaxMana}
             </span>
             <span className="rounded bg-emerald-900/60 px-2 py-1">命中 {rate}%</span>
+            {streak > 0 && (
+              <span className="rounded bg-amber-900/60 px-2 py-1 text-amber-200" title={`最佳連勝 ${bestStreak}`}>
+                連勝 {streak}
+              </span>
+            )}
+            <button
+              onClick={concede}
+              disabled={!!game.winner || mulliganPhase}
+              className={`rounded border px-2 py-1 transition disabled:opacity-40 ${
+                confirmConcede
+                  ? "border-rose-400 bg-rose-900/60 text-rose-100"
+                  : "border-slate-600 bg-slate-800/70 text-slate-300 hover:bg-slate-700"
+              }`}
+            >
+              {confirmConcede ? "確定認輸？" : "認輸"}
+            </button>
           </div>
         </header>
 
@@ -934,6 +1022,59 @@ export default function PlayPage() {
         </div>
       </div>
 
+      {/* 開局換牌（mulligan）：新局開始、規則關閉後彈出 */}
+      {mulliganPhase && !showRules && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-[60]">
+          <div className="w-full max-w-xl rounded-2xl bg-slate-900 border border-amber-400/25 p-5 sm:p-6">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-amber-200/60">開局換牌</p>
+            <h3 className={`${notoSerifTC.className} text-xl font-bold text-amber-100 mb-1`}>調整起手牌</h3>
+            <p className="text-xs text-slate-400 mb-4">
+              點選想換掉的牌（洗回牌庫、重抽等量），或直接保留全部開始。只有這一次機會。
+            </p>
+            <div className="flex flex-wrap justify-center gap-3 mb-5">
+              {game.pHand.map((c, i) => {
+                const marked = mulliganSel.has(i);
+                const art = CARD_ART[c.id];
+                return (
+                  <button
+                    key={`${c.id}-${i}`}
+                    onClick={() => toggleMulligan(i)}
+                    className={`relative w-[88px] aspect-[5/7] rounded-lg overflow-hidden border-2 transition ${
+                      marked ? "border-rose-400 opacity-70" : "border-amber-400/40 hover:border-amber-300 hover:-translate-y-0.5"
+                    }`}
+                  >
+                    {art ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={art} alt={c.nameZh} className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                      <span className="hs-art-placeholder">{THEME_ZH[c.theme]}</span>
+                    )}
+                    <span className="absolute top-1 left-1 rounded bg-black/70 px-1 text-[10px] text-sky-200">{c.cost}</span>
+                    <span className="absolute inset-x-0 bottom-0 truncate bg-black/70 py-0.5 text-center text-[10px]">
+                      {c.nameZh}
+                    </span>
+                    {marked && (
+                      <span className="absolute inset-0 grid place-items-center bg-rose-950/40 text-sm font-bold text-rose-200">
+                        換
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500">難度：{DIFF_ZH[difficulty]}</span>
+              <button
+                onClick={confirmMulligan}
+                className="rounded bg-amber-500 hover:bg-amber-400 px-5 py-2 text-sm font-bold text-black"
+              >
+                {mulliganSel.size > 0 ? `換掉 ${mulliganSel.size} 張並開始 ▶` : "保留全部開始 ▶"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 開場規則說明（第一次自動彈，之後可從 header「規則」再開） */}
       {showRules && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-[60]">
@@ -1094,9 +1235,18 @@ export default function PlayPage() {
             >
               {game.winner === "player" ? "通過山林試煉！" : "山林試煉未過"}
             </h3>
-            <p className="text-sm text-slate-400 mb-4">
+            <p className="text-sm text-slate-400 mb-3">
               命中率 {rate}%（答對 {game.correct} · 答錯 {game.wrong}）
             </p>
+            <div className="flex flex-wrap items-center justify-center gap-2 text-xs mb-4">
+              <span className="rounded bg-slate-800 px-2 py-1 text-slate-300">難度 {DIFF_ZH[difficulty]}</span>
+              {game.winner === "player" && streak > 0 && (
+                <span className="rounded bg-amber-900/60 px-2 py-1 text-amber-200">連勝 {streak}</span>
+              )}
+              {bestStreak > 0 && (
+                <span className="rounded bg-slate-800 px-2 py-1 text-slate-400">最佳連勝 {bestStreak}</span>
+              )}
+            </div>
             <button
               onClick={reset}
               className="rounded bg-sky-600 hover:bg-sky-500 px-5 py-2 font-medium"

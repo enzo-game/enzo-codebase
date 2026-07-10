@@ -692,6 +692,18 @@ export function newGame(): Game {
   };
 }
 
+/** 開局換牌（mulligan）：把手牌中選定索引的牌洗回牌庫、重抽等量。玩家專用。 */
+export function mulligan(g: Game, replaceIdx: number[]): Game {
+  if (replaceIdx.length === 0) return g;
+  const ng = cloneGame(g);
+  const idxSet = new Set(replaceIdx);
+  const returned = ng.pHand.filter((_, i) => idxSet.has(i));
+  ng.pHand = ng.pHand.filter((_, i) => !idxSet.has(i));
+  ng.pDeck = shuffle([...ng.pDeck, ...returned]);
+  drawCards(ng, "player", returned.length);
+  return ng;
+}
+
 // ───────────────────────── 答題（真實太魯閣語詞庫）─────────────────────────
 
 export function makeQuiz(card: Card): QuizState {
