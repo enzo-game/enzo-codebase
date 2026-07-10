@@ -48,13 +48,36 @@ function tone(
   o.stop(startAt + dur + 0.05);
 }
 
-/** 出牌：短促柔和「嗒」（低音三角波，似木片輕碰的中性感） */
+/** 出牌：卡牌「咔嗒」落桌聲 —— 高頻短噪音瞬態（咔）＋低頻木質 body（嗒） */
 export function sfxPlayCard() {
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  tone(ac, 220, t, 0.09, 0.12, "triangle");
-  tone(ac, 330, t + 0.02, 0.07, 0.05, "triangle");
+
+  // 咔：極短噪音瞬態，經高通 → 卡緣清脆的一聲「咔」
+  const len = Math.max(1, Math.floor(ac.sampleRate * 0.03));
+  const noise = ac.createBuffer(1, len, ac.sampleRate);
+  const d = noise.getChannelData(0);
+  for (let i = 0; i < len; i++) {
+    const env = (1 - i / len) ** 2; // 快速衰減
+    d[i] = (Math.random() * 2 - 1) * env;
+  }
+  const src = ac.createBufferSource();
+  src.buffer = noise;
+  const hp = ac.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.value = 1800;
+  const ng = ac.createGain();
+  ng.gain.value = 0.32;
+  src.connect(hp);
+  hp.connect(ng);
+  ng.connect(ac.destination);
+  src.start(t);
+  src.stop(t + 0.04);
+
+  // 嗒：低頻木質 body → 卡片落桌的「嗒」
+  tone(ac, 180, t + 0.012, 0.08, 0.11, "triangle");
+  tone(ac, 120, t + 0.022, 0.06, 0.06, "triangle");
 }
 
 /** 答對：兩聲上行輕鳴（標準 UI 確認音） */
