@@ -91,78 +91,42 @@ function IconCross({ className = "w-4 h-4" }: IconProps) {
 function IconMountain({ className = "w-4 h-4" }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 19l6-11 4 6 2-3 6 8z" />
-    </svg>
-  );
-}
-function IconRain({ className = "w-4 h-4" }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M7 15.5a4 4 0 01.5-8 5 5 0 019.4 2.1A3.5 3.5 0 0116 17H8" />
-      <path d="M8 19l-1 2M12 19l-1 2M16 19l-1 2" />
+      <path d="M3 20h18L14 8l-3 4.5L8.5 9z" />
+      <path d="M12 12.5l1.2-1.8" />
     </svg>
   );
 }
 function IconHeart({ className = "w-4 h-4" }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 20s-7-4.4-9.5-9A5.5 5.5 0 0112 5.8 5.5 5.5 0 0121.5 11c-2.5 4.6-9.5 9-9.5 9z" />
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" stroke="none">
+      <path d="M12 21s-7-4.55-9.5-9C1 9 2.6 5.5 6 5.5c2.05 0 3.25 1.2 4 2.35.75-1.15 1.95-2.35 4-2.35 3.4 0 5 3.5 3.5 6.5C19 16.45 12 21 12 21z" />
     </svg>
   );
 }
 function IconPerson({ className = "w-4 h-4" }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="7.5" r="3.5" />
-      <path d="M5 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5" />
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" />
     </svg>
   );
 }
-function IconPaw({ className = "w-4 h-4" }: IconProps) {
+function IconRain({ className = "w-4 h-4" }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="15" r="4" />
-      <circle cx="6" cy="9" r="2" />
-      <circle cx="18" cy="9" r="2" />
-      <circle cx="9.5" cy="5.5" r="1.7" />
-      <circle cx="14.5" cy="5.5" r="1.7" />
-    </svg>
-  );
-}
-function IconLeaf({ className = "w-4 h-4" }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 19c0-8 6-14 14-14 0 8-6 14-14 14z" />
-      <path d="M5 19c3-3 6-6 10-10" />
-    </svg>
-  );
-}
-function IconBow({ className = "w-4 h-4" }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 3a15 15 0 000 18" />
-      <path d="M6 12h14" />
-      <path d="M17 9l3 3-3 3" />
-    </svg>
-  );
-}
-function IconScroll({ className = "w-4 h-4" }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M7 4h11a2 2 0 012 2v12a2 2 0 01-2 2H8a3 3 0 01-3-3V6a2 2 0 00-2-2h4z" />
-      <path d="M9 9h7M9 13h7" />
+      <path d="M7 15a4 4 0 01-.5-7.97A5 5 0 0116.5 6.5 3.5 3.5 0 0117 13.5" />
+      <path d="M8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5" />
     </svg>
   );
 }
 
-// 卡牌題材圖示（傳說系列用卷軸線稿；person 主題已隨 v1 卡表淘汰）
-const THEME_ICON = {
-  legend: IconScroll,
-  animal: IconPaw,
-  plant: IconLeaf,
-  nature: IconMountain,
-  tool: IconBow,
-} satisfies Record<Theme, (props: IconProps) => JSX.Element>;
+const THEME_ZH: Record<Theme, string> = {
+  legend: "傳說",
+  animal: "動物",
+  plant: "植物",
+  nature: "自然",
+  tool: "器物",
+};
 
 // ───────────────────────── 卡面美術（ORDER-044，enzo-culture 複核 35/35 通過）─────────────────────────
 // 依卡 id 對應卡面圖；沒有對應圖的卡維持原本純文字版型（UI 必須容忍缺圖）。
@@ -258,6 +222,18 @@ function GemDefs() {
 
 type GemKind = "cost" | "atk" | "hp";
 
+const GEM_LABEL: Record<GemKind, string> = {
+  cost: "費",
+  atk: "攻",
+  hp: "命",
+};
+
+const GEM_TITLE: Record<GemKind, string> = {
+  cost: "費用：打出這張牌需要的法力",
+  atk: "攻擊：造成的傷害",
+  hp: "生命：承受傷害的血量",
+};
+
 /** 藍寶石：直立六角柱切（尖頂尖底、左右直邊，六邊形非菱形） */
 function GemShapeCost() {
   return (
@@ -325,17 +301,27 @@ function StatGem({
 }) {
   const Shape = GEM_SHAPE[kind];
   return (
-    <span className={`hs-gem hs-gem-${size} ${className}`}>
+    <span
+      className={`hs-gem hs-gem-${size} ${className}`}
+      data-label={GEM_LABEL[kind]}
+      title={`${GEM_TITLE[kind]} ${value}`}
+      aria-label={`${GEM_TITLE[kind]} ${value}`}
+    >
       <svg viewBox="0 0 24 24" className="block w-full h-full" aria-hidden focusable="false">
         <Shape />
       </svg>
       <span className={`hs-gem-num ${tone}`}>{value}</span>
+      <span className="hs-gem-label" aria-hidden>{GEM_LABEL[kind]}</span>
     </span>
   );
 }
 
 const BOARD_BG = "/images/cards/board-battle.jpg";
 const CARDBACK = "/images/cards/cardback.jpg";
+const HERO_ART = {
+  enemy: "/images/play/hero-trial.jpg",
+  player: "/images/play/hero-weaver.jpg",
+};
 
 // ───────────────────────── 工具 ─────────────────────────
 
@@ -1201,13 +1187,15 @@ export default function PlayPage() {
             disabled={!enemyHeroTargetable}
             className={`hs-portrait hs-portrait-enemy transition ${enemyHeroTargetable ? "hs-hero-targetable cursor-pointer" : ""}`}
           >
-            <span className="hs-portrait-icon">
-              <IconMountain className="w-7 h-7" />
+            <span className="hs-portrait-art">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={HERO_ART.enemy} alt="山林試煉頭像" />
             </span>
             <span className="hs-portrait-name">山林試煉</span>
             <span className="hs-portrait-sub">手牌 {game.eHand.length} · 牌庫 {game.eDeck.length}</span>
             <span className="hs-portrait-hp">
-              <IconHeart className="w-3.5 h-3.5 shrink-0" /> {game.enemyHp}
+              <span className="hs-hp-label">生命 HP</span>
+              <span className="hs-hp-value">{game.enemyHp}/{HERO_HP}</span>
             </span>
           </button>
 
@@ -1235,7 +1223,6 @@ export default function PlayPage() {
             )}
             {game.eBoard.map((e) => {
               const targetable = enemyMinionTargetable(e);
-              const ThemeIcon = THEME_ICON[e.card.theme];
               const art = CARD_ART[e.card.id];
               const kw = [e.taunt ? "嘲諷" : "", e.stealth ? "潛行" : ""].filter(Boolean).join("·");
               return (
@@ -1254,8 +1241,8 @@ export default function PlayPage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={art} alt={e.card.nameZh} className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
-                      <span className="absolute inset-0 flex items-center justify-center text-amber-200/40">
-                        <ThemeIcon className="w-7 h-7" />
+                      <span className="hs-art-placeholder">
+                        {THEME_ZH[e.card.theme]}
                       </span>
                     )}
                     <span className="hs-art-frame" aria-hidden />
@@ -1286,7 +1273,6 @@ export default function PlayPage() {
             {game.pBoard.map((e) => {
               const ready = e.canAttack && game.phase === "player" && !game.winner && !pending;
               const spellTarget = friendMinionTargetable;
-              const ThemeIcon = THEME_ICON[e.card.theme];
               const art = CARD_ART[e.card.id];
               const kw = [e.taunt ? "嘲諷" : "", e.stealth ? "潛行" : "", e.bonus ? "加成" : ""]
                 .filter(Boolean)
@@ -1309,8 +1295,8 @@ export default function PlayPage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={art} alt={e.card.nameZh} className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
-                      <span className="absolute inset-0 flex items-center justify-center text-amber-200/40">
-                        <ThemeIcon className="w-7 h-7" />
+                      <span className="hs-art-placeholder">
+                        {THEME_ZH[e.card.theme]}
                       </span>
                     )}
                     <span className="hs-art-frame" aria-hidden />
@@ -1353,13 +1339,15 @@ export default function PlayPage() {
 
           {/* 我方英雄 + 資源 */}
           <section className="hs-portrait hs-portrait-player">
-            <span className="hs-portrait-icon">
-              <IconPerson className="w-7 h-7" />
+            <span className="hs-portrait-art">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={HERO_ART.player} alt="織者頭像" />
             </span>
             <span className="hs-portrait-name">織者</span>
             <span className="hs-portrait-sub">答題命中 {rate}%</span>
             <span className="hs-portrait-hp">
-              <IconHeart className="w-3.5 h-3.5 shrink-0" /> {game.playerHp}
+              <span className="hs-hp-label">生命 HP</span>
+              <span className="hs-hp-value">{game.playerHp}/{HERO_HP}</span>
             </span>
           </section>
 
@@ -1387,7 +1375,6 @@ export default function PlayPage() {
             {game.pHand.map((c, i) => {
               const playable =
                 c.cost <= game.pMana && game.phase === "player" && !game.winner && !pending && !quiz;
-              const ThemeIcon = THEME_ICON[c.theme];
               const art = CARD_ART[c.id];
               const learningText = CARD_LEARNING[c.id];
               return (
@@ -1407,8 +1394,8 @@ export default function PlayPage() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={art} alt={c.nameZh} className="absolute inset-0 w-full h-full object-cover" />
                       ) : (
-                        <span className="absolute inset-0 flex items-center justify-center text-amber-200/40">
-                          <ThemeIcon className="w-12 h-12" />
+                        <span className="hs-art-placeholder hs-art-placeholder-card">
+                          {THEME_ZH[c.theme]}
                         </span>
                       )}
                       <span className="hs-art-frame" aria-hidden />
@@ -1416,8 +1403,7 @@ export default function PlayPage() {
                     {/* 文字欄：類型／稀有度、效果、答對加成 */}
                     <span className="flex-1 flex flex-col px-1.5 pt-3.5 pb-2 text-center">
                       <span className="flex items-center justify-center gap-1 text-[8px] tracking-[0.15em] text-amber-200/70">
-                        <ThemeIcon className="w-2.5 h-2.5 shrink-0" />
-                        {c.type === "minion" ? "隨從" : "法術"} · {RARITY_ZH[c.rarity]}
+                        {THEME_ZH[c.theme]} · {c.type === "minion" ? "隨從" : "法術"} · {RARITY_ZH[c.rarity]}
                       </span>
                       {c.effectText !== "—" && (
                         <span title={c.effectText} className="text-[9px] leading-tight text-slate-200 mt-0.5 line-clamp-1">
@@ -1556,12 +1542,13 @@ export default function PlayPage() {
       {game.winner && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50">
           <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-700 p-6 text-center">
-            <div className="flex justify-center mb-2">
-              {game.winner === "player" ? (
-                <IconMountain className="w-10 h-10 text-emerald-400" />
-              ) : (
-                <IconRain className="w-10 h-10 text-slate-400" />
-              )}
+            <div className="flex justify-center mb-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={game.winner === "player" ? HERO_ART.player : HERO_ART.enemy}
+                alt={game.winner === "player" ? "通過山林試煉" : "山林試煉未過"}
+                className="w-16 h-16 rounded-full object-cover border border-amber-300/50 shadow-lg"
+              />
             </div>
             <h3 className="text-xl font-bold mb-1">
               {game.winner === "player" ? "通過山林試煉！" : "山林試煉未過"}
