@@ -79,6 +79,7 @@ type JGame = {
   streak: number; // 連續答對題數（v2 核心循環重構）
   wordLog: { vocabId: string; correct: boolean }[]; // v4（ORDER-033）：逐題紀錄，供結局回顧「這次學了什麼」
   trialedNodes: string[]; // v7（ORDER-042）：已做過「族語試煉」的節點 id（每節點限一次）
+  fastDebt: number | null; // ORDER-048（P1）：事件節點「快速通過」的延遲反噬——記下兩節點後的 idx，走到時壓力+2
 };
 
 type EventCard = {
@@ -252,7 +253,9 @@ function IconAlert({ className = "w-4 h-4" }: IconProps) {
 
 // ───────────────────────── 常數 ─────────────────────────
 
-const MAX_DAY = 7;
+// ORDER-048（P1 收緊）：天數 7→6、起始糧 6→4——依 mode-a-review-v2-boredom 診斷，
+// 原本資源從不吃緊、時限幾乎不會觸發，所有選擇都不痛。
+const MAX_DAY = 6;
 const HAND_LIMIT = 5;
 const RES_NAME: Record<Resource, string> = { food: "糧食", wood: "木材", stone: "石材", rope: "繩索" };
 // 美術素材（ORDER-015，Codex 生圖，已過 enzo-culture 複核）
@@ -490,7 +493,7 @@ function newGame(): JGame {
     maxPressure: 10,
     teamHp: 12,
     maxTeamHp: 12,
-    res: { food: 6, wood: 3, stone: 2, rope: 2 },
+    res: { food: 4, wood: 3, stone: 2, rope: 2 },
     nodes: buildNodes(),
     idx: 0,
     hand: deck.slice(0, HAND_LIMIT),
@@ -511,6 +514,7 @@ function newGame(): JGame {
     streak: 0,
     wordLog: [],
     trialedNodes: [],
+    fastDebt: null,
   };
 }
 
@@ -599,6 +603,12 @@ function advance(g: JGame): JGame {
   ng.idx += 1;
   ng = enterNode(ng);
   ng.log = pushLog(ng.log, `▶ 前進至「${ng.nodes[ng.idx].name}」。`, "info");
+  // ORDER-048（P1）：快速通過的延遲反噬在抵達指定節點時觸發
+  if (ng.fastDebt !== null && ng.idx >= ng.fastDebt) {
+    ng.pressure = Math.min(ng.maxPressure, ng.pressure + 2);
+    ng.fastDebt = null;
+    ng.log = pushLog(ng.log, `當時快速通過沒探勘的路況，回頭咬了一口——壓力 +2。`, "bad");
+  }
   return settle(ng);
 }
 
@@ -660,7 +670,9 @@ function resolveEventChoice(g: JGame, choice: "fast" | "careful", correct?: bool
   n2.cleared = true;
   if (choice === "fast") {
     ng.pressure = Math.min(ng.maxPressure, ng.pressure + 4);
-    ng.log = pushLog(ng.log, `「${n2.name}」快速通過：壓力 +4。`, "bad");
+    // ORDER-048（P1）：沒探勘就硬闖，兩個節點後路況回來咬人（TRPG「選擇有重量」）
+    ng.fastDebt = ng.idx + 2;
+    ng.log = pushLog(ng.log, `「${n2.name}」快速通過：壓力 +4。沒探勘的路況，之後可能回來咬人。`, "bad");
   } else {
     ng.res.wood -= 1;
     ng.res.rope -= 1;
@@ -811,17 +823,29 @@ function applyNodeTrial(g: JGame, nodeId: string, results: { vocabId: string; co
   const passed = total > 0 && correctCount / total >= 2 / 3;
   const node = ng.nodes[ng.idx];
   if (passed) {
+    // ORDER-048（P1）：30% 機率升級獎勵（變動報酬，做出「賭一把」的期待感）
+    const boosted = Math.random() < 0.3;
     if (node && !node.cleared && node.obstacle > 0) {
-      node.obstacle -= 1;
+      const amt = boosted ? Math.min(2, node.obstacle) : 1;
+      node.obstacle -= amt;
       if (node.obstacle === 0) node.cleared = true;
       ng.log = pushLog(
         ng.log,
-        `✓ 族語試煉 ${correctCount}/${total}：邊做邊念，手更穩——「${node.name}」阻礙 -1（剩 ${node.obstacle}）。`,
+        boosted
+          ? `✓ 族語試煉 ${correctCount}/${total}：念得又快又順，手勢默契絕佳——「${node.name}」阻礙 -${amt}（剩 ${node.obstacle}）！`
+          : `✓ 族語試煉 ${correctCount}/${total}：邊做邊念，手更穩——「${node.name}」阻礙 -1（剩 ${node.obstacle}）。`,
         "good",
       );
     } else {
-      ng.pressure = Math.max(0, ng.pressure - 1);
-      ng.log = pushLog(ng.log, `✓ 族語試煉 ${correctCount}/${total}：隊伍沿路練語，心安腳穩，壓力 -1。`, "good");
+      const amt = boosted ? 2 : 1;
+      ng.pressure = Math.max(0, ng.pressure - amt);
+      ng.log = pushLog(
+        ng.log,
+        boosted
+          ? `✓ 族語試煉 ${correctCount}/${total}：整隊越念越有勁，壓力 -${amt}！`
+          : `✓ 族語試煉 ${correctCount}/${total}：隊伍沿路練語，心安腳穩，壓力 -1。`,
+        "good",
+      );
     }
   } else {
     ng.log = pushLog(ng.log, `族語試煉 ${correctCount}/${total}：這幾個詞還不熟，路上再多念幾次。`, "info");
@@ -866,6 +890,12 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
       if (node && node.cleared && ng.idx < ng.nodes.length - 1) {
         ng.idx += 1;
         ng = enterNode(ng);
+        // ORDER-048（P1）：與常駐「前進」一致，快速通過的延遲反噬也在此結算
+        if (ng.fastDebt !== null && ng.idx >= ng.fastDebt) {
+          ng.pressure = Math.min(ng.maxPressure, ng.pressure + 2);
+          ng.fastDebt = null;
+          ng.log = pushLog(ng.log, `當時快速通過沒探勘的路況，回頭咬了一口——壓力 +2。`, "bad");
+        }
         if (correct) {
           ng.pressure = Math.max(0, ng.pressure - 1);
           ng.log = pushLog(ng.log, `${tag}｜巡路：前進至「${ng.nodes[ng.idx].name}」，腳步輕快，壓力 -1。`, "good");
@@ -1062,7 +1092,7 @@ function stepHint(g: JGame): { situation: string; todo: string } {
     case "event":
       s = n.cleared
         ? { situation: `${n.name}・已通過`, todo: "點「前進」。" }
-        : { situation: n.name, todo: "選擇「快速通過」（壓力 +2）或「謹慎探勘」（耗木材/繩索各1，換糧食 +1）。" };
+        : { situation: n.name, todo: "選擇「快速通過」（壓力 +4，之後路況可能反噬）或「謹慎探勘」（耗木材/繩索各1，換糧食 +1）。" };
       break;
     case "supply":
       s = n.cleared
@@ -1921,7 +1951,7 @@ export default function JourneyPage() {
                       onClick={() => doEventChoice("fast")}
                       className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 px-3 py-2 text-xs font-medium transition"
                     >
-                      <IconRun className="w-3.5 h-3.5 shrink-0" /> 快速通過（壓力 +2）
+                      <IconRun className="w-3.5 h-3.5 shrink-0" /> 快速通過（壓力 +4，且路況可能反噬）
                     </button>
                     <button
                       onClick={() => doEventChoice("careful")}
@@ -2548,7 +2578,7 @@ export default function JourneyPage() {
               <li>吊橋可以打行動／協作牌清除，也可以花<b>雙倍資源「硬清」</b>——都要先答族語題，答對全額答錯半額，硬清只是省行動點、不是省答題。</li>
               <li className="flex gap-2">
                 <IconQuestion className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
-                <span>林間捷徑是<b>真選擇</b>：「快速通過」不用答題但壓力 +4（高風險捷徑）；「謹慎探勘」要答題換糧食。山腰營地要補哪一種資源也要先答題，答對 +3、答錯僅 +1。</span>
+                <span>林間捷徑是<b>真選擇</b>：「快速通過」不用答題但壓力 +4，且兩個路段後路況會回頭反噬（壓力再 +2）；「謹慎探勘」要答題換糧食。山腰營地要補哪一種資源也要先答題，答對 +3、答錯僅 +1。</span>
               </li>
               <li className="flex gap-2">
                 <IconBook className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
