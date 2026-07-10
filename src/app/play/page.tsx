@@ -38,6 +38,117 @@ const notoSerifTC = Noto_Serif_TC({ weight: ["700"], subsets: ["latin"], display
 
 const DIFF_ZH: Record<Difficulty, string> = { easy: "簡單", normal: "普通", hard: "困難" };
 
+// 新手引導步驟（互動分步教學；文字＋簡易示意圖，無 emoji）
+const ONB_STEPS: { k: string; title: string; body: string }[] = [
+  {
+    k: "goal",
+    title: "目標：打倒山林試煉",
+    body: "你（織者）和對手都從 30 點生命開始。把「山林試煉」的生命打到 0，就通過試煉。",
+  },
+  {
+    k: "quiz",
+    title: "出牌先答族語題",
+    body: "每打一張牌會跳出一題太魯閣族語選擇。答對 → 觸發卡片的 ★加成（更強）；答錯 → 以基礎效果打出，一樣能出牌。揭曉後自動播正確發音。",
+  },
+  {
+    k: "mana",
+    title: "法力決定你能出什麼",
+    body: "每回合法力上限 +1（最多 10）。牌左上角的藍寶石是費用，法力不夠就不能出這張。",
+  },
+  {
+    k: "attack",
+    title: "隨從與攻擊",
+    body: "剛打出的隨從要「下一回合」才能攻擊。輪到你時，先點自己的隨從，再點敵方隨從或英雄發動攻擊。",
+  },
+  {
+    k: "keyword",
+    title: "三個關鍵字",
+    body: "嘲諷＝敵方有嘲諷隨從時必須先打它；潛行＝不能被指定攻擊；★加成＝答對題目才會生效。",
+  },
+];
+
+/** 引導步驟的簡易示意圖（純樣式方塊／線稿，無 emoji） */
+function OnbArt({ k }: { k: string }) {
+  if (k === "goal") {
+    return (
+      <div className="space-y-2">
+        {[
+          { name: "織者（你）", w: "100%", c: "bg-emerald-500" },
+          { name: "山林試煉", w: "35%", c: "bg-rose-500" },
+        ].map((r) => (
+          <div key={r.name} className="flex items-center gap-2">
+            <span className="w-20 shrink-0 text-[11px] text-slate-300">{r.name}</span>
+            <span className="relative h-3 flex-1 rounded-full bg-slate-700 overflow-hidden">
+              <span className={`absolute inset-y-0 left-0 ${r.c}`} style={{ width: r.w }} />
+            </span>
+          </div>
+        ))}
+        <p className="text-center text-[11px] text-rose-300/80">把對手血條清空 → 通過</p>
+      </div>
+    );
+  }
+  if (k === "quiz") {
+    return (
+      <div className="mx-auto max-w-[240px] space-y-1.5">
+        <p className="text-center text-[11px] text-slate-400">「三」的太魯閣族語是？</p>
+        {[
+          { t: "tru", ok: true },
+          { t: "spat", ok: false },
+        ].map((o) => (
+          <div
+            key={o.t}
+            className={`flex items-center justify-between rounded border px-3 py-1.5 text-sm ${
+              o.ok ? "border-emerald-400 bg-emerald-900/30 text-emerald-200" : "border-slate-700 text-slate-400"
+            }`}
+          >
+            <span>{o.t}</span>
+            {o.ok && <span className="text-emerald-300">✓ ★加成</span>}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (k === "mana") {
+    return (
+      <div className="flex items-center justify-center gap-1.5">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <span
+            key={i}
+            className={`h-4 w-4 rotate-45 rounded-[3px] ${i < 4 ? "bg-sky-400" : "bg-slate-700"}`}
+          />
+        ))}
+        <span className="ml-2 text-[11px] text-sky-200">4 / 10</span>
+      </div>
+    );
+  }
+  if (k === "attack") {
+    return (
+      <div className="flex items-center justify-center gap-3">
+        <span className="grid h-14 w-11 place-items-center rounded-md border-2 border-emerald-400 bg-emerald-900/30 text-[10px] text-emerald-200">
+          我方
+        </span>
+        <span className="text-2xl text-amber-300">→</span>
+        <span className="grid h-14 w-11 place-items-center rounded-md border-2 border-rose-400 bg-rose-900/30 text-[10px] text-rose-200">
+          敵方
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      {[
+        { t: "嘲諷", c: "border-orange-400 text-orange-200" },
+        { t: "潛行", c: "border-slate-400 text-slate-200" },
+        { t: "★加成", c: "border-amber-400 text-amber-200" },
+      ].map((c) => (
+        <span key={c.t} className={`rounded-full border px-3 py-1 text-xs ${c.c}`}>
+          {c.t}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 
 // ───────────────────────── 圖示（比照 /journey ORDER-039：全面移除表情符號）─────────────────────────
 // 一律用線稿 SVG 圖示，不用彩色 emoji 圖形字元。統一 24×24 viewBox、currentColor 描邊，
@@ -281,8 +392,11 @@ export default function PlayPage() {
   const [revealed, setRevealed] = useState<number | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [pending, setPending] = useState<{ card: Card; isCorrect: boolean } | null>(null);
-  // 開場規則說明：第一次進來自動彈出（localStorage 記過就不再自動彈），header 的「規則」可隨時再開
+  // 規則說明：header 的「規則」可隨時開啟的詳細條列
   const [showRules, setShowRules] = useState(false);
+  // 新手引導：第一次進來的互動分步教學（localStorage 記過就不再自動彈）
+  const [onboarding, setOnboarding] = useState(false);
+  const [onbStep, setOnbStep] = useState(0);
   // 電腦難度：預設普通，記憶上次選擇。切換即刻套用（影響下一個系統回合）。
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   // 耐玩循環：開局換牌、連勝計數、認輸確認
@@ -299,21 +413,26 @@ export default function PlayPage() {
     setGame(newGame());
     setMulliganPhase(true);
     try {
-      if (!localStorage.getItem("enzo-play-rules-seen")) setShowRules(true);
+      if (!localStorage.getItem("enzo-play-onboarded")) setOnboarding(true);
       const d = localStorage.getItem("enzo-play-difficulty");
       if (d === "easy" || d === "normal" || d === "hard") setDifficulty(d);
       const best = Number(localStorage.getItem("enzo-play-best-streak"));
       if (Number.isFinite(best) && best > 0) setBestStreak(best);
     } catch {
-      setShowRules(true); // localStorage 不可用（隱私模式）時仍給第一次說明
+      setOnboarding(true); // localStorage 不可用（隱私模式）時仍給第一次引導
     }
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   function closeRules() {
     setShowRules(false);
+  }
+
+  function finishOnboarding() {
+    setOnboarding(false);
+    setOnbStep(0);
     try {
-      localStorage.setItem("enzo-play-rules-seen", "1");
+      localStorage.setItem("enzo-play-onboarded", "1");
     } catch {
       // 記不住就算了，不阻斷開始遊戲
     }
@@ -1022,8 +1141,72 @@ export default function PlayPage() {
         </div>
       </div>
 
-      {/* 開局換牌（mulligan）：新局開始、規則關閉後彈出 */}
-      {mulliganPhase && !showRules && (
+      {/* 新手引導：第一次進來的互動分步教學 */}
+      {onboarding && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[70]">
+          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-amber-400/25 p-5 sm:p-6">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-amber-200/60">
+                新手引導 {onbStep + 1}/{ONB_STEPS.length}
+              </p>
+              <button onClick={finishOnboarding} className="text-xs text-slate-500 hover:text-slate-300 underline">
+                略過
+              </button>
+            </div>
+
+            <h3 className={`${notoSerifTC.className} text-xl font-bold text-amber-100 mb-2`}>
+              {ONB_STEPS[onbStep].title}
+            </h3>
+
+            <div className="rounded-xl bg-slate-950/60 border border-slate-700/60 p-4 mb-3 min-h-[92px] flex items-center justify-center">
+              <OnbArt k={ONB_STEPS[onbStep].k} />
+            </div>
+
+            <p className="text-sm text-slate-200 leading-relaxed mb-4 min-h-[3.5rem]">
+              {ONB_STEPS[onbStep].body}
+            </p>
+
+            <div className="flex items-center justify-center gap-1.5 mb-4">
+              {ONB_STEPS.map((s, i) => (
+                <span
+                  key={s.k}
+                  className={`h-1.5 rounded-full transition-all ${
+                    i === onbStep ? "w-5 bg-amber-400" : "w-1.5 bg-slate-600"
+                  }`}
+                />
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => setOnbStep((s) => Math.max(0, s - 1))}
+                disabled={onbStep === 0}
+                className="rounded px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-30"
+              >
+                ◀ 上一步
+              </button>
+              {onbStep < ONB_STEPS.length - 1 ? (
+                <button
+                  onClick={() => setOnbStep((s) => Math.min(ONB_STEPS.length - 1, s + 1))}
+                  className="rounded bg-amber-500 hover:bg-amber-400 px-5 py-2 text-sm font-bold text-black"
+                >
+                  下一步 ▶
+                </button>
+              ) : (
+                <button
+                  onClick={finishOnboarding}
+                  className="rounded bg-amber-500 hover:bg-amber-400 px-5 py-2 text-sm font-bold text-black"
+                >
+                  開始試煉 ▶
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 開局換牌（mulligan）：新局開始、引導/規則關閉後彈出 */}
+      {mulliganPhase && !showRules && !onboarding && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-[60]">
           <div className="w-full max-w-xl rounded-2xl bg-slate-900 border border-amber-400/25 p-5 sm:p-6">
             <p className="text-[11px] uppercase tracking-[0.2em] text-amber-200/60">開局換牌</p>
