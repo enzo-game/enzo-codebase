@@ -62,10 +62,10 @@ This lets the game feel fuller quickly while leaving sensitive cards in a review
 | 風停後的路 | tool | spell | 2 | `11-31` 雨停 | Give a friendly minion +1/+1; correct answer grants charge | Journey repair image | Implemented |
 | 溪畔補給 | nature | minion | 2 | `10-03` 小溪 | 1/3. End of turn: heal hero 1 | Travel and river crossing | Implemented |
 | 山口逆風 | nature | spell | 3 | `10-04` 風 | Return one enemy minion to deck; correct answer draws 1 | Weather as obstacle | Implemented |
-| 退水河床 | nature | spell | 3 | `11-31` 雨停 | Deal 2 to all damaged minions | Great Flood aftermath, non-ritual | Green-yellow |
+| 退水河床 | nature | spell | 3 | `11-31` 雨停 | Deal 2 to all enemy minions (reused `aoeEnemy2`; damaged-only kept as future engine option) | Great Flood aftermath, non-ritual | Implemented (ORDER-059) |
 | 石堆路標 | tool | minion | 3 | `12-11` 石堆 | 1/5 taunt | Mountain route marker | Implemented |
 | 火光守夜 | tool | spell | 3 | `30-33` 光明 | Heal hero 5 | Camp and safety image | Implemented |
-| 樹根護徑 | plant | minion | 4 | `08-28` 根 | 2/6 taunt | Pusu Qhuni-adjacent tree imagery | Green-yellow |
+| 樹根護徑 | plant | minion | 4 | `08-28` 根 | 2/6 taunt | Pusu Qhuni-adjacent tree imagery | Implemented (ORDER-059) |
 
 ## 6. Wave B: Needs Cultural Review
 
@@ -75,8 +75,20 @@ This lets the game feel fuller quickly while leaving sensitive cards in a review
 | 石木根脈 | legend/plant | minion | 5 | `08-28` 根 | 2/8 taunt | Pusu Qhuni; avoid dramatizing origin birth | Yellow |
 | 水退後的星光 | legend/nature | spell | 4 | `11-05` 星星 | Draw 2; correct answer heals 3 | Great Flood star image | Yellow |
 | 遠海兩島 | legend/nature | spell | 5 | `11-26` 海邊 | Deal 3 to enemy minions | Mawi aftermath, no playable giant | Yellow |
-| 彩虹橋影 | legend/nature | spell | 5 | `12-07` 橋樑 | Restore 8 health | Rainbow bridge as distant image only | High-yellow |
-| 虹光歸路 | legend/nature | spell | 6 | `11-28` 彩虹 | Restore 8 health and draw 1 on correct answer | Rainbow as return/connection image only | High-yellow |
+| 彩虹橋影 | legend/nature | spell | 5 | `12-07` 橋樑 | Restore 8 health | Rainbow bridge as distant image only | High-yellow — HOLD, see note |
+| 虹光歸路 | legend/nature | spell | 6 | `11-28` 彩虹 | Restore 8 health and draw 1 on correct answer | Rainbow as return/connection image only | High-yellow — HOLD, see note |
+
+> **Hold note (2026-07-10, ORDER-059 review):** The rainbow lane is already
+> served by the shipped card `leg-l07 彩虹當空` (`vocabId 11-28` = *hakaw utux*,
+> cost 6, restore 8), which carries a deliberately-guarded learning note
+> restricting it to "connection / watching" imagery. Adding `彩虹橋影` +
+> `虹光歸路` would (a) duplicate leg-l07's effect and (b) triple the amount of
+> Hakaw-Utux material in the pool. Note that `11-28`'s Truku token is literally
+> *hakaw utux* (spirit/ancestor bridge), so any new card on it is a cultural
+> red-line decision, not a design one. Recommendation: do **not** add these two;
+> the rainbow lane is complete. The remaining 4 Wave B cards (`樹頭的記憶`,
+> `石木根脈`, `水退後的星光`, `遠海兩島`) still need `enzo-culture` review before
+> implementation.
 
 ## 7. Cards To Avoid
 

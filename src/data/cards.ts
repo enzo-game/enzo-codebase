@@ -61,6 +61,7 @@ export const CARDS: Card[] = [
   { id: "leg-n08", nameZh: "休息的夜", type: "spell", cost: 2, rarity: "rare", theme: "nature", vocabId: "13-22", effect: "allFriendStealth", effectText: "我方所有隨從獲得潛行", bonusText: "各 +0/+1" },
   { id: "leg-n09", nameZh: "溪畔補給", type: "minion", cost: 2, attack: 1, health: 3, rarity: "common", theme: "nature", vocabId: "10-03", effect: "healHero1", effectText: "回合結束：回復我方英雄 1", bonusText: "改為回復 2" },
   { id: "leg-n10", nameZh: "山口逆風", type: "spell", cost: 3, rarity: "rare", theme: "nature", vocabId: "10-04", effect: "shuffleBackEnemy", effectText: "將一個敵方隨從洗回敵方牌庫", bonusText: "額外抽 1 張" },
+  { id: "leg-n11", nameZh: "退水河床", type: "spell", cost: 3, rarity: "rare", theme: "nature", vocabId: "11-31", effect: "aoeEnemy2", effectText: "對所有敵方隨從造成 2 點傷害", bonusText: "改為 3 點" },
   // ── 山林動物 ──
   { id: "leg-a01", nameZh: "山羌", type: "minion", cost: 1, attack: 2, health: 1, rarity: "common", theme: "animal", vocabId: "07-24", keywords: ["charge"], effectText: "衝鋒", bonusText: "+1/+0", bonusStats: { atk: 1, hp: 0 } },
   { id: "leg-a02", nameZh: "山豬", type: "minion", cost: 2, attack: 3, health: 2, rarity: "common", theme: "animal", vocabId: "07-15", effectText: "—", bonusText: "+0/+1", bonusStats: { atk: 0, hp: 1 } },
@@ -80,6 +81,7 @@ export const CARDS: Card[] = [
   { id: "leg-p06", nameZh: "風停後的路", type: "spell", cost: 2, rarity: "common", theme: "tool", vocabId: "11-31", effect: "buffFriend11", effectText: "一個友方隨從 +1/+1", bonusText: "並獲得衝鋒" },
   { id: "leg-p07", nameZh: "石堆路標", type: "minion", cost: 3, attack: 1, health: 5, rarity: "common", theme: "tool", vocabId: "12-11", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+0/+1", bonusStats: { atk: 0, hp: 1 } },
   { id: "leg-p08", nameZh: "火光守夜", type: "spell", cost: 3, rarity: "common", theme: "tool", vocabId: "30-33", effect: "healHero5", effectText: "回復我方英雄 5 點", bonusText: "額外回復 3 點" },
+  { id: "leg-p09", nameZh: "樹根護徑", type: "minion", cost: 4, attack: 2, health: 6, rarity: "common", theme: "plant", vocabId: "08-28", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+0/+2", bonusStats: { atk: 0, hp: 2 } },
 ];
 
 // 幼樹 token（不入牌庫，僅由 Pusu Qhuni 戰吼召喚）
@@ -122,6 +124,7 @@ export const CARD_LEARNING: Record<string, string> = {
   "leg-n08": "射日之後世界重新有夜晚，休息也成為旅程的一部分。",
   "leg-n09": "小溪是山路補給與過路地景，讓玩家學到溪流相關詞彙。",
   "leg-n10": "山口逆風把風變成路上的阻力，學的是自然與地形的關係。",
+  "leg-n11": "大洪水退去後，河床重新顯露；牌面只呈現水勢消退的地景，不涉儀式。",
   "leg-a01": "山羌是台灣山林動物，卡牌用快速行動讓玩家記住牠的敏捷。",
   "leg-a02": "山豬是常見山林動物詞彙，牌面作為基礎戰力而非傳說角色。",
   "leg-a03": "飛鼠連到夜間山林生態，玩家同時學動物詞與抽牌節奏。",
@@ -139,6 +142,7 @@ export const CARD_LEARNING: Record<string, string> = {
   "leg-p06": "雨停後路才重新可走，這張牌連到修路與同行的旅程主題。",
   "leg-p07": "石堆可作山路標記；牌面避免祭壇化，只呈現自然路標。",
   "leg-p08": "火光守夜是夜路中的安全與陪伴，學的是光明與守望意象。",
+  "leg-p09": "山徑旁的樹根抓住土石、護住路基；以植物與地形呈現，不神聖化樹木本身。",
   "leg-token-sapling": "幼樹連到 Pusu Qhuni 的樹木意象，也提醒牌面以植物代替人物神聖化。",
 };
 
