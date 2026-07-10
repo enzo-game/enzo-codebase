@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { Noto_Serif_TC } from "next/font/google";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
 import { CARD_LEARNING, Card, RARITY_COLOR, Rarity, Theme } from "@/data/cards";
 import { audioUrl } from "@/data/truku";
 import AmbientAudio from "@/components/AmbientAudio";
-import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose } from "@/lib/sfx";
+import BattleMusic from "@/components/BattleMusic";
+import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose, sfxAttack, sfxHit, sfxSummon } from "@/lib/sfx";
 import {
   Game,
   Minion,
@@ -313,6 +314,73 @@ export default function PlayPage() {
     else if (winner === "enemy") sfxLose();
   }, [winner]);
 
+  // ── 打擊感（ORDER-065）：以「前後盤面差異」推導浮動傷害數字、受擊震動、登場音 ──
+  // 集中在一個 effect 比較 prevGame vs game：英雄/隨從掉血 → 冒 -N、抖動、播受擊音；敵方新隨從 → 登場音。
+  const [heroShake, setHeroShake] = useState({ player: false, enemy: false });
+  const [floats, setFloats] = useState<{ id: number; anchor: string; dmg: number }[]>([]);
+  const prevGameRef = useRef<Game | null>(null);
+  const fxId = useRef(0);
+
+  useEffect(() => {
+    const prev = prevGameRef.current;
+    prevGameRef.current = game;
+    if (!prev) return;
+
+    /* eslint-disable react-hooks/set-state-in-effect */
+    const spawned: { id: number; anchor: string; dmg: number }[] = [];
+    let hit = false;
+
+    if (game.enemyHp < prev.enemyHp) {
+      spawned.push({ id: ++fxId.current, anchor: "heroEnemy", dmg: prev.enemyHp - game.enemyHp });
+      setHeroShake((s) => ({ ...s, enemy: true }));
+      hit = true;
+    }
+    if (game.playerHp < prev.playerHp) {
+      spawned.push({ id: ++fxId.current, anchor: "heroPlayer", dmg: prev.playerHp - game.playerHp });
+      setHeroShake((s) => ({ ...s, player: true }));
+      hit = true;
+    }
+
+    const prevE = new Map(prev.eBoard.map((m) => [m.key, m.health]));
+    for (const m of game.eBoard) {
+      const ph = prevE.get(m.key);
+      if (ph !== undefined && m.health < ph) {
+        spawned.push({ id: ++fxId.current, anchor: m.key, dmg: ph - m.health });
+        hit = true;
+      }
+    }
+    const prevP = new Map(prev.pBoard.map((m) => [m.key, m.health]));
+    for (const m of game.pBoard) {
+      const ph = prevP.get(m.key);
+      if (ph !== undefined && m.health < ph) {
+        spawned.push({ id: ++fxId.current, anchor: m.key, dmg: ph - m.health });
+        hit = true;
+      }
+    }
+
+    const prevEKeys = new Set(prev.eBoard.map((m) => m.key));
+    if (game.eBoard.some((m) => !prevEKeys.has(m.key))) sfxSummon();
+
+    if (spawned.length > 0) {
+      setFloats((f) => [...f, ...spawned]);
+      const ids = new Set(spawned.map((s) => s.id));
+      setTimeout(() => setFloats((f) => f.filter((x) => !ids.has(x.id))), 850);
+    }
+    if (hit) sfxHit();
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [game]);
+
+  useEffect(() => {
+    if (!heroShake.player && !heroShake.enemy) return;
+    const t = setTimeout(() => setHeroShake({ player: false, enemy: false }), 420);
+    return () => clearTimeout(t);
+  }, [heroShake]);
+
+  const hitKeys = new Set(
+    floats.filter((f) => f.anchor !== "heroEnemy" && f.anchor !== "heroPlayer").map((f) => f.anchor),
+  );
+  const floatsFor = (anchor: string) => floats.filter((f) => f.anchor === anchor);
+
   function reset() {
     setQuiz(null);
     setRevealed(null);
@@ -408,6 +476,7 @@ export default function PlayPage() {
       return;
     }
     if (!selected || !atkLegal.keys.has(key)) return;
+    sfxAttack();
     setGame((g) => resolveAttack(g, "player", selected, { kind: "minion", side: "enemy", key }));
     setSelected(null);
   }
@@ -419,6 +488,7 @@ export default function PlayPage() {
       return;
     }
     if (!selected || !atkLegal.heroAllowed) return;
+    sfxAttack();
     setGame((g) => resolveAttack(g, "player", selected, { kind: "hero" }));
     setSelected(null);
   }
@@ -465,6 +535,7 @@ export default function PlayPage() {
   return (
     <main className="play-page min-h-screen text-slate-100 p-2 sm:p-4">
       <AmbientAudio />
+      <BattleMusic />
       <GemDefs />
       <div className="play-shell mx-auto">
         {/* 標題列 */}
@@ -558,8 +629,13 @@ export default function PlayPage() {
           <button
             onClick={onEnemyHero}
             disabled={!enemyHeroTargetable}
-            className={`hs-portrait hs-portrait-enemy transition ${enemyHeroTargetable ? "hs-hero-targetable cursor-pointer" : ""}`}
+            className={`hs-portrait hs-portrait-enemy relative transition ${enemyHeroTargetable ? "hs-hero-targetable cursor-pointer" : ""} ${heroShake.enemy ? "hs-hero-shake" : ""}`}
           >
+            {floatsFor("heroEnemy").map((f) => (
+              <span key={f.id} className="dmg-float" aria-hidden>
+                -{f.dmg}
+              </span>
+            ))}
             <span className="hs-portrait-art">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={HERO_ART.enemy} alt="山林試煉頭像" />
@@ -604,11 +680,17 @@ export default function PlayPage() {
                   onClick={() => onEnemyMinion(e.key)}
                   disabled={!targetable}
                   title={`${e.card.nameZh}${kw ? `（${kw}）` : ""}`}
-                  className={`hs-token w-[86px] md:w-[102px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
+                  className={`hs-token hs-token-enter w-[86px] md:w-[102px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
                     ${e.taunt ? "hs-token-taunt" : ""}
+                    ${hitKeys.has(e.key) ? "hs-token-hit" : ""}
                     ${e.stealth ? "opacity-60 blur-[0.5px] ring-1 ring-slate-400" : ""}
                     ${targetable ? "hover:ring-2 hover:ring-rose-400 cursor-pointer" : ""}`}
                 >
+                  {floatsFor(e.key).map((f) => (
+                    <span key={f.id} className="dmg-float" aria-hidden>
+                      -{f.dmg}
+                    </span>
+                  ))}
                   <span className="absolute inset-0 rounded-[8px] overflow-hidden">
                     {art ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -655,14 +737,20 @@ export default function PlayPage() {
                   key={e.key}
                   onClick={() => onPlayerMinion(e.key)}
                   title={`${e.card.nameZh}${kw ? `（${kw}）` : ""}`}
-                  className={`hs-token w-[86px] md:w-[102px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
+                  className={`hs-token hs-token-enter w-[86px] md:w-[102px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
                     ${e.taunt ? "hs-token-taunt" : ""}
+                    ${hitKeys.has(e.key) ? "hs-token-hit" : ""}
                     ${e.stealth ? "opacity-60 blur-[0.5px] ring-1 ring-slate-400" : ""}
                     ${ready && selected !== e.key && !spellTarget ? "hs-ready-pulse" : ""}
                     ${selected === e.key ? "ring-2 ring-amber-400 -translate-y-1" : ""}
                     ${spellTarget ? "ring-2 ring-emerald-400 cursor-pointer" : ""}
                     ${ready || spellTarget ? "cursor-pointer hover:-translate-y-0.5" : e.stealth ? "" : "opacity-70"}`}
                 >
+                  {floatsFor(e.key).map((f) => (
+                    <span key={f.id} className="dmg-float" aria-hidden>
+                      -{f.dmg}
+                    </span>
+                  ))}
                   <span className="absolute inset-0 rounded-[8px] overflow-hidden">
                     {art ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -711,7 +799,12 @@ export default function PlayPage() {
           </button>
 
           {/* 我方英雄 + 資源 */}
-          <section className="hs-portrait hs-portrait-player">
+          <section className={`hs-portrait hs-portrait-player relative ${heroShake.player ? "hs-hero-shake" : ""}`}>
+            {floatsFor("heroPlayer").map((f) => (
+              <span key={f.id} className="dmg-float" aria-hidden>
+                -{f.dmg}
+              </span>
+            ))}
             <span className="hs-portrait-art">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={HERO_ART.player} alt="織者頭像" />
@@ -994,7 +1087,11 @@ export default function PlayPage() {
                 className="w-16 h-16 rounded-full object-cover border border-amber-300/50 shadow-lg"
               />
             </div>
-            <h3 className="text-xl font-bold mb-1">
+            <h3
+              className={`hs-result-title text-2xl font-bold mb-1 ${
+                game.winner === "player" ? "text-amber-300" : "text-slate-300"
+              }`}
+            >
               {game.winner === "player" ? "通過山林試煉！" : "山林試煉未過"}
             </h3>
             <p className="text-sm text-slate-400 mb-4">

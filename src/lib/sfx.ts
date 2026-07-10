@@ -85,6 +85,53 @@ export function sfxStreak() {
   tone(ac, 987.77, t + 0.16, 0.22, 0.11);
 }
 
+/** 隨從入場：短促柔和「登場」感（上行雙音） */
+export function sfxSummon() {
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  tone(ac, 294, t, 0.1, 0.08, "triangle");
+  tone(ac, 440, t + 0.06, 0.14, 0.08, "triangle");
+}
+
+/** 攻擊揮擊：短促下掃「咻」（三角波快速下滑，中性戰鬥語彙、非族樂） */
+export function sfxAttack() {
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  const o = ac.createOscillator();
+  o.type = "triangle";
+  o.frequency.setValueAtTime(520, t);
+  o.frequency.exponentialRampToValueAtTime(180, t + 0.12);
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.1, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+  o.connect(g);
+  g.connect(ac.destination);
+  o.start(t);
+  o.stop(t + 0.2);
+}
+
+/** 命中/受擊：短促悶擊「咚」（低頻正弦快速衰減） */
+export function sfxHit() {
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  const o = ac.createOscillator();
+  o.type = "sine";
+  o.frequency.setValueAtTime(160, t);
+  o.frequency.exponentialRampToValueAtTime(70, t + 0.14);
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.14, t + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+  o.connect(g);
+  g.connect(ac.destination);
+  o.start(t);
+  o.stop(t + 0.22);
+}
+
 /** 抵達/勝利：三聲柔和上行（中性 UI 完成音） */
 export function sfxArrive() {
   const ac = getCtx();
