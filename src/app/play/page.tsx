@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { Noto_Serif_TC } from "next/font/google";
 import { useEffect, useState } from "react";
 import type { JSX } from "react";
-import { CARDS, Card, RARITY_COLOR, Theme, TOKEN_SAPLING } from "@/data/cards";
+import { CARDS, Card, RARITY_COLOR, Rarity, Theme, TOKEN_SAPLING } from "@/data/cards";
 import { vocab, distractors, audioUrl } from "@/data/truku";
 import AmbientAudio from "@/components/AmbientAudio";
 import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose } from "@/lib/sfx";
@@ -62,6 +63,9 @@ type QuizState = {
   chinese: string;
 };
 
+// 卡名用襯線字（比照 /journey 的標題字），像收藏卡的名條
+const notoSerifTC = Noto_Serif_TC({ weight: ["700"], subsets: ["latin"], display: "swap" });
+
 const HERO_HP = 30;
 const BOARD_MAX = 7;
 const HAND_MAX = 10;
@@ -103,25 +107,6 @@ function IconHeart({ className = "w-4 h-4" }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 20s-7-4.4-9.5-9A5.5 5.5 0 0112 5.8 5.5 5.5 0 0121.5 11c-2.5 4.6-9.5 9-9.5 9z" />
-    </svg>
-  );
-}
-function IconSword({ className = "w-4 h-4" }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 4L9 15" />
-      <path d="M13 11l3 3" />
-      <path d="M6 18l3-3" />
-      <path d="M4 20l2-2" />
-    </svg>
-  );
-}
-function IconGem({ className = "w-4 h-4" }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 9l3-5h10l3 5-8 12z" />
-      <path d="M4 9h16" />
-      <path d="M9.5 4L12 9l2.5-5" />
     </svg>
   );
 }
@@ -217,6 +202,129 @@ const CARD_ART: Record<string, string> = {
   "leg-p05": "/images/cards/p05-cypress.jpg",
   "leg-token-sapling": "/images/cards/token-sapling.jpg",
 };
+
+// 稀有度 → 卡框光暈（史詩靜態紫暈、傳說琥珀呼吸暈；樣式見 globals.css .hs-glow-*）
+const RARITY_GLOW: Record<Rarity, string> = {
+  common: "",
+  rare: "",
+  epic: "hs-glow-epic",
+  legendary: "hs-glow-legendary",
+};
+
+const RARITY_ZH: Record<Rarity, string> = {
+  common: "普通",
+  rare: "稀有",
+  epic: "史詩",
+  legendary: "傳說",
+};
+
+// ───────────────────────── 切面寶石（費用／攻擊／生命指示器）─────────────────────────
+// 依司令規格：費用＝藍寶石六角柱切、攻擊＝琥珀石六角切、生命＝紅寶石盾形切。
+// 小型 SVG：深色鑲邊（bezel）→ 漸層主體 → 三角切面（亮／暗面）→ 白色高光點。
+// 文化紅線：輪廓一律避開菱形（祖靈之眼紋樣），切面也只用三角形，不出現菱形塊面。
+
+/** 寶石漸層共用定義：整頁 render 一次，供所有 StatGem 以 url(#…) 引用 */
+function GemDefs() {
+  return (
+    <svg width="0" height="0" className="absolute" aria-hidden focusable="false">
+      <defs>
+        <linearGradient id="gemSapphire" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#7dd3fc" />
+          <stop offset="0.55" stopColor="#0284c7" />
+          <stop offset="1" stopColor="#075985" />
+        </linearGradient>
+        <linearGradient id="gemAmber" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fcd34d" />
+          <stop offset="0.55" stopColor="#f59e0b" />
+          <stop offset="1" stopColor="#b45309" />
+        </linearGradient>
+        <linearGradient id="gemRuby" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fb7185" />
+          <stop offset="0.55" stopColor="#e11d48" />
+          <stop offset="1" stopColor="#9f1239" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+type GemKind = "cost" | "atk" | "hp";
+
+/** 藍寶石：直立六角柱切（尖頂尖底、左右直邊，六邊形非菱形） */
+function GemShapeCost() {
+  return (
+    <>
+      <polygon points="12,0.8 21.5,6.6 21.5,17.4 12,23.2 2.5,17.4 2.5,6.6" fill="#0c2f45" stroke="#bae6fd" strokeWidth="0.9" strokeOpacity="0.75" strokeLinejoin="round" />
+      <polygon points="12,2.8 19.7,7.6 19.7,16.4 12,21.2 4.3,16.4 4.3,7.6" fill="url(#gemSapphire)" />
+      <polygon points="12,2.8 4.3,7.6 12,12.2" fill="#ffffff" opacity="0.34" />
+      <polygon points="12,2.8 19.7,7.6 12,12.2" fill="#ffffff" opacity="0.18" />
+      <polygon points="4.3,16.4 12,21.2 12,12.2" fill="#000000" opacity="0.14" />
+      <polygon points="19.7,16.4 12,21.2 12,12.2" fill="#000000" opacity="0.26" />
+      <circle cx="8.2" cy="6.6" r="1.2" fill="#ffffff" opacity="0.9" />
+    </>
+  );
+}
+
+/** 琥珀石：平頂六角切 */
+function GemShapeAtk() {
+  return (
+    <>
+      <polygon points="6,1.2 18,1.2 23.3,12 18,22.8 6,22.8 0.7,12" fill="#5b3308" stroke="#fde68a" strokeWidth="0.9" strokeOpacity="0.75" strokeLinejoin="round" />
+      <polygon points="7.1,3.1 16.9,3.1 21.2,12 16.9,20.9 7.1,20.9 2.8,12" fill="url(#gemAmber)" />
+      <polygon points="7.1,3.1 16.9,3.1 12,12" fill="#ffffff" opacity="0.3" />
+      <polygon points="7.1,3.1 2.8,12 12,12" fill="#ffffff" opacity="0.16" />
+      <polygon points="2.8,12 7.1,20.9 12,12" fill="#000000" opacity="0.14" />
+      <polygon points="7.1,20.9 16.9,20.9 12,12" fill="#000000" opacity="0.26" />
+      <polygon points="21.2,12 16.9,20.9 12,12" fill="#000000" opacity="0.18" />
+      <circle cx="8.6" cy="6" r="1.2" fill="#ffffff" opacity="0.9" />
+    </>
+  );
+}
+
+/** 紅寶石：盾形切 */
+function GemShapeHp() {
+  return (
+    <>
+      <path d="M12 0.8 L21.6 4.6 V11.4 C21.6 17.5 12 23.2 12 23.2 C12 23.2 2.4 17.5 2.4 11.4 V4.6 Z" fill="#4c0519" stroke="#fecdd3" strokeWidth="0.9" strokeOpacity="0.75" strokeLinejoin="round" />
+      <path d="M12 2.8 L19.7 5.9 V11.2 C19.7 16.2 12 20.9 12 20.9 C12 20.9 4.3 16.2 4.3 11.2 V5.9 Z" fill="url(#gemRuby)" />
+      <polygon points="12,2.8 4.3,5.9 12,11.6" fill="#ffffff" opacity="0.32" />
+      <polygon points="12,2.8 19.7,5.9 12,11.6" fill="#ffffff" opacity="0.16" />
+      <polygon points="4.3,11.2 12,20.9 12,11.6" fill="#000000" opacity="0.14" />
+      <polygon points="19.7,11.2 12,20.9 12,11.6" fill="#000000" opacity="0.26" />
+      <circle cx="8.4" cy="6.4" r="1.2" fill="#ffffff" opacity="0.9" />
+    </>
+  );
+}
+
+const GEM_SHAPE: Record<GemKind, () => JSX.Element> = {
+  cost: GemShapeCost,
+  atk: GemShapeAtk,
+  hp: GemShapeHp,
+};
+
+function StatGem({
+  kind,
+  value,
+  size = "md",
+  tone = "text-white",
+  className = "",
+}: {
+  kind: GemKind;
+  value: number;
+  size?: "md" | "sm";
+  tone?: string;
+  className?: string;
+}) {
+  const Shape = GEM_SHAPE[kind];
+  return (
+    <span className={`hs-gem hs-gem-${size} ${className}`}>
+      <svg viewBox="0 0 24 24" className="block w-full h-full" aria-hidden focusable="false">
+        <Shape />
+      </svg>
+      <span className={`hs-gem-num ${tone}`}>{value}</span>
+    </span>
+  );
+}
 
 const BOARD_BG = "/images/cards/board-battle.jpg";
 const CARDBACK = "/images/cards/cardback.jpg";
@@ -1021,6 +1129,7 @@ export default function PlayPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 text-slate-100 p-3 sm:p-5">
       <AmbientAudio />
+      <GemDefs />
       <div className="max-w-5xl mx-auto">
         {/* 標題列 */}
         <header className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -1090,43 +1199,46 @@ export default function PlayPage() {
           <div className="relative p-2 space-y-2">
         {/* 敵方戰場 */}
         <section>
-          <div className="min-h-24 rounded-xl border border-rose-900/40 bg-rose-950/10 p-2 flex flex-wrap gap-2">
+          <div className="min-h-24 rounded-xl border border-rose-900/40 bg-rose-950/10 px-2 pt-2 pb-4 flex flex-wrap gap-x-3 gap-y-4">
             {game.eBoard.length === 0 && (
               <span className="text-slate-600 text-xs self-center px-2">山林試煉尚無隨從。</span>
             )}
             {game.eBoard.map((e) => {
               const targetable = enemyMinionTargetable(e);
+              const ThemeIcon = THEME_ICON[e.card.theme];
+              const art = CARD_ART[e.card.id];
+              const kw = [e.taunt ? "嘲諷" : "", e.stealth ? "潛行" : ""].filter(Boolean).join("·");
               return (
                 <button
                   key={e.key}
                   onClick={() => onEnemyMinion(e.key)}
                   disabled={!targetable}
-                  className={`w-20 rounded-lg border-2 ${RARITY_COLOR[e.card.rarity]} bg-slate-800 p-1.5 text-center relative transition
-                    ${targetable ? "hover:ring-2 hover:ring-rose-400 cursor-pointer" : ""}
-                    ${e.stealth ? "opacity-60" : ""}`}
+                  title={`${e.card.nameZh}${kw ? `（${kw}）` : ""}`}
+                  className={`hs-token w-[72px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
+                    ${e.taunt ? "hs-token-taunt" : ""}
+                    ${e.stealth ? "opacity-60 blur-[0.5px] ring-1 ring-slate-400" : ""}
+                    ${targetable ? "hover:ring-2 hover:ring-rose-400 cursor-pointer" : ""}`}
                 >
-                  {e.taunt && (
-                    <span className="absolute -top-2 -left-1 text-[9px] bg-slate-300 text-black rounded-full px-1">嘲諷</span>
-                  )}
-                  {e.stealth && (
-                    <span className="absolute -top-2 -right-1 text-[9px] bg-indigo-400 text-black rounded-full px-1">潛行</span>
-                  )}
-                  {CARD_ART[e.card.id] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={CARD_ART[e.card.id]} alt="" className="w-10 h-10 object-cover rounded mx-auto" />
-                  ) : (
-                    <div className="text-base flex justify-center">
-                      {(() => {
-                        const ThemeIcon = THEME_ICON[e.card.theme];
-                        return <ThemeIcon className="w-4 h-4" />;
-                      })()}
-                    </div>
-                  )}
-                  <div className="text-[10px] font-semibold truncate">{e.card.nameZh}</div>
-                  <div className="flex justify-between text-[11px] mt-0.5">
-                    <span className="text-amber-300 flex items-center gap-0.5"><IconSword className="w-3 h-3 shrink-0" />{e.attack}</span>
-                    <span className="text-rose-300 flex items-center gap-0.5"><IconHeart className="w-3 h-3 shrink-0" />{e.health}</span>
-                  </div>
+                  <span className="absolute inset-0 rounded-[8px] overflow-hidden">
+                    {art ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={art} alt={e.card.nameZh} className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                      <span className="absolute inset-0 flex items-center justify-center text-amber-200/40">
+                        <ThemeIcon className="w-7 h-7" />
+                      </span>
+                    )}
+                    <span className="hs-art-frame" aria-hidden />
+                    <span className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-black/80 to-transparent" aria-hidden />
+                  </span>
+                  <StatGem kind="atk" value={e.attack} size="sm" className="hs-gem-atk" />
+                  <StatGem
+                    kind="hp"
+                    value={e.health}
+                    size="sm"
+                    tone={e.health < e.maxHealth ? "text-rose-200" : "text-white"}
+                    className="hs-gem-hp"
+                  />
                 </button>
               );
             })}
@@ -1135,7 +1247,7 @@ export default function PlayPage() {
 
         {/* 我方戰場 */}
         <section>
-          <div className="min-h-24 rounded-xl border border-sky-900/40 bg-sky-950/10 p-2 flex flex-wrap gap-2">
+          <div className="min-h-24 rounded-xl border border-sky-900/40 bg-sky-950/10 px-2 pt-2 pb-4 flex flex-wrap gap-x-3 gap-y-4">
             {game.pBoard.length === 0 && (
               <span className="text-slate-600 text-xs self-center px-2">
                 尚無隨從，從手牌打出吧。
@@ -1144,47 +1256,49 @@ export default function PlayPage() {
             {game.pBoard.map((e) => {
               const ready = e.canAttack && game.phase === "player" && !game.winner && !pending;
               const spellTarget = friendMinionTargetable;
+              const ThemeIcon = THEME_ICON[e.card.theme];
+              const art = CARD_ART[e.card.id];
+              const kw = [e.taunt ? "嘲諷" : "", e.stealth ? "潛行" : "", e.bonus ? "加成" : ""]
+                .filter(Boolean)
+                .join("·");
               return (
                 <button
                   key={e.key}
                   onClick={() => onPlayerMinion(e.key)}
-                  className={`w-20 rounded-lg border-2 ${RARITY_COLOR[e.card.rarity]} bg-slate-800 p-1.5 text-center relative transition
+                  title={`${e.card.nameZh}${kw ? `（${kw}）` : ""}`}
+                  className={`hs-token w-[72px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
+                    ${e.taunt ? "hs-token-taunt" : ""}
+                    ${e.stealth ? "opacity-60 blur-[0.5px] ring-1 ring-slate-400" : ""}
+                    ${ready && selected !== e.key && !spellTarget ? "hs-ready-pulse" : ""}
                     ${selected === e.key ? "ring-2 ring-amber-400 -translate-y-1" : ""}
                     ${spellTarget ? "ring-2 ring-emerald-400 cursor-pointer" : ""}
-                    ${ready || spellTarget ? "cursor-pointer hover:-translate-y-0.5" : "opacity-70"}`}
+                    ${ready || spellTarget ? "cursor-pointer hover:-translate-y-0.5" : e.stealth ? "" : "opacity-70"}`}
                 >
+                  <span className="absolute inset-0 rounded-[8px] overflow-hidden">
+                    {art ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={art} alt={e.card.nameZh} className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                      <span className="absolute inset-0 flex items-center justify-center text-amber-200/40">
+                        <ThemeIcon className="w-7 h-7" />
+                      </span>
+                    )}
+                    <span className="hs-art-frame" aria-hidden />
+                    <span className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-black/80 to-transparent" aria-hidden />
+                  </span>
                   {e.bonus && (
-                    <span className="absolute -top-2 -right-1 text-[9px] bg-amber-500 text-black rounded-full px-1">
-                      加成
+                    <span className="absolute -top-1.5 -right-1.5 z-10 rounded-full bg-amber-500 px-1 text-[9px] font-bold text-black shadow">
+                      ★
                     </span>
                   )}
-                  {ready && !e.taunt && !e.stealth && (
-                    <span className="absolute -top-2 -left-1 text-[9px] bg-emerald-500 text-black rounded-full px-1">
-                      可攻
-                    </span>
-                  )}
-                  {e.taunt && (
-                    <span className="absolute -top-2 -left-1 text-[9px] bg-slate-300 text-black rounded-full px-1">嘲諷</span>
-                  )}
-                  {e.stealth && (
-                    <span className="absolute -bottom-2 -left-1 text-[9px] bg-indigo-400 text-black rounded-full px-1">潛行</span>
-                  )}
-                  {CARD_ART[e.card.id] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={CARD_ART[e.card.id]} alt="" className="w-10 h-10 object-cover rounded mx-auto" />
-                  ) : (
-                    <div className="text-base flex justify-center">
-                      {(() => {
-                        const ThemeIcon = THEME_ICON[e.card.theme];
-                        return <ThemeIcon className="w-4 h-4" />;
-                      })()}
-                    </div>
-                  )}
-                  <div className="text-[10px] font-semibold truncate">{e.card.nameZh}</div>
-                  <div className="flex justify-between text-[11px] mt-0.5">
-                    <span className="text-amber-300 flex items-center gap-0.5"><IconSword className="w-3 h-3 shrink-0" />{e.attack}</span>
-                    <span className="text-rose-300 flex items-center gap-0.5"><IconHeart className="w-3 h-3 shrink-0" />{e.health}</span>
-                  </div>
+                  <StatGem kind="atk" value={e.attack} size="sm" className="hs-gem-atk" />
+                  <StatGem
+                    kind="hp"
+                    value={e.health}
+                    size="sm"
+                    tone={e.health < e.maxHealth ? "text-rose-200" : "text-white"}
+                    className="hs-gem-hp"
+                  />
                 </button>
               );
             })}
@@ -1226,53 +1340,72 @@ export default function PlayPage() {
               <span className="text-amber-300 ml-2">▶ 已選攻擊者，點敵方目標</span>
             )}
           </h2>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-x-3 gap-y-4 pt-2 pb-2">
             {game.pHand.length === 0 && (
               <span className="text-slate-600 text-xs">手牌已空，結束回合抽牌。</span>
             )}
             {game.pHand.map((c, i) => {
               const playable =
                 c.cost <= game.pMana && game.phase === "player" && !game.winner && !pending && !quiz;
+              const ThemeIcon = THEME_ICON[c.theme];
+              const art = CARD_ART[c.id];
               return (
                 <button
                   key={`${c.id}-${i}`}
                   onClick={() => tryPlay(c)}
                   disabled={!playable}
-                  className={`w-28 text-left rounded-xl border-2 ${RARITY_COLOR[c.rarity]} p-2 transition
-                    ${playable ? "bg-slate-800 hover:-translate-y-1 hover:bg-slate-700" : "bg-slate-900 opacity-40 cursor-not-allowed"}`}
+                  title={c.nameZh}
+                  className={`hs-card ${RARITY_GLOW[c.rarity]} w-[124px] sm:w-[150px] aspect-[5/7] shrink-0 text-left border-2 ${RARITY_COLOR[c.rarity]}
+                    ${playable ? "hs-card-playable cursor-pointer" : "opacity-40 cursor-not-allowed"}`}
                 >
-                  {CARD_ART[c.id] && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={CARD_ART[c.id]} alt={c.nameZh} className="w-full h-16 object-cover rounded-lg mb-1" />
-                  )}
-                  <div className="flex justify-between items-center">
-                    <span className="text-sky-300 font-bold text-sm flex items-center gap-0.5">
-                      <IconGem className="w-3.5 h-3.5 shrink-0" />{c.cost}
+                  {/* 內容層：切圓角、蓋在稀有度外框內 */}
+                  <span className="absolute inset-0 rounded-[12px] overflow-hidden flex flex-col">
+                    {/* 畫窗（上 55%）：金內框裱起來的肖像；缺圖用大號題材線稿 */}
+                    <span className="relative h-[55%] shrink-0 rounded-t-[12px] bg-gradient-to-b from-slate-800 to-slate-900">
+                      {art ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={art} alt={c.nameZh} className="absolute inset-0 w-full h-full object-cover" />
+                      ) : (
+                        <span className="absolute inset-0 flex items-center justify-center text-amber-200/40">
+                          <ThemeIcon className="w-12 h-12" />
+                        </span>
+                      )}
+                      <span className="hs-art-frame" aria-hidden />
                     </span>
-                    <span className="text-base">
-                      {(() => {
-                        const ThemeIcon = THEME_ICON[c.theme];
-                        return <ThemeIcon className="w-4 h-4" />;
-                      })()}
+                    {/* 文字欄：類型／稀有度、效果、答對加成 */}
+                    <span className="flex-1 flex flex-col px-1.5 pt-3.5 pb-2 text-center">
+                      <span className="flex items-center justify-center gap-1 text-[8px] tracking-[0.15em] text-amber-200/70">
+                        <ThemeIcon className="w-2.5 h-2.5 shrink-0" />
+                        {c.type === "minion" ? "隨從" : "法術"} · {RARITY_ZH[c.rarity]}
+                      </span>
+                      {c.effectText !== "—" && (
+                        <span title={c.effectText} className="text-[9px] leading-tight text-slate-200 mt-0.5 line-clamp-2">
+                          {c.effectText}
+                        </span>
+                      )}
+                      <span title={c.bonusText} className="text-[9px] leading-tight text-amber-300/90 mt-0.5 line-clamp-2">
+                        ★ {c.bonusText}
+                      </span>
                     </span>
-                  </div>
-                  <div className="font-semibold text-xs mt-1 truncate">{c.nameZh}</div>
-                  <div className="text-[9px] text-slate-400">
-                    {c.type === "minion" ? "隨從" : "法術"} ·{" "}
-                    {c.rarity === "legendary" ? "傳說" : c.rarity === "epic" ? "史詩" : c.rarity === "rare" ? "稀有" : "普通"}
-                  </div>
-                  {c.type === "minion" && (
-                    <div className="flex justify-between text-[11px] mt-1">
-                      <span className="text-amber-300 flex items-center gap-0.5"><IconSword className="w-3 h-3 shrink-0" />{c.attack}</span>
-                      <span className="text-rose-300 flex items-center gap-0.5"><IconHeart className="w-3 h-3 shrink-0" />{c.health}</span>
-                    </div>
+                  </span>
+                  {/* 名條：跨在畫窗與文字欄接縫上 */}
+                  <span
+                    title={c.nameZh}
+                    className={`${notoSerifTC.className} hs-name-banner absolute left-0 right-0 top-[55%] -translate-y-1/2 z-[5] block px-1.5 py-0.5 text-center text-[11px] font-bold truncate`}
+                  >
+                    {c.nameZh}
+                  </span>
+                  {/* 法力水晶（藍寶石切面，實際費用） */}
+                  <StatGem kind="cost" value={c.cost} className="hs-gem-cost" />
+                  {/* 攻／血寶石（隨從）或類型小牌（法術） */}
+                  {c.type === "minion" ? (
+                    <>
+                      <StatGem kind="atk" value={c.attack ?? 0} className="hs-gem-atk" />
+                      <StatGem kind="hp" value={c.health ?? 0} className="hs-gem-hp" />
+                    </>
+                  ) : (
+                    <span className="hs-spell-chip">法術</span>
                   )}
-                  {c.effectText !== "—" && (
-                    <div className="text-[9px] text-slate-300 mt-1 line-clamp-2">{c.effectText}</div>
-                  )}
-                  <div className="text-[9px] text-amber-300/80 mt-1 line-clamp-2">
-                    ★ {c.bonusText}
-                  </div>
                 </button>
               );
             })}
@@ -1308,12 +1441,16 @@ export default function PlayPage() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
           <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-5">
             {CARD_ART[quiz.card.id] && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={CARD_ART[quiz.card.id]}
-                alt={quiz.card.nameZh}
-                className="w-full h-40 object-cover rounded-xl mb-3 border border-slate-700"
-              />
+              <div className="relative rounded-xl overflow-hidden mb-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={CARD_ART[quiz.card.id]}
+                  alt={quiz.card.nameZh}
+                  className="w-full h-40 object-cover"
+                />
+                {/* 與手牌畫窗同款的金內框（收藏卡裱框感） */}
+                <span className="hs-art-frame" aria-hidden />
+              </div>
             )}
             <div className="text-xs text-slate-400 mb-1">
               打出「{quiz.card.nameZh}」— 答對觸發加成「{quiz.card.bonusText}」
