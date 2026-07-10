@@ -625,6 +625,259 @@ body {
   }
 }
 
+/* ───── 模式 A 全頁史詩化（ORDER-051）─────
+ * 司令回饋「模式Ａ的視覺不行，很沒有 PS 的史詩遊戲感」——把 .repair-*（ORDER-046 唯一及格的
+ * 深藍黑霧面玻璃＋暖金線框語言）鋪滿整頁。全 CSS、中性金線／光暈，不新增文化圖紋。 */
+
+/* 整頁底：深藍黑漸層＋兩角極淡金光暈（body 不再是綠黑漸層網頁背景） */
+.jny-page {
+  background:
+    radial-gradient(ellipse 55% 38% at 0% 0%, rgba(226, 164, 58, 0.08), transparent 70%),
+    radial-gradient(ellipse 55% 38% at 100% 100%, rgba(226, 164, 58, 0.06), transparent 70%),
+    linear-gradient(180deg, #081119, #030a10);
+}
+/* 電影感全頁背景：既有 journey 場景圖 fixed+cover，暗化約 80% ＋ vignette，不搶內容 */
+.jny-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.2;
+}
+.jny-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 25%, rgba(3, 10, 16, 0.92) 100%);
+}
+
+/* 通用金框霧面玻璃面板（.repair-modal 的輕量版：雙層金邊＋霧面玻璃＋微光） */
+.jny-panel {
+  position: relative;
+  color: #f5e6c5;
+  background: linear-gradient(180deg, rgba(8, 17, 25, 0.88), rgba(3, 10, 16, 0.93));
+  border: 1px solid rgba(226, 164, 58, 0.5);
+  border-radius: 18px;
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.5),
+    0 0 28px rgba(226, 164, 58, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(6px);
+}
+.jny-panel::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(240, 194, 108, 0.18);
+  border-radius: 12px;
+  pointer-events: none;
+}
+/* 任務誌主面板：金邊與光暈加重（取代原綠框） */
+.jny-panel-quest {
+  border-color: rgba(240, 194, 108, 0.72);
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.58),
+    0 0 44px rgba(226, 164, 58, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 36px rgba(255, 177, 64, 0.05);
+}
+/* ORDER-052：常駐使命句，讓敘事目標與數值任務同時可見 */
+.jny-mission {
+  border: 1px solid rgba(240, 194, 108, 0.28);
+  background:
+    linear-gradient(90deg, rgba(95, 63, 18, 0.34), rgba(15, 28, 42, 0.55) 42%, rgba(4, 12, 19, 0.35)),
+    rgba(4, 12, 19, 0.48);
+  box-shadow:
+    inset 3px 0 0 rgba(240, 194, 108, 0.72),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+/* 關卡選擇卡：進行中的金色高亮 */
+.jny-pick-active {
+  border-color: rgba(255, 213, 91, 0.92);
+  box-shadow:
+    0 0 0 1px rgba(255, 188, 37, 0.3),
+    0 0 30px rgba(255, 177, 38, 0.24),
+    0 18px 34px rgba(0, 0, 0, 0.5);
+}
+
+/* 金底深字徽章（「主線」「模式 A」「進行中」等） */
+.jny-badge-gold {
+  color: #2b1c06;
+  background: linear-gradient(180deg, #ffd98a, #d9a13c);
+  border: 1px solid rgba(255, 231, 170, 0.9);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* 寶石量表：圓形金框小徽記＋數字（day / 行動點 / 正確率） */
+.jny-gem-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 3px;
+  border-radius: 999px;
+  color: #ffe9bd;
+  background: linear-gradient(180deg, rgba(15, 28, 42, 0.92), rgba(7, 14, 24, 0.96));
+  border: 1px solid rgba(240, 194, 108, 0.45);
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+.jny-gem-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 226, 150, 0.4), rgba(80, 52, 12, 0.92));
+  border: 1px solid rgba(255, 213, 91, 0.72);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.28),
+    0 0 10px rgba(255, 190, 72, 0.22);
+}
+
+/* 量表軌道：內陰影凹槽（壓力／體力條），填色沿用 .repair-progress-fill 語彙 */
+.jny-track {
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(100, 116, 139, 0.22);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+.jny-fill-calm {
+  background: linear-gradient(90deg, #fb7185, #f59e0b);
+  box-shadow: 0 0 14px rgba(251, 113, 133, 0.35);
+}
+.jny-fill-tense {
+  background: linear-gradient(90deg, #f59e0b, #fb923c);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.45);
+}
+.jny-fill-critical {
+  background: linear-gradient(90deg, #ef4444, #fb7185);
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.55);
+}
+
+/* ── 行動聚光燈（引導核心）：任何時刻只有一顆「現在該按的鈕」── */
+@keyframes jnyBreathe {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(255, 213, 91, 0.55),
+      0 0 12px rgba(255, 190, 72, 0.32),
+      0 12px 24px rgba(0, 0, 0, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px rgba(255, 224, 130, 0.95),
+      0 0 32px rgba(255, 196, 84, 0.8),
+      0 12px 24px rgba(0, 0, 0, 0.4);
+  }
+}
+.jny-spotlight {
+  position: relative;
+  animation: jnyBreathe 1.8s ease-in-out infinite;
+}
+/* 「▶ 現在」小標籤：掛在聚光鈕左上角 */
+.jny-now-pill {
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  z-index: 5;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #2b1c06;
+  background: linear-gradient(180deg, #ffe08a, #e2a43a);
+  border: 1px solid rgba(255, 240, 190, 0.95);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(255, 196, 84, 0.5);
+  pointer-events: none;
+}
+/* 次要動作降階：非聚光按鈕暗化 */
+.jny-dim {
+  opacity: 0.55;
+  filter: saturate(0.55);
+}
+
+/* AP=0 紮營提示強化：全頁輕微降暗（pointer-events:none 不擋操作與彈窗），紮營鈕抬升 */
+.jny-camp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(2, 7, 12, 0.55);
+  pointer-events: none;
+}
+.jny-camp-raise {
+  position: relative;
+  z-index: 45;
+}
+
+/* 山徑節點卡：小型道具卡（金框、當前位置呼吸光暈、已通過降飽和） */
+.jny-node {
+  position: relative;
+  border: 1px solid rgba(226, 164, 58, 0.38);
+  background: linear-gradient(180deg, rgba(15, 28, 42, 0.9), rgba(6, 12, 20, 0.94));
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.jny-node-current {
+  border-color: rgba(255, 213, 91, 0.92);
+  animation: jnyBreathe 2.2s ease-in-out infinite;
+}
+.jny-node-passed {
+  filter: saturate(0.35);
+  opacity: 0.72;
+}
+
+/* 面板進場（沿用既有 riseIn keyframe） */
+.jny-rise {
+  animation: riseIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 首次教學 coach marks：box-shadow 巨型外陰影挖洞聚光目標區域 */
+.jny-coach-cutout {
+  position: fixed;
+  z-index: 70;
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 9999px rgba(2, 7, 12, 0.82),
+    0 0 0 3px rgba(255, 213, 91, 0.85),
+    0 0 30px rgba(255, 196, 84, 0.5);
+  pointer-events: none;
+  transition:
+    top 0.3s ease,
+    left 0.3s ease,
+    width 0.3s ease,
+    height 0.3s ease;
+}
+
+/* 尊重使用者的減少動態偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .jny-spotlight,
+  .jny-node-current {
+    animation: none;
+    box-shadow:
+      0 0 0 2px rgba(255, 224, 130, 0.85),
+      0 0 24px rgba(255, 196, 84, 0.6),
+      0 12px 24px rgba(0, 0, 0, 0.4);
+  }
+  .jny-rise {
+    animation: none;
+    opacity: 1;
+  }
+  .jny-coach-cutout {
+    transition: none;
+  }
+}
+
 /* 尊重使用者的減少動態偏好 */
 @media (prefers-reduced-motion: reduce) {
   .anim-logo,

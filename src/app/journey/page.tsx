@@ -269,6 +269,17 @@ const HAND_LIMIT = 5;
 // 解鎖與關卡記憶（localStorage key；僅在 client mount 後讀寫，避免 SSR 觸碰 window）
 const LS_LEVEL2_UNLOCKED = "cw_level2_unlocked";
 const LS_LAST_LEVEL = "cw_journey_level";
+// ORDER-051：首次教學 coach marks 旗標（做完/跳過即不再出現）
+const LS_COACH_DONE = "cw_journey_coach_done";
+// ORDER-051：電影感全頁背景——沿用已過文化複核的既有場景圖（stories/scene-start-v1），暗化 80%＋vignette
+const PAGE_BG = "/images/journey/stories/scene-start-v1.jpg";
+// ORDER-051（引導點 3）：首次教學 4 站（任務面板→行動聚光燈→手牌→紮營），各一句話
+const COACH_STEPS: { title: string; text: string }[] = [
+  { title: "任務面板", text: "看這裡——每一步的狀況跟該做的事，都寫在這本任務誌上。" },
+  { title: "行動聚光燈", text: "跟著金色光暈走：掛著「▶ 現在」的按鈕，就是你現在該按的那一顆。" },
+  { title: "手牌", text: "出行動籤推進任務——多數牌要先答對族語題，行動才會全額生效。" },
+  { title: "紮營", text: "行動點用完就按「紮營」收束今日，換日補滿行動點再上路。" },
+];
 const RES_NAME: Record<Resource, string> = { food: "糧食", wood: "木材", stone: "石材", rope: "繩索" };
 // 美術素材（ORDER-015，Codex 生圖，已過 enzo-culture 複核）
 const RES_IMG: Record<Resource, string> = {
@@ -644,6 +655,7 @@ type LevelConfig = {
   name: string; // 關卡名（標題列／主線面板用）
   pickLabel: string; // 關卡選擇卡標籤
   pickDesc: string;
+  mission: string; // ORDER-052：常駐使命句，讓玩家知道為何出發與如何完成
   maxDay: number;
   startRes: Record<Resource, number>;
   buildNodes: () => PathNode[];
@@ -662,6 +674,7 @@ const LEVELS: Record<LevelId, LevelConfig> = {
     name: "修復山徑",
     pickLabel: "第一關 · 修復山徑",
     pickDesc: "溪水沖斷了回部落的路，一段一段修好它。",
+    mission: "溪水沖斷了回家的路——在第 6 日入夜前，把每一段路重新接起來，帶每個人回到部落。",
     maxDay: 6,
     startRes: { food: 4, wood: 3, stone: 2, rope: 2 },
     buildNodes: buildNodesL1,
@@ -684,6 +697,7 @@ const LEVELS: Record<LevelId, LevelConfig> = {
     name: "風雨的稜線",
     pickLabel: "第二關 · 風雨的稜線",
     pickDesc: "暴風雨正面撲向稜線——環境危害不清除，每晚都會消耗隊伍。",
+    mission: "風暴壓上稜線——在第 7 日入夜前清除持續消耗隊伍的危害，帶大家下到背風處。",
     // 7 節點、兩個多點數危害＋3 點石堆：比第一關多一天，但經濟更緊（糧 3、木 2）
     maxDay: 7,
     startRes: { food: 3, wood: 2, stone: 2, rope: 2 },
@@ -958,14 +972,29 @@ function resolveSupplyChoice(g: JGame, resource: Resource, correct: boolean, voc
 // 簡化版規則式穩定度判定（非真實物理引擎，依司令拍板）。族語題仍保留、但降為輔助加成，不是唯一內容。
 type BuildMaterials = { stone: number; wood: number; rope: number };
 
-function buildScore(b: BuildMaterials): number {
-  return Math.min(100, b.stone * 10 + b.wood * 20);
+// ORDER-053：把落石與吊橋拆成兩種工法。玩家不是只在堆同一種分數，
+// 而是要看眼前的山況決定「穩住路基」或「把兩岸接回來」。
+type BuildMode = "rockfall" | "bridge";
+
+function buildModeForNode(node: PathNode | undefined): BuildMode | null {
+  if (node?.type === "obstacle") return "rockfall";
+  if (node?.type === "bridge") return "bridge";
+  return null;
+}
+
+function buildScore(b: BuildMaterials, mode: BuildMode): number {
+  return mode === "bridge"
+    ? Math.min(100, b.wood * 25 + b.rope * 15 + b.stone * 5)
+    : Math.min(100, b.stone * 10 + b.wood * 20);
 }
 
 // 環境機制（純自然力，不掛任何族語信仰概念）：石頭堆太密會擋住水路，測試時有機率被溪水沖毀部分結構
 function resolveBuildTest(g: JGame, b: BuildMaterials, quizCorrect: boolean, vocabId: string): JGame {
   const node = g.nodes[g.idx];
-  if (g.status !== "playing" || !node || node.type !== "obstacle" || node.cleared || b.rope < 1) return g;
+  const mode = buildModeForNode(node);
+  if (g.status !== "playing" || !node || !mode || node.cleared || b.rope < 1) return g;
+  // 吊橋需要至少兩根橫樑才有跨距；這是玩家在畫面上看得懂的硬條件，不靠隱藏數值猜答案。
+  if (mode === "bridge" && b.wood < 2) return g;
   const ng: JGame = { ...g, nodes: g.nodes.map((n) => ({ ...n })) };
   ng.wordLog = [...ng.wordLog, { vocabId, correct: quizCorrect }];
   if (quizCorrect) {
@@ -976,9 +1005,11 @@ function resolveBuildTest(g: JGame, b: BuildMaterials, quizCorrect: boolean, voc
     ng.streak = 0;
   }
 
-  let score = buildScore(b) + (quizCorrect ? 15 : 0);
+  let score = buildScore(b, mode) + (quizCorrect ? 15 : 0);
+  const stormPenalty = mode === "bridge" && pressureTier(g) === "critical" ? 15 : 0;
+  score = Math.max(0, score - stormPenalty);
   let envPenalty = false;
-  if (b.stone > 8 && Math.random() < 0.3) {
+  if (mode === "rockfall" && b.stone > 8 && Math.random() < 0.3) {
     score = Math.max(0, score - 25);
     envPenalty = true;
   }
@@ -987,10 +1018,18 @@ function resolveBuildTest(g: JGame, b: BuildMaterials, quizCorrect: boolean, voc
   if (pass) {
     n2.obstacle = 0;
     n2.cleared = true;
-    if (b.wood === 0) {
+    if (mode === "rockfall" && b.wood === 0) {
       const cap = effectiveMaxAp(ng);
       if (ng.ap < cap) ng.ap = Math.min(cap, ng.ap + 1);
       ng.log = pushLog(ng.log, `✓ 「${n2.name}」重新排好了路——全程沒砍一根木材，工法巧思獎勵：行動點 +1！`, "good");
+    } else if (mode === "bridge") {
+      ng.log = pushLog(
+        ng.log,
+        stormPenalty > 0
+          ? `✓ 「${n2.name}」在暴風裡接回兩岸——你用足橫樑與藤索，橋身撐住了。`
+          : `✓ 「${n2.name}」兩岸重新接起，隊伍踩著有彈性的橋面安全通過。`,
+        "good",
+      );
     } else {
       ng.log = pushLog(ng.log, `✓ 「${n2.name}」重新排好了路，隊伍安全通過。`, "good");
     }
@@ -1323,22 +1362,24 @@ function neededEffects(n: PathNode): EffectId[] {
   return [];
 }
 
+// ORDER-051（追加引導重修）：「這一步」文案全面改為動詞開頭的祈使句——司令回饋
+// 「玩家不知道如何是好，我現在要做什麼都沒有說」。指令感優先，機制資訊照舊保留。
 function stepHint(g: JGame): { situation: string; todo: string } {
   if (g.status === "won")
     return g.levelId === "l2"
       ? { situation: "抵達山腳背風處！", todo: "隊伍完整地下了山，任務完成。" }
       : { situation: "抵達部落！", todo: "隊伍平安返家，任務完成。" };
-  if (g.status === "lost") return { situation: "任務失敗", todo: "點「重新開始」再試一次。" };
+  if (g.status === "lost") return { situation: "任務失敗", todo: "點「重新開始」，再走一次。" };
   const n = g.nodes[g.idx];
   const last = g.idx >= g.nodes.length - 1;
-  const apNote = g.ap <= 0 ? "　行動點用完了 → 點「紮營」換日、補行動點。" : "";
+  const apNote = g.ap <= 0 ? "　行動點用完了——按「紮營」收束今日，換日補滿行動點。" : "";
   let s: { situation: string; todo: string };
   switch (n.type) {
     case "obstacle":
     case "bridge": {
       const label = n.type === "obstacle" ? `落石擋道（剩 ${n.obstacle} 點）` : "峽谷吊橋斷裂";
       if (n.cleared) {
-        s = { situation: n.type === "obstacle" ? "落石已清除" : "吊橋已完成", todo: "點「前進」。" };
+        s = { situation: n.type === "obstacle" ? "落石已清除" : "吊橋已完成", todo: "按「前進」，繼續上路（行動點 -1）。" };
       } else {
         const hasCard = g.hand.some((c) => neededEffects(n).includes(c.effect));
         const canHard = n.type === "obstacle" ? g.res.rope >= 1 : canHardClear(g);
@@ -1347,47 +1388,65 @@ function stepHint(g: JGame): { situation: string; todo: string } {
           todo:
             !hasCard && !canHard
               ? n.type === "obstacle"
-                ? "手牌無可用行動牌、繩索也不夠（修復路段至少要 1 繩索）→ 點「紮營」換日重抽／囤資源。"
-                : "手牌無可用行動牌、資源也不夠硬清 → 點「紮營」換日重抽／囤資源。"
+                ? "先按「紮營」換日重抽手牌、囤資源——手上沒有可用行動牌，繩索也不夠（修復路段至少要 1 繩索）。"
+                : "先按「紮營」換日重抽手牌、囤資源——手上沒有可用行動牌，資源也不夠硬清。"
               : n.type === "obstacle"
-                ? "出「搬石」／「共同搬運」快速過，或點「修復路段」動手疊石架橋（可省木材，答題只是加成不是唯一內容）。"
-                : "出「搭橋」／「共同搬運」，或花資源「硬清」（木材×2・繩索×2）——皆需答題，答對全額答錯半額。",
+                ? "把落石清掉——出「搬石」／「共同搬運」牌快速清，或點「修復路段」動手疊石架橋（可省木材，答題只是加成不是唯一內容）。"
+                : "把橋接起來——出「搭橋」／「共同搬運」牌、點「搭建吊橋」動手接兩岸，或花資源硬清（木材×2・繩索×2）；每條路都會留下不同代價。",
         };
       }
       break;
     }
     case "start":
-      s = { situation: `${n.name.replace("（起點）", "")}・出發點`, todo: "點「前進」出發。" };
+      s = { situation: `${n.name.replace("（起點）", "")}・出發點`, todo: "按「前進」，帶隊伍出發（行動點 -1）。" };
       break;
     case "hazard": {
       // ORDER-050（P2）：環境危害節點——不清除就每晚吃 ongoingPenalty，提示要講清楚代價
       if (n.cleared) {
-        s = { situation: `${n.name}・已平息`, todo: "點「前進」。" };
+        s = { situation: `${n.name}・已平息`, todo: "按「前進」，繼續上路（行動點 -1）。" };
       } else {
         s = {
           situation: `環境危害：${n.name}（剩 ${n.obstacle} 點）`,
-          todo: `出「頂風前行」／「架設臨時遮蔽」／「共同搬運」清除，或花資源架遮蔽硬撐（木材×2・繩索×2）。不清除的話，每次紮營：${n.hazard?.text ?? "持續付出代價"}。`,
+          todo: `把危害壓下去——出「頂風前行」／「架設臨時遮蔽」／「共同搬運」牌清除，或花資源架遮蔽硬撐（木材×2・繩索×2）。放著不管，每次紮營：${n.hazard?.text ?? "持續付出代價"}。`,
         };
       }
       break;
     }
     case "event":
       s = n.cleared
-        ? { situation: `${n.name}・已通過`, todo: "點「前進」。" }
-        : { situation: n.name, todo: "選擇「快速通過」（壓力 +4，之後路況可能反噬）或「謹慎探勘」（耗木材/繩索各1，換糧食 +1）。" };
+        ? { situation: `${n.name}・已通過`, todo: "按「前進」，繼續上路（行動點 -1）。" }
+        : { situation: n.name, todo: "選一條路通過——按「快速通過」（壓力 +4，之後路況可能反噬）或「謹慎探勘」（耗木材/繩索各1，答對換糧食 +1）。" };
       break;
     case "supply":
       s = n.cleared
-        ? { situation: `${n.name}・已補給`, todo: "點「前進」。" }
-        : { situation: `${n.name}・補給點`, todo: "選一項資源，補給 +3。" };
+        ? { situation: `${n.name}・已補給`, todo: "按「前進」，繼續上路（行動點 -1）。" }
+        : { situation: `${n.name}・補給點`, todo: "點一項資源進行補給——答對 +3、答錯僅 +1。" };
       break;
     case "destination":
-      s = { situation: last ? `${n.name.replace("（目的地）", "")}・終點在望` : n.name, todo: "點「前進」抵達，帶所有人回家。" };
+      s = { situation: last ? `${n.name.replace("（目的地）", "")}・終點在望` : n.name, todo: "按「前進」抵達終點，把每一個人帶回去。" };
       break;
     default:
-      s = { situation: n.name, todo: "點「前進」。" };
+      s = { situation: n.name, todo: "按「前進」，繼續上路。" };
   }
   return { situation: s.situation, todo: s.todo + apNote };
+}
+
+// ORDER-051（引導點 1）：行動聚光燈——任何時刻只有一顆「當前該按的鈕」。
+// 判定優先序：終局→無；當前節點未清（落石→修復路段；吊橋/危害→硬清；事件→兩選項；補給→資源選項）；
+// 已清且可前進（AP≥1）→前進；AP=0→紮營。
+type PrimaryAction = "repair" | "hazard" | "event" | "supply" | "advance" | "camp" | null;
+
+function primaryAction(g: JGame): PrimaryAction {
+  if (g.status !== "playing") return null;
+  const n = g.nodes[g.idx];
+  if (!n) return null;
+  if (!n.cleared && (n.type === "obstacle" || n.type === "bridge")) return "repair";
+  if (!n.cleared && n.type === "hazard") return "hazard";
+  if (!n.cleared && n.type === "event") return "event";
+  if (!n.cleared && n.type === "supply") return "supply";
+  if (n.cleared && g.idx < g.nodes.length - 1 && g.ap >= 1) return "advance";
+  if (g.ap <= 0) return "camp";
+  return null;
 }
 
 type SideQuest = { label: string; note: string; state: "ok" | "fail" | "pending" };
@@ -1955,6 +2014,74 @@ export default function JourneyPage() {
     !!challenge ||
     !!building;
 
+  // ORDER-051（引導點 1）：行動聚光燈——唯一的「現在該按的鈕」
+  const primary = primaryAction(game);
+
+  // ORDER-051（引導點 3）：首次教學 coach marks——第一次進入（localStorage 旗標）逐步聚光 4 站：
+  // 任務面板 → 行動聚光燈 → 手牌 → 紮營。只在全新第一關開局、章節卡/故事卡都關掉後觸發一次；
+  // 彈窗開著時不觸發。SSR 安全：只在 mounted 後讀 localStorage。
+  const [coach, setCoach] = useState<number | null>(null);
+  const [coachTried, setCoachTried] = useState(false);
+  const [coachRect, setCoachRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+  const questRef = useRef<HTMLElement | null>(null);
+  const spotRef = useRef<HTMLDivElement | null>(null);
+  const handRef = useRef<HTMLElement | null>(null);
+  const campRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!mounted || coachTried || coach !== null) return;
+    // 只在「全新第一關開局」觸發：第 1 日、起點、且開場章節卡與節點故事卡都已看完關閉
+    if (game.levelId !== "l1" || game.day !== 1 || game.idx !== 0) return;
+    if (anyModalOpen || seenChapters < 0 || seenStories.size < 1) return;
+    let done = true;
+    try {
+      done = localStorage.getItem(LS_COACH_DONE) === "1";
+    } catch {
+      /* localStorage 不可用：視同已完成，不打擾 */
+    }
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setCoachTried(true);
+    if (!done) setCoach(0);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [mounted, coachTried, coach, game.levelId, game.day, game.idx, anyModalOpen, seenChapters, seenStories]);
+
+  // 目前教學站的目標區域量測（捲入視野後取 getBoundingClientRect，resize/scroll 時重算）
+  useEffect(() => {
+    if (coach === null) return;
+    const el = [questRef.current, spotRef.current, handRef.current, campRef.current][coach];
+    if (!el) {
+      setCoachRect(null);
+      return;
+    }
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function measure() {
+      const r = el!.getBoundingClientRect();
+      setCoachRect({ top: r.top - 6, left: r.left - 6, width: r.width + 12, height: r.height + 12 });
+    }
+    el.scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
+    measure();
+    const t = setTimeout(measure, 400);
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
+  }, [coach]);
+
+  function finishCoach() {
+    try {
+      localStorage.setItem(LS_COACH_DONE, "1");
+    } catch {
+      /* 忽略寫入失敗 */
+    }
+    setCoach(null);
+  }
+
+  // ORDER-051（引導點 4）：AP=0 且下一步就是紮營時，全頁輕微降暗、只留紮營鈕聚光（不擋彈窗與教學）
+  const campDim = primary === "camp" && !anyModalOpen && coach === null;
+
   function addMaterial(kind: keyof BuildMaterials) {
     if (!building || game.res[kind] < 1) return false;
     setGame((g) => ({ ...g, res: { ...g.res, [kind]: g.res[kind] - 1 } }));
@@ -1963,7 +2090,8 @@ export default function JourneyPage() {
   }
 
   function startBuildTest() {
-    if (!building || building.rope < 1) return;
+    const mode = buildModeForNode(game.nodes[game.idx]);
+    if (!building || !mode || building.rope < 1 || (mode === "bridge" && building.wood < 2)) return;
     setActionRevealed(null);
     setPendingAction({ kind: "buildTest" });
   }
@@ -2141,7 +2269,7 @@ export default function JourneyPage() {
   // mount 前：SSR 與 client 首渲染皆輸出此骨架，確保 HTML 一致（避免 hydration mismatch）
   if (!mounted) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-emerald-950 via-slate-950 to-slate-950 text-slate-100 flex">
+      <main className="jny-page min-h-screen text-slate-100 flex">
         <SideRail active="journey" />
         <div className="flex-1 min-w-0 px-4 sm:px-6 py-6">
           <div className="max-w-5xl mx-auto text-sm text-slate-500">載入山徑…</div>
@@ -2151,50 +2279,61 @@ export default function JourneyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-emerald-950 via-slate-950 to-slate-950 text-slate-100 flex">
+    <main className="jny-page min-h-screen text-slate-100 flex">
+      {/* 電影感全頁背景（ORDER-051）：既有場景圖 fixed+cover、暗化 80%＋vignette */}
+      <div className="jny-bg" style={{ backgroundImage: `url(${PAGE_BG})` }} aria-hidden />
       <AmbientAudio />
       <SideRail active="journey" />
-      <div className="flex-1 min-w-0 px-4 sm:px-6 py-6">
+      <div className="relative z-10 flex-1 min-w-0 px-4 sm:px-6 py-6">
         <div className="max-w-5xl mx-auto">
-        {/* 標題列 */}
-        <header className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        {/* 標題列（ORDER-051）：遊戲門面——kicker 小字＋關卡名 serif 大字金光暈＋金色分隔飾 */}
+        <header className="jny-rise mb-4 flex items-end justify-between flex-wrap gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <Link href="/" className="text-xs text-slate-400 hover:text-slate-200">
+              <Link href="/" className="text-xs text-amber-200/60 hover:text-amber-100">
                 ◀ 模式選擇
               </Link>
-              <span className="text-[10px] rounded-full bg-emerald-500/80 text-black px-2 py-0.5">模式 A</span>
+              <span className="jny-badge-gold rounded-full px-2 py-0.5 text-[10px] font-bold">模式 A</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold">峽谷行者 · 山徑：{levelCfg(game).name}</h1>
-            <p className="text-[11px] text-slate-400">
+            <p className={`${notoSansTC.className} mt-2 text-[11px] tracking-[0.35em] text-amber-300/85`}>峽谷行者・山徑</p>
+            <h1 className={`${notoSerifTC.className} repair-title text-3xl font-black sm:text-4xl`}>{levelCfg(game).name}</h1>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={FRAME_DIVIDER} alt="" className="mt-2 h-2 w-44 object-contain object-left opacity-90" />
+            <p className="mt-1.5 text-[11px] text-amber-100/50">
               非戰鬥。答對族語題讓行動全額生效。族語詞彙與發音為真實太魯閣語資料。
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="rounded bg-slate-800 px-2 py-1 inline-flex items-center gap-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={ICON_DAY} width={14} height={14} alt="" />第 {game.day}/{levelCfg(game).maxDay} 日
+          <div className="flex items-center gap-2 text-xs flex-wrap">
+            <span className="jny-gem-chip">
+              <span className="jny-gem-icon">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={ICON_DAY} width={14} height={14} alt="" />
+              </span>
+              <span className="font-bold">第 {game.day}/{levelCfg(game).maxDay} 日</span>
             </span>
-            <span className="rounded bg-sky-900/60 px-2 py-1 inline-flex items-center gap-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={ICON_ACTION} width={14} height={14} alt="" />行動點 {game.ap}/{effectiveMaxAp(game)}
+            <span className="jny-gem-chip">
+              <span className="jny-gem-icon">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={ICON_ACTION} width={14} height={14} alt="" />
+              </span>
+              <span className="font-bold">行動點 {game.ap}/{effectiveMaxAp(game)}</span>
             </span>
-            <span
-              className="rounded bg-emerald-900/60 px-2 py-1 inline-flex items-center gap-1"
-              title="答對題數 ÷ 已答題數"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={ICON_HIT} width={14} height={14} alt="" />答題正確率 {rateLabel}
+            <span className="jny-gem-chip" title="答對題數 ÷ 已答題數">
+              <span className="jny-gem-icon">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={ICON_HIT} width={14} height={14} alt="" />
+              </span>
+              <span className="font-bold">正確率 {rateLabel}</span>
             </span>
             <button
               onClick={() => setShowRules(true)}
-              className="rounded bg-slate-700 hover:bg-slate-600 px-2 py-1"
+              className="repair-secondary-btn rounded-lg px-3 py-1.5 font-bold"
             >
               規則
             </button>
             <button
               onClick={() => setConfirmRestart(true)}
-              className="rounded bg-slate-800 hover:bg-slate-700 px-2 py-1 text-slate-300"
+              className="repair-secondary-btn rounded-lg px-3 py-1.5"
               title="重新開始一局"
             >
               重新開始
@@ -2204,7 +2343,7 @@ export default function JourneyPage() {
 
         {/* 關卡選擇（ORDER-050，P2）：兩張精簡卡——第一關通關後解鎖第二關（localStorage 記錄），
             切換＝直接開新局（進度不保留，與「重新開始」同語意）。 */}
-        <section className="mb-3 grid grid-cols-2 gap-2">
+        <section className="jny-rise mb-3 grid grid-cols-2 gap-2">
           {(Object.keys(LEVELS) as LevelId[]).map((lid) => {
             const cfg = LEVELS[lid];
             const active = game.levelId === lid;
@@ -2217,24 +2356,24 @@ export default function JourneyPage() {
                   restart(lid);
                 }}
                 disabled={locked}
-                className={`rounded-xl border-2 p-3 text-left transition ${
+                className={`jny-panel rounded-xl p-3 text-left transition ${
                   active
-                    ? "border-emerald-400 bg-emerald-950/50"
+                    ? "jny-pick-active"
                     : locked
-                      ? "border-slate-800 bg-slate-900/40 opacity-60 cursor-not-allowed"
-                      : "border-slate-700 bg-slate-900/60 hover:border-emerald-600/70 hover:bg-slate-800/70"
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:-translate-y-0.5 hover:border-amber-300/70"
                 }`}
                 title={locked ? "通關第一關解鎖" : cfg.pickDesc}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-bold">{cfg.pickLabel}</span>
+                  <span className={`${notoSerifTC.className} text-sm font-bold text-amber-50`}>{cfg.pickLabel}</span>
                   {active ? (
-                    <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-emerald-50">進行中</span>
+                    <span className="jny-badge-gold rounded px-1.5 py-0.5 text-[10px] font-bold">進行中</span>
                   ) : locked ? (
-                    <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">未解鎖</span>
+                    <span className="rounded border border-slate-700 bg-slate-900/80 px-1.5 py-0.5 text-[10px] text-slate-400">未解鎖</span>
                   ) : null}
                 </div>
-                <p className="mt-1 text-[11px] leading-snug text-slate-400">
+                <p className="mt-1 text-[11px] leading-snug text-amber-100/55">
                   {locked ? "未解鎖 · 通關第一關解鎖" : cfg.pickDesc}
                 </p>
               </button>
@@ -2244,34 +2383,47 @@ export default function JourneyPage() {
 
         {/* 任務面板（v3，ORDER-030）：主線目標＋節點進度＋節點故事＋這一步＋可直接操作的行動按鈕＋支線＋連擊
             視覺層級修正：搬到統計數字前面，第一眼就是「該做什麼」；面板整體放大字級（司令實測回報還是太小看不清） */}
-        <section className="mb-3 rounded-2xl border-4 border-emerald-500/80 bg-emerald-950/30 p-4 shadow-[0_0_32px_rgba(16,185,129,0.25)]">
-          <div className="flex items-center justify-between gap-2">
+        <section ref={questRef} className="jny-panel jny-panel-quest jny-rise mb-4 rounded-2xl p-4 sm:p-5">
+          <div className="relative z-[2] flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="rounded bg-emerald-700 px-2.5 py-1 text-xs font-bold text-emerald-50">主線</span>
-              <span className="text-base font-bold">{levelCfg(game).mainQuest}</span>
+              <span className="jny-badge-gold rounded px-2.5 py-1 text-xs font-black">主線</span>
+              <span className={`${notoSerifTC.className} text-base font-bold text-amber-50`}>{levelCfg(game).mainQuest}</span>
             </div>
-            <span className="text-xs text-slate-300">
+            <span className="text-xs text-amber-100/60">
               節點 {game.idx}/{game.nodes.length - 1} · 第 {game.day}/{levelCfg(game).maxDay} 日
             </span>
+          </div>
+          <div className="jny-mission relative z-[2] mt-3 flex items-start gap-2 rounded-xl px-3 py-2.5">
+            <IconFlag className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300/80">你的使命</div>
+              <p className="mt-0.5 text-sm leading-relaxed text-amber-50/90">{levelCfg(game).mission}</p>
+            </div>
           </div>
           {(() => {
             const hint = stepHint(game);
             const node = game.nodes[game.idx];
             const canGoAdvance = canAdvance(game);
             const canGoHardClear = canHardClear(game);
+            // 行動聚光燈（ORDER-051 引導點 1）：primary 對應的那顆鈕加金色呼吸光暈＋「▶ 現在」，
+            // 其餘動作降階為暗色（jny-dim）。
+            const nowPill = <span className="jny-now-pill">▶ 現在</span>;
             return (
-              <div className="mt-3 rounded-lg bg-slate-950/60 p-3.5">
-                <div className="text-xs uppercase tracking-wider text-emerald-400 font-semibold">這一步</div>
-                <div className="mt-1 text-lg font-bold text-emerald-100">{hint.situation}</div>
-                <div className="mt-1.5 text-sm leading-relaxed text-slate-200">{hint.todo}</div>
+              <div ref={spotRef} className="relative z-[2] mt-3 rounded-xl border border-amber-500/20 bg-[#040c13]/75 p-3.5">
+                <div className="text-xs uppercase tracking-[0.2em] text-amber-400/90 font-semibold">這一步</div>
+                <div className={`${notoSerifTC.className} mt-1 text-lg font-bold text-amber-50`}>{hint.situation}</div>
+                <div className="mt-1.5 text-sm leading-relaxed text-amber-100/85">{hint.todo}</div>
 
                 {/* 常駐「前進」：脫離卡牌經濟，路段已清就能按（v2 修死局） */}
                 {game.status === "playing" && node.cleared && game.idx < game.nodes.length - 1 && (
                   <button
                     onClick={doAdvance}
                     disabled={!canGoAdvance}
-                    className="mt-3 w-full rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:hover:bg-emerald-600 px-4 py-3.5 text-base font-bold shadow-lg transition"
+                    className={`repair-primary-btn relative mt-3 w-full rounded-xl px-4 py-3.5 text-base font-black tracking-[0.06em] transition ${
+                      primary === "advance" ? "jny-spotlight" : primary !== null ? "jny-dim" : ""
+                    }`}
                   >
+                    {primary === "advance" && nowPill}
                     ▶ 前進（行動點 -1）
                   </button>
                 )}
@@ -2282,52 +2434,65 @@ export default function JourneyPage() {
                   <button
                     onClick={doHardClear}
                     disabled={!canGoHardClear}
-                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-600/60 bg-amber-950/30 hover:bg-amber-900/40 disabled:opacity-30 px-3 py-2 text-sm font-semibold text-amber-200 transition"
+                    className={`repair-primary-btn relative mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-black transition disabled:cursor-not-allowed ${
+                      primary === "hazard" ? "jny-spotlight" : primary !== null ? "jny-dim" : ""
+                    }`}
                   >
+                    {primary === "hazard" && nowPill}
                     <IconPickaxe className="w-4 h-4 shrink-0" />{" "}
                     {node.type === "hazard" ? "花資源架遮蔽硬撐（木材×2・繩索×2）" : "花資源硬清（木材×2・繩索×2）"}
                   </button>
                 )}
 
-                {/* 修復路段（v5，ORDER-036）：動手疊石／架橫樑／綁藤索，取代原本單鍵答題的「花資源硬清」——
-                    司令回饋故事寫了「重新排一次路」，結果玩家什麼都沒得做，敘事沒兌現。 */}
-                {game.status === "playing" && !node.cleared && node.type === "obstacle" && (
+                {/* 修復路段（v5／ORDER-053）：落石與吊橋共用動手建造，但工法目標不同。 */}
+                {game.status === "playing" && !node.cleared && (node.type === "obstacle" || node.type === "bridge") && (
                   <button
                     onClick={() => setBuilding({ stone: 0, wood: 0, rope: 0 })}
                     disabled={anyModalOpen}
-                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-600/60 bg-amber-950/30 hover:bg-amber-900/40 disabled:opacity-30 px-3 py-2 text-sm font-semibold text-amber-200 transition"
+                    className={`repair-primary-btn relative mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-black transition disabled:cursor-not-allowed ${
+                      primary === "repair" ? "jny-spotlight" : primary !== null ? "jny-dim" : ""
+                    }`}
                   >
-                    <IconHammer className="w-4 h-4 shrink-0" /> 修復路段（動手疊石架橋）
+                    {primary === "repair" && nowPill}
+                    <IconHammer className="w-4 h-4 shrink-0" /> {node.type === "bridge" ? "搭建吊橋（動手接回兩岸）" : "修復路段（動手疊石架橋）"}
                   </button>
                 )}
 
-                {/* 林間捷徑選擇 */}
+                {/* 林間捷徑選擇（事件節點是「二選一」——兩顆都是當前該按的選項，一起聚光） */}
                 {game.status === "playing" && !node.cleared && node.type === "event" && (
-                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="relative mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1.5">
+                    {primary === "event" && nowPill}
                     <button
                       onClick={() => doEventChoice("fast")}
-                      className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 px-3 py-2 text-xs font-medium transition"
+                      className={`repair-secondary-btn flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition ${
+                        primary === "event" ? "jny-spotlight" : primary !== null ? "jny-dim" : ""
+                      }`}
                     >
                       <IconRun className="w-3.5 h-3.5 shrink-0" /> 快速通過（壓力 +4，且路況可能反噬）
                     </button>
                     <button
                       onClick={() => doEventChoice("careful")}
                       disabled={game.res.wood < 1 || game.res.rope < 1}
-                      className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 disabled:opacity-30 px-3 py-2 text-xs font-medium transition"
+                      className={`repair-secondary-btn flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition disabled:opacity-30 ${
+                        primary === "event" ? "jny-spotlight" : primary !== null ? "jny-dim" : ""
+                      }`}
                     >
                       <IconSearch className="w-3.5 h-3.5 shrink-0" /> 謹慎探勘（耗木材1・繩索1，換糧食+1）
                     </button>
                   </div>
                 )}
 
-                {/* 山腰營地選擇 */}
+                {/* 山腰營地選擇（補給節點：資源選項全部聚光） */}
                 {game.status === "playing" && !node.cleared && node.type === "supply" && (
-                  <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="relative mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1.5">
+                    {primary === "supply" && nowPill}
                     {(Object.keys(RES_NAME) as Resource[]).map((r) => (
                       <button
                         key={r}
                         onClick={() => doSupplyChoice(r)}
-                        className="flex flex-col items-center gap-1 rounded-lg border border-slate-700 bg-slate-900/70 hover:bg-slate-800 px-2 py-2 text-xs font-medium transition"
+                        className={`repair-secondary-btn flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-xs font-bold transition ${
+                          primary === "supply" ? "jny-spotlight" : primary !== null ? "jny-dim" : ""
+                        }`}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={COIN_IMG[r]} width={20} height={20} alt={RES_NAME[r]} />
@@ -2343,7 +2508,9 @@ export default function JourneyPage() {
                   <button
                     onClick={startNodeTrial}
                     disabled={anyModalOpen}
-                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-sky-700/60 bg-sky-950/30 hover:bg-sky-900/30 disabled:opacity-30 px-3 py-2 text-sm font-semibold text-sky-200 transition"
+                    className={`repair-secondary-btn mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold text-sky-200 transition disabled:opacity-30 ${
+                      primary !== null ? "jny-dim" : ""
+                    }`}
                   >
                     <IconBook className="w-4 h-4 shrink-0" /> 族語試煉（本路段一次：{node.cleared || node.obstacle === 0 ? "通過則壓力 -1" : "通過則阻礙 -1"}）
                   </button>
@@ -2351,14 +2518,14 @@ export default function JourneyPage() {
               </div>
             );
           })()}
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="text-[11px] text-slate-500">支線</span>
+          <div className="relative z-[2] mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="text-[11px] text-amber-200/50">支線</span>
             {sideQuests(game).map((q) => (
               <span
                 key={q.label}
                 title={q.note}
                 className={`inline-flex items-center gap-1 text-[11px] ${
-                  q.state === "ok" ? "text-emerald-300" : q.state === "fail" ? "text-slate-600 line-through" : "text-slate-400"
+                  q.state === "ok" ? "text-emerald-300" : q.state === "fail" ? "text-slate-600 line-through" : "text-amber-100/60"
                 }`}
               >
                 <span>{q.state === "ok" ? "✓" : q.state === "fail" ? "✕" : "○"}</span>
@@ -2374,34 +2541,38 @@ export default function JourneyPage() {
         </section>
 
         {/* 頂部數值列（v2：壓力分級變色，危急時脈動警示） */}
-        <section className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+        <section className="jny-rise grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
           <StatBar
             label="壓力"
             value={game.pressure}
             max={game.maxPressure}
             color={
-              pressureTier(game) === "critical" ? "bg-red-500" : pressureTier(game) === "tense" ? "bg-amber-500" : "bg-rose-500"
+              pressureTier(game) === "critical" ? "jny-fill-critical" : pressureTier(game) === "tense" ? "jny-fill-tense" : "jny-fill-calm"
             }
             invert
             icon={METER_PRESSURE}
             pulse={pressureTier(game) === "critical"}
             tag={pressureTier(game) === "critical" ? "危急" : pressureTier(game) === "tense" ? "緊張" : undefined}
           />
-          <StatBar label="隊伍體力" value={game.teamHp} max={game.maxTeamHp} color="bg-emerald-500" icon={METER_STAMINA} />
-          <div className="relative rounded-lg border border-slate-800 bg-slate-900/50 p-2 pt-3 flex items-start justify-around gap-2 text-sm col-span-2">
+          <StatBar label="隊伍體力" value={game.teamHp} max={game.maxTeamHp} color="repair-progress-fill" icon={METER_STAMINA} />
+          <div className="jny-panel relative rounded-xl p-2 pt-3 flex items-start justify-around gap-2 text-sm col-span-2">
             {/* 族語落字（決策#22）：klokah 真實詞＋發音，整區標「示範·待核」待語言部終核 */}
-            <span className="absolute -top-2 right-2 rounded bg-slate-800 px-1.5 text-[9px] text-amber-300/90 border border-slate-700">
+            <span className="absolute -top-2 right-2 z-[2] rounded border border-amber-500/40 bg-[#0b1722] px-1.5 text-[9px] text-amber-300/90">
               族語：示範·待核
             </span>
             {(Object.keys(game.res) as Resource[]).map((r) => (
-              <span key={r} className="flex flex-col items-center gap-0.5" title={`${RES_NAME[r]}（示範·待核）`}>
+              <span
+                key={r}
+                className="material-card relative z-[2] flex flex-col items-center gap-0.5 rounded-lg px-2 py-1.5"
+                title={`${RES_NAME[r]}（示範·待核）`}
+              >
                 <span className="flex items-center gap-1">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={COIN_IMG[r]} width={24} height={24} alt={RES_NAME[r]} className="inline-block" />
                   <span className="font-semibold">{game.res[r]}</span>
                 </span>
                 {/* 中文名稱為主要可見標籤（避免只藏在 title tooltip 裡看不到）；族語詞為輔助學習 */}
-                <span className="text-[10px] text-slate-400">{RES_NAME[r]}</span>
+                <span className="text-[10px] text-amber-100/60">{RES_NAME[r]}</span>
                 <WordChip vocabId={RES_VOCAB[r]} />
               </span>
             ))}
@@ -2410,11 +2581,11 @@ export default function JourneyPage() {
 
         {/* 今日事件 */}
         {game.event && (
-          <section className="mb-3 rounded-xl border border-amber-700/40 bg-amber-950/20 p-3 text-sm">
-            <span className="text-amber-300 font-semibold">今日事件 · {game.event.name}</span>
-            <span className="text-slate-400 text-xs">（{game.event.kind}）</span>
+          <section className="jny-panel jny-rise mb-3 rounded-xl p-3 text-sm">
+            <span className="relative z-[2] text-amber-300 font-semibold">今日事件 · {game.event.name}</span>
+            <span className="text-amber-100/50 text-xs">（{game.event.kind}）</span>
             <WordChip vocabId={game.event.vocabId} />
-            <span className="text-slate-300"> — {game.event.desc}</span>
+            <span className="text-amber-100/80"> — {game.event.desc}</span>
           </section>
         )}
 
@@ -2426,26 +2597,22 @@ export default function JourneyPage() {
             </span>
           </div>
           <SectionHeading>山徑路線</SectionHeading>
-          <div className="relative rounded-xl border border-slate-800 overflow-hidden">
+          <div className="relative rounded-xl border border-amber-500/35 overflow-hidden shadow-[0_18px_40px_rgba(0,0,0,0.5)]">
             {/* 山徑地圖底（ORDER-015 美術，已過文化複核）＋深色 overlay 保節點可讀 */}
             <div
               className="absolute inset-0 bg-cover bg-center"
               style={{ backgroundImage: `url(${MAP_BASE})` }}
               aria-hidden
             />
-            <div className="absolute inset-0 bg-slate-950/70" aria-hidden />
+            <div className="absolute inset-0 bg-[#030a10]/70" aria-hidden />
             <div className="relative p-3 flex flex-wrap items-stretch gap-2">
               {game.nodes.map((n, i) => {
                 const here = i === game.idx;
                 return (
                   <div
                     key={n.id}
-                    className={`flex-1 min-w-24 rounded-lg border-2 p-2 text-center relative ${
-                      here
-                        ? "border-emerald-400 bg-emerald-900/70"
-                        : n.cleared
-                          ? "border-slate-700 bg-slate-900/70 opacity-80"
-                          : "border-slate-700 bg-slate-900/80"
+                    className={`jny-node flex-1 min-w-24 rounded-xl p-2 text-center relative ${
+                      here ? "jny-node-current" : n.cleared ? "jny-node-passed" : ""
                     }`}
                   >
                     {here && (
@@ -2461,11 +2628,11 @@ export default function JourneyPage() {
                     )}
                     {/* 場景水彩底（ORDER-017，已過文化複核）＋深色 overlay 保文字可讀 */}
                     <span
-                      className="absolute inset-0 rounded-lg bg-cover bg-center opacity-35"
+                      className="absolute inset-0 rounded-xl bg-cover bg-center opacity-35"
                       style={{ backgroundImage: `url(${SCENE_IMG[n.type]})` }}
                       aria-hidden
                     />
-                    <span className="absolute inset-0 rounded-lg bg-slate-950/45" aria-hidden />
+                    <span className="absolute inset-0 rounded-xl bg-[#030a10]/45" aria-hidden />
                     <div className="relative">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={NODE_IMG[n.type]} width={48} height={48} alt={n.name} className="mx-auto mt-1" />
@@ -2500,7 +2667,7 @@ export default function JourneyPage() {
         {/* 紀錄 */}
         <section className="mb-3">
           <SectionHeading>行動紀錄</SectionHeading>
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-3 min-h-16 max-h-32 overflow-auto space-y-1 text-xs">
+          <div className="jny-panel rounded-xl p-3 min-h-16 max-h-32 overflow-auto space-y-1 text-xs">
             {game.log.map((l) => (
               <div
                 key={l.key}
@@ -2520,23 +2687,27 @@ export default function JourneyPage() {
           </div>
         </section>
 
-        {/* 手牌 */}
-        <section>
+        {/* 手牌（ORDER-051 spec 7）：行動籤改用模式 B 新卡框語彙（.hs-card 金框畫窗＋名條＋費用寶石）迷你版 */}
+        <section ref={handRef}>
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xs uppercase tracking-wider text-slate-500">
+            <h2 className="text-xs uppercase tracking-wider text-amber-300/70">
               行動籤（牌庫 {game.deck.length} · 棄 {game.discard.length}）
             </h2>
             <button
+              ref={campRef}
               onClick={() => setGame((g) => camp(g))}
               disabled={game.status !== "playing"}
-              className="flex items-center gap-1.5 rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 px-3 py-1 text-sm font-medium"
+              className={`repair-primary-btn relative flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-black transition disabled:cursor-not-allowed ${
+                primary === "camp" ? "jny-spotlight" : primary !== null && game.status === "playing" ? "jny-dim" : ""
+              } ${campDim ? "jny-camp-raise" : ""}`}
             >
+              {primary === "camp" && <span className="jny-now-pill">▶ 現在</span>}
               <IconMoon className="w-3.5 h-3.5 shrink-0" /> 紮營（收束今日）
             </button>
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={FRAME_DIVIDER} alt="" className="mb-2 h-2 w-40 object-contain object-left opacity-80" />
-          <div className="flex flex-wrap gap-2">
+          <img src={FRAME_DIVIDER} alt="" className="mb-3 h-2 w-40 object-contain object-left opacity-80" />
+          <div className="flex flex-wrap gap-3 pt-2">
             {game.hand.map((c) => {
               const playable = canAfford(game, c);
               const eff = apCost(game, c);
@@ -2546,27 +2717,36 @@ export default function JourneyPage() {
                   key={c.key}
                   onClick={() => tryPlay(c)}
                   disabled={!playable}
-                  className={`w-36 text-left rounded-xl border-2 p-2 transition ${
-                    playable
-                      ? "border-slate-600 bg-slate-800 hover:-translate-y-1 hover:bg-slate-700"
-                      : "border-slate-800 bg-slate-900 opacity-40 cursor-not-allowed"
+                  className={`hs-card w-36 text-left p-2 ${
+                    playable ? "hs-card-playable" : "opacity-40 cursor-not-allowed"
                   }`}
                 >
-                  {art && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={art} alt={c.name} className="w-full h-16 object-cover rounded-lg mb-2" />
-                  )}
-                  <div className="flex justify-between items-center">
-                    <span className="inline-flex items-center gap-1 text-sky-300 font-bold text-sm">
-                      <IconTarget className="w-3.5 h-3.5 shrink-0" />
-                      {eff}
-                      {eff !== c.cost && <span className="text-emerald-400 text-[10px]"> (原{c.cost})</span>}
+                  <CostGem n={eff} />
+                  {eff !== c.cost && (
+                    <span className="absolute -top-2 left-6 z-10 rounded-full border border-emerald-400/70 bg-emerald-900/95 px-1.5 text-[9px] font-bold text-emerald-300">
+                      原{c.cost}
                     </span>
-                    <span className="text-[10px] text-slate-400">{cardTypeLabel(c.type)}</span>
+                  )}
+                  {art ? (
+                    <div className="relative mb-1.5 h-16 w-full overflow-hidden rounded-lg">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={art} alt={c.name} className="h-full w-full object-cover" />
+                      <span className="hs-art-frame rounded-lg" aria-hidden />
+                    </div>
+                  ) : (
+                    <div className="relative mb-1.5 flex h-16 w-full items-center justify-center overflow-hidden rounded-lg bg-[#0b1722]">
+                      <IconTarget className="w-6 h-6 text-amber-300/50" />
+                      <span className="hs-art-frame rounded-lg" aria-hidden />
+                    </div>
+                  )}
+                  <div className="hs-name-banner -mx-2 flex items-center justify-between px-2 py-0.5">
+                    <span className={`${notoSerifTC.className} text-sm font-bold`}>{c.name}</span>
+                    <span className="text-[9px] tracking-[0.15em] text-amber-200/70">{cardTypeLabel(c.type)}</span>
                   </div>
-                  <div className="font-semibold text-sm mt-1">{c.name}</div>
-                  <WordChip vocabId={c.vocabId} />
-                  <div className="text-[10px] text-slate-400 mt-1 leading-snug">{c.desc}</div>
+                  <div className="mt-1">
+                    <WordChip vocabId={c.vocabId} />
+                  </div>
+                  <div className="text-[10px] text-amber-100/60 mt-1 leading-snug">{c.desc}</div>
                   {c.costRes && (
                     <div className="flex items-center gap-2 text-[10px] text-amber-300/80 mt-1">
                       <span>耗</span>
@@ -2600,58 +2780,60 @@ export default function JourneyPage() {
 
       {/* 族語答題彈窗 */}
       {pending && quiz && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-5">
-            <div className="text-xs text-slate-400 mb-1">打出「{pending.name}」— 答對則行動全額生效</div>
-            <h3 className="text-lg font-bold mb-1">{quiz.prompt}</h3>
-            <p className="text-[10px] text-amber-300/70 mb-3">{quiz.note}</p>
-            <div className="grid gap-2">
-              {quiz.options.map((opt, idx) => {
-                let cls = "bg-slate-800 hover:bg-slate-700";
-                if (revealed !== null) {
-                  if (idx === quiz.answer) cls = "bg-emerald-700";
-                  else if (idx === revealed) cls = "bg-rose-700";
-                  else cls = "bg-slate-800 opacity-60";
-                }
-                return (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-[4px] flex items-center justify-center p-4 z-50">
+          <div className="repair-modal w-full max-w-md p-5">
+            <div className="relative z-[2]">
+              <div className="text-xs text-amber-300/80 mb-1">打出「{pending.name}」— 答對則行動全額生效</div>
+              <h3 className={`${notoSerifTC.className} repair-title text-lg font-black mb-1`}>{quiz.prompt}</h3>
+              <p className="text-[10px] text-amber-300/70 mb-3">{quiz.note}</p>
+              <div className="grid gap-2">
+                {quiz.options.map((opt, idx) => {
+                  let cls = "border-amber-500/25 bg-[#0b1722]/90 hover:border-amber-400/60 hover:bg-[#132435]";
+                  if (revealed !== null) {
+                    if (idx === quiz.answer) cls = "border-emerald-400/70 bg-emerald-800/80";
+                    else if (idx === revealed) cls = "border-rose-400/70 bg-rose-800/80";
+                    else cls = "border-amber-500/15 bg-[#0b1722]/90 opacity-50";
+                  }
+                  return (
+                    <button
+                      key={idx}
+                      disabled={revealed !== null}
+                      onClick={() => answer(idx)}
+                      className={`rounded-lg border px-4 py-2 text-left text-amber-50 transition ${cls}`}
+                    >
+                      {String.fromCharCode(65 + idx)}. {opt}
+                    </button>
+                  );
+                })}
+              </div>
+              {revealed !== null && (
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <p className="inline-flex items-center gap-1 text-xs text-amber-100/85">
+                      {revealed === quiz.answer ? (
+                        <IconCheck className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                      ) : (
+                        <IconCross className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+                      )}
+                      {revealed === quiz.answer ? "答對！行動全額生效。" : "答錯，行動以半額生效。"}
+                    </p>
+                    <button
+                      onClick={() => playAudio(quiz.audioId)}
+                      className="repair-secondary-btn flex items-center gap-1 rounded-lg px-2 py-1 text-xs"
+                      title="播放正解發音（原住民族語E樂園）"
+                    >
+                      <IconSpeaker className="w-3.5 h-3.5 shrink-0" /> 聽發音
+                    </button>
+                  </div>
                   <button
-                    key={idx}
-                    disabled={revealed !== null}
-                    onClick={() => answer(idx)}
-                    className={`rounded-lg px-4 py-2 text-left ${cls}`}
+                    onClick={confirmAnswer}
+                    className="repair-primary-btn rounded-lg px-4 py-1.5 text-xs font-black"
                   >
-                    {String.fromCharCode(65 + idx)}. {opt}
-                  </button>
-                );
-              })}
-            </div>
-            {revealed !== null && (
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <p className="inline-flex items-center gap-1 text-xs text-slate-300">
-                    {revealed === quiz.answer ? (
-                      <IconCheck className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-                    ) : (
-                      <IconCross className="w-3.5 h-3.5 shrink-0 text-rose-400" />
-                    )}
-                    {revealed === quiz.answer ? "答對！行動全額生效。" : "答錯，行動以半額生效。"}
-                  </p>
-                  <button
-                    onClick={() => playAudio(quiz.audioId)}
-                    className="flex items-center gap-1 rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
-                    title="播放正解發音（原住民族語E樂園）"
-                  >
-                    <IconSpeaker className="w-3.5 h-3.5 shrink-0" /> 聽發音
+                    繼續 ▶
                   </button>
                 </div>
-                <button
-                  onClick={confirmAnswer}
-                  className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 text-xs font-bold"
-                >
-                  繼續 ▶
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -2661,7 +2843,9 @@ export default function JourneyPage() {
           讓答題彈窗疊在上層、動畫播放時畫布仍可見；過關判定沿用已驗證的 resolveBuildTest。 */}
       {building && (() => {
         const node = game.nodes[game.idx];
-        const score = buildScore(building);
+        const mode = buildModeForNode(node) ?? "rockfall";
+        const bridgeMode = mode === "bridge";
+        const score = buildScore(building, mode);
         const tier = score >= 60 ? "safe" : score >= 35 ? "risky" : "weak";
         const textColor = tier === "safe" ? "text-emerald-400" : tier === "risky" ? "text-amber-400" : "text-rose-400";
         const interactive = !pendingAction && !crossing;
@@ -2671,12 +2855,13 @@ export default function JourneyPage() {
               {/* 標題區（RPG 任務面板：分類小字＋大標＋說明） */}
               <header className="relative z-[2] mb-4 text-center">
                 <p className={`${notoSansTC.className} mb-1.5 text-sm font-bold tracking-[0.08em] text-amber-300`}>
-                  修復路段 · 這次，換你們重新排一次路
+                  {bridgeMode ? "章節試煉 · 把兩岸重新接起來" : "修復路段 · 這次，換你們重新排一次路"}
                 </p>
                 <h3 className={`${notoSerifTC.className} repair-title text-3xl font-black sm:text-4xl`}>{node.name}</h3>
                 <p className="mx-auto mt-3 max-w-xl text-left text-xs leading-relaxed text-amber-100/70 sm:text-sm">
-                  溪水沖垮了這段路。拖拉手邊的材料，把它重新接起來——頁岩固定樁可以直接點在溪面上；
-                  橫樑跟藤索則從一個節點拖到另一個節點，牽出連線。
+                  {bridgeMode
+                    ? "兩岸還隔著急流。先在溪面安好頁岩樁，再用至少兩根橫樑接住跨距，最後以藤索固定；暴風越急，橋身就越考驗你的取捨。"
+                    : "溪水沖垮了這段路。拖拉手邊的材料，把它重新接起來——頁岩固定樁可以直接點在溪面上；橫樑跟藤索則從一個節點拖到另一個節點，牽出連線。"}
                 </p>
               </header>
 
@@ -2704,6 +2889,7 @@ export default function JourneyPage() {
 
               <p className="relative z-[2] mt-3 text-center text-xs tracking-[0.06em] text-amber-200/80">
                 {buildTool === "stone" ? "點溪面即可放置頁岩樁" : "拖曳材料至節點或兩節點之間以搭建結構"}
+                {bridgeMode && <span className="ml-2 text-amber-300/90">吊橋最低需求：橫樑×2・藤索×1</span>}
               </p>
 
               {/* 材料道具卡 */}
@@ -2745,7 +2931,9 @@ export default function JourneyPage() {
                 <p>◈ 點溪面即可放置頁岩樁。</p>
                 <p className="mt-1">
                   ◈{" "}
-                  {building.wood === 0
+                  {bridgeMode
+                    ? "吊橋工法：至少兩根橫樑承住跨距，再用藤索固定；石樁越多不一定越穩，留出水路才是關鍵。"
+                    : building.wood === 0
                     ? "純疊石工法：省下橫樑木材，測試通過後有額外行動點獎勵。"
                     : "架橫樑能更快墊高穩定度，但這次用了木材，沒有省料獎勵。"}
                 </p>
@@ -2769,9 +2957,12 @@ export default function JourneyPage() {
                   {building.rope < 1 && (
                     <p className="mb-1.5 text-xs font-bold text-rose-400">還沒綁緊固定，至少要用 1 個藤索。</p>
                   )}
+                  {bridgeMode && building.wood < 2 && (
+                    <p className="mb-1.5 text-xs font-bold text-rose-400">吊橋跨距還沒接住，至少要用 2 根橫樑。</p>
+                  )}
                   <button
                     onClick={startBuildTest}
-                    disabled={building.rope < 1 || !interactive}
+                    disabled={building.rope < 1 || (bridgeMode && building.wood < 2) || !interactive}
                     className="repair-primary-btn inline-flex w-full items-center justify-center gap-2 rounded-xl px-10 py-3 text-sm font-black tracking-[0.08em] sm:w-auto"
                   >
                     <IconFootprint className="w-4 h-4 shrink-0" /> 測試通行
@@ -2785,152 +2976,157 @@ export default function JourneyPage() {
 
       {/* 族語答題彈窗（v3，ORDER-031）：硬清／謹慎探勘／補給共用，答對全額、答錯半額 */}
       {pendingAction && actionQuiz && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-5">
-            <div className="text-xs text-slate-400 mb-1">
-              {pendingAction.kind === "hardClear" && "花資源硬清 — 答對則全額生效"}
-              {pendingAction.kind === "eventCareful" && "謹慎探勘 — 答對則全額生效"}
-              {pendingAction.kind === "supply" && `補給（${RES_NAME[pendingAction.resource as Resource]}）— 答對則全額生效`}
-              {pendingAction.kind === "buildTest" && "測試通行前，先答一題（答對：隊伍信心加成，結構穩定度 +15）"}
-            </div>
-            <h3 className="text-lg font-bold mb-1">{actionQuiz.prompt}</h3>
-            <p className="text-[10px] text-amber-300/70 mb-3">{actionQuiz.note}</p>
-            <div className="grid gap-2">
-              {actionQuiz.options.map((opt, idx) => {
-                let cls = "bg-slate-800 hover:bg-slate-700";
-                if (actionRevealed !== null) {
-                  if (idx === actionQuiz.answer) cls = "bg-emerald-700";
-                  else if (idx === actionRevealed) cls = "bg-rose-700";
-                  else cls = "bg-slate-800 opacity-60";
-                }
-                return (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-[4px] flex items-center justify-center p-4 z-50">
+          <div className="repair-modal w-full max-w-md p-5">
+            <div className="relative z-[2]">
+              <div className="text-xs text-amber-300/80 mb-1">
+                {pendingAction.kind === "hardClear" && "花資源硬清 — 答對則全額生效"}
+                {pendingAction.kind === "eventCareful" && "謹慎探勘 — 答對則全額生效"}
+                {pendingAction.kind === "supply" && `補給（${RES_NAME[pendingAction.resource as Resource]}）— 答對則全額生效`}
+                {pendingAction.kind === "buildTest" && "測試通行前，先答一題（答對：隊伍信心加成，結構穩定度 +15）"}
+              </div>
+              <h3 className={`${notoSerifTC.className} repair-title text-lg font-black mb-1`}>{actionQuiz.prompt}</h3>
+              <p className="text-[10px] text-amber-300/70 mb-3">{actionQuiz.note}</p>
+              <div className="grid gap-2">
+                {actionQuiz.options.map((opt, idx) => {
+                  let cls = "border-amber-500/25 bg-[#0b1722]/90 hover:border-amber-400/60 hover:bg-[#132435]";
+                  if (actionRevealed !== null) {
+                    if (idx === actionQuiz.answer) cls = "border-emerald-400/70 bg-emerald-800/80";
+                    else if (idx === actionRevealed) cls = "border-rose-400/70 bg-rose-800/80";
+                    else cls = "border-amber-500/15 bg-[#0b1722]/90 opacity-50";
+                  }
+                  return (
+                    <button
+                      key={idx}
+                      disabled={actionRevealed !== null}
+                      onClick={() => answerAction(idx)}
+                      className={`rounded-lg border px-4 py-2 text-left text-amber-50 transition ${cls}`}
+                    >
+                      {String.fromCharCode(65 + idx)}. {opt}
+                    </button>
+                  );
+                })}
+              </div>
+              {actionRevealed !== null && (
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <p className="inline-flex items-center gap-1 text-xs text-amber-100/85">
+                      {actionRevealed === actionQuiz.answer ? (
+                        <IconCheck className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                      ) : (
+                        <IconCross className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+                      )}
+                      {pendingAction.kind === "buildTest"
+                        ? actionRevealed === actionQuiz.answer
+                          ? "答對！穩定度 +15。"
+                          : "答錯，沒有加成。"
+                        : actionRevealed === actionQuiz.answer
+                          ? "答對！全額生效。"
+                          : "答錯，半額生效。"}
+                    </p>
+                    <button
+                      onClick={() => playAudio(actionQuiz.audioId)}
+                      className="repair-secondary-btn flex items-center gap-1 rounded-lg px-2 py-1 text-xs"
+                      title="播放正解發音（原住民族語E樂園）"
+                    >
+                      <IconSpeaker className="w-3.5 h-3.5 shrink-0" /> 聽發音
+                    </button>
+                  </div>
                   <button
-                    key={idx}
-                    disabled={actionRevealed !== null}
-                    onClick={() => answerAction(idx)}
-                    className={`rounded-lg px-4 py-2 text-left ${cls}`}
+                    onClick={confirmActionAnswer}
+                    className="repair-primary-btn flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-black"
                   >
-                    {String.fromCharCode(65 + idx)}. {opt}
-                  </button>
-                );
-              })}
-            </div>
-            {actionRevealed !== null && (
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <p className="inline-flex items-center gap-1 text-xs text-slate-300">
-                    {actionRevealed === actionQuiz.answer ? (
-                      <IconCheck className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                    {pendingAction.kind === "buildTest" ? (
+                      <>
+                        <IconFootprint className="w-3.5 h-3.5 shrink-0" /> 測試通行
+                      </>
                     ) : (
-                      <IconCross className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+                      "繼續 ▶"
                     )}
-                    {pendingAction.kind === "buildTest"
-                      ? actionRevealed === actionQuiz.answer
-                        ? "答對！穩定度 +15。"
-                        : "答錯，沒有加成。"
-                      : actionRevealed === actionQuiz.answer
-                        ? "答對！全額生效。"
-                        : "答錯，半額生效。"}
-                  </p>
-                  <button
-                    onClick={() => playAudio(actionQuiz.audioId)}
-                    className="flex items-center gap-1 rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
-                    title="播放正解發音（原住民族語E樂園）"
-                  >
-                    <IconSpeaker className="w-3.5 h-3.5 shrink-0" /> 聽發音
                   </button>
                 </div>
-                <button
-                  onClick={confirmActionAnswer}
-                  className="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 text-xs font-bold"
-                >
-                  {pendingAction.kind === "buildTest" ? (
-                    <>
-                      <IconFootprint className="w-3.5 h-3.5 shrink-0" /> 測試通行
-                    </>
-                  ) : (
-                    "繼續 ▶"
-                  )}
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
 
       {/* 族語試煉（v7，ORDER-042）：綁節點的 TRPG 式語言檢定，每節點一次，3 題（含節點自己的詞）。 */}
       {challenge && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-sky-700/60 p-5">
-            <div className="flex items-center gap-1.5 text-xs text-sky-400 mb-1 font-semibold">
-              <IconBook className="w-3.5 h-3.5 shrink-0" /> 族語試煉 · {game.nodes[game.idx]?.name} · 第 {challenge.idx + 1}/{challenge.quizzes.length} 題
-            </div>
-            <h3 className="text-lg font-bold mb-1">{challenge.quizzes[challenge.idx].prompt}</h3>
-            <p className="text-[10px] text-amber-300/70 mb-3">{challenge.quizzes[challenge.idx].note}</p>
-            <div className="grid gap-2">
-              {challenge.quizzes[challenge.idx].options.map((opt, idx) => {
-                const q = challenge.quizzes[challenge.idx];
-                let cls = "bg-slate-800 hover:bg-slate-700";
-                if (challengeRevealed !== null) {
-                  if (idx === q.answer) cls = "bg-emerald-700";
-                  else if (idx === challengeRevealed) cls = "bg-rose-700";
-                  else cls = "bg-slate-800 opacity-60";
-                }
-                return (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-[4px] flex items-center justify-center p-4 z-50">
+          <div className="repair-modal w-full max-w-md p-5">
+            <div className="relative z-[2]">
+              <div className="flex items-center gap-1.5 text-xs text-sky-300 mb-1 font-semibold">
+                <IconBook className="w-3.5 h-3.5 shrink-0" /> 族語試煉 · {game.nodes[game.idx]?.name} · 第 {challenge.idx + 1}/{challenge.quizzes.length} 題
+              </div>
+              <h3 className={`${notoSerifTC.className} repair-title text-lg font-black mb-1`}>{challenge.quizzes[challenge.idx].prompt}</h3>
+              <p className="text-[10px] text-amber-300/70 mb-3">{challenge.quizzes[challenge.idx].note}</p>
+              <div className="grid gap-2">
+                {challenge.quizzes[challenge.idx].options.map((opt, idx) => {
+                  const q = challenge.quizzes[challenge.idx];
+                  let cls = "border-amber-500/25 bg-[#0b1722]/90 hover:border-amber-400/60 hover:bg-[#132435]";
+                  if (challengeRevealed !== null) {
+                    if (idx === q.answer) cls = "border-emerald-400/70 bg-emerald-800/80";
+                    else if (idx === challengeRevealed) cls = "border-rose-400/70 bg-rose-800/80";
+                    else cls = "border-amber-500/15 bg-[#0b1722]/90 opacity-50";
+                  }
+                  return (
+                    <button
+                      key={idx}
+                      disabled={challengeRevealed !== null}
+                      onClick={() => answerChallenge(idx)}
+                      className={`rounded-lg border px-4 py-2 text-left text-amber-50 transition ${cls}`}
+                    >
+                      {String.fromCharCode(65 + idx)}. {opt}
+                    </button>
+                  );
+                })}
+              </div>
+              {challengeRevealed !== null && (
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <p className="inline-flex items-center gap-1 text-xs text-amber-100/85">
+                      {challengeRevealed === challenge.quizzes[challenge.idx].answer ? (
+                        <IconCheck className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                      ) : (
+                        <IconCross className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+                      )}
+                      {challengeRevealed === challenge.quizzes[challenge.idx].answer ? "答對！" : "答錯。"}
+                    </p>
+                    <button
+                      onClick={() => playAudio(challenge.quizzes[challenge.idx].audioId)}
+                      className="repair-secondary-btn flex items-center gap-1 rounded-lg px-2 py-1 text-xs"
+                      title="播放正解發音（原住民族語E樂園）"
+                    >
+                      <IconSpeaker className="w-3.5 h-3.5 shrink-0" /> 聽發音
+                    </button>
+                  </div>
                   <button
-                    key={idx}
-                    disabled={challengeRevealed !== null}
-                    onClick={() => answerChallenge(idx)}
-                    className={`rounded-lg px-4 py-2 text-left ${cls}`}
+                    onClick={nextChallenge}
+                    className="repair-primary-btn flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-black"
                   >
-                    {String.fromCharCode(65 + idx)}. {opt}
-                  </button>
-                );
-              })}
-            </div>
-            {challengeRevealed !== null && (
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <p className="inline-flex items-center gap-1 text-xs text-slate-300">
-                    {challengeRevealed === challenge.quizzes[challenge.idx].answer ? (
-                      <IconCheck className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                    {challenge.idx + 1 >= challenge.quizzes.length ? (
+                      <>
+                        <IconFlag className="w-3.5 h-3.5 shrink-0" /> 完成
+                      </>
                     ) : (
-                      <IconCross className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+                      "下一題 ▶"
                     )}
-                    {challengeRevealed === challenge.quizzes[challenge.idx].answer ? "答對！" : "答錯。"}
-                  </p>
-                  <button
-                    onClick={() => playAudio(challenge.quizzes[challenge.idx].audioId)}
-                    className="flex items-center gap-1 rounded bg-sky-700 hover:bg-sky-600 px-2 py-1 text-xs"
-                    title="播放正解發音（原住民族語E樂園）"
-                  >
-                    <IconSpeaker className="w-3.5 h-3.5 shrink-0" /> 聽發音
                   </button>
                 </div>
-                <button
-                  onClick={nextChallenge}
-                  className="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 text-xs font-bold"
-                >
-                  {challenge.idx + 1 >= challenge.quizzes.length ? (
-                    <>
-                      <IconFlag className="w-3.5 h-3.5 shrink-0" /> 完成
-                    </>
-                  ) : (
-                    "下一題 ▶"
-                  )}
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
 
       {/* 規則面板 */}
       {showRules && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-5 text-sm">
-            <h3 className="text-lg font-bold mb-3">怎麼玩 · 勝敗條件</h3>
-            <ul className="space-y-2 text-slate-300">
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-[4px] flex items-center justify-center p-4 z-50">
+          <div className="repair-modal w-full max-w-md max-h-[85vh] overflow-y-auto p-5 text-sm">
+            <div className="relative z-[2]">
+            <h3 className={`${notoSerifTC.className} repair-title text-lg font-black mb-3`}>怎麼玩 · 勝敗條件</h3>
+            <ul className="space-y-2 text-amber-100/85">
               <li className="flex gap-2">
                 <IconFlag className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
                 <span><b>目標</b>：在第 {levelCfg(game).maxDay} 日結束前，帶隊伍抵達終點「{game.nodes[game.nodes.length - 1]?.name.replace("（目的地）", "")}」。</span>
@@ -2979,10 +3175,11 @@ export default function JourneyPage() {
             <div className="text-right mt-4">
               <button
                 onClick={() => setShowRules(false)}
-                className="rounded-full bg-emerald-600 hover:bg-emerald-500 px-5 py-2 text-sm font-semibold"
+                className="repair-primary-btn rounded-xl px-6 py-2 text-sm font-black"
               >
                 知道了
               </button>
+            </div>
             </div>
           </div>
         </div>
@@ -2990,23 +3187,25 @@ export default function JourneyPage() {
 
       {/* 重新開始二次確認 */}
       {confirmRestart && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-xs rounded-2xl bg-slate-900 border border-slate-700 p-5 text-center">
-            <h3 className="text-base font-bold mb-1">重新開始這一局？</h3>
-            <p className="text-xs text-slate-400 mb-4">目前進度會全部重置，無法復原。</p>
-            <div className="flex gap-2 justify-center">
-              <button
-                onClick={() => restart()}
-                className="rounded-full bg-rose-600 hover:bg-rose-500 px-4 py-2 text-sm font-semibold"
-              >
-                確定重來
-              </button>
-              <button
-                onClick={() => setConfirmRestart(false)}
-                className="rounded-full bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm"
-              >
-                取消
-              </button>
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-[4px] flex items-center justify-center p-4 z-50">
+          <div className="repair-modal w-full max-w-xs p-5 text-center">
+            <div className="relative z-[2]">
+              <h3 className={`${notoSerifTC.className} repair-title text-base font-black mb-1`}>重新開始這一局？</h3>
+              <p className="text-xs text-amber-100/60 mb-4">目前進度會全部重置，無法復原。</p>
+              <div className="flex gap-2 justify-center">
+                <button
+                  onClick={() => restart()}
+                  className="repair-primary-btn rounded-xl px-4 py-2 text-sm font-black"
+                >
+                  確定重來
+                </button>
+                <button
+                  onClick={() => setConfirmRestart(false)}
+                  className="repair-secondary-btn rounded-xl px-4 py-2 text-sm font-bold"
+                >
+                  取消
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -3016,20 +3215,24 @@ export default function JourneyPage() {
           優先權高於故事卡（見下）——同一節點若兩者的觸發 state 剛好同時被設成非 null（effect 批次處理時序），
           章節卡在 JSX 順位優先渲染，避免兩層全螢幕蒙版疊加；玩家關掉章節卡後故事卡才顯示。 */}
       {chapterCard !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-slate-950/95 p-8 text-center shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-[4px] p-4">
+          <div className="repair-modal w-full max-w-md p-8 text-center">
             <div
               className={`${notoSansTC.className} mb-4 inline-block rounded-full border border-amber-500/40 bg-amber-950/30 px-3 py-1 text-xs tracking-[0.3em] text-amber-300/90`}
             >
               {chaptersOf(game.levelId)[chapterCard].kicker}
             </div>
-            <div className={`${notoSerifTC.className} text-xl font-bold leading-snug text-amber-50 sm:text-2xl`}>
+            <div className={`${notoSerifTC.className} repair-title text-xl font-bold leading-snug sm:text-2xl`}>
               {chaptersOf(game.levelId)[chapterCard].title}
             </div>
-            <p className={`${notoSansTC.className} mt-4 text-sm leading-relaxed text-slate-300`}>{chaptersOf(game.levelId)[chapterCard].sub}</p>
+            <p className={`${notoSansTC.className} mt-4 text-sm leading-relaxed text-amber-100/80`}>{chaptersOf(game.levelId)[chapterCard].sub}</p>
+            <div className="mt-5 rounded-xl border border-amber-500/25 bg-[#050d14]/65 p-3 text-left">
+              <div className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300/80">本章任務</div>
+              <p className="mt-1 text-xs leading-relaxed text-amber-50/90">{levelCfg(game).mission}</p>
+            </div>
             <button
               onClick={() => setChapterCard(null)}
-              className={`${notoSerifTC.className} mt-6 rounded-lg border-2 border-amber-500/60 bg-gradient-to-b from-[#32251766] to-[#0f1218f0] px-8 py-2.5 text-sm font-bold tracking-[0.15em] text-amber-100 transition hover:-translate-y-0.5 hover:border-amber-300/90`}
+              className={`${notoSerifTC.className} repair-primary-btn mt-6 rounded-xl px-8 py-2.5 text-sm font-bold tracking-[0.15em] transition hover:-translate-y-0.5`}
             >
               繼續
             </button>
@@ -3042,31 +3245,35 @@ export default function JourneyPage() {
           chapterCard === null 才渲染：章節卡優先顯示，避免兩層全螢幕蒙版同時疊加。
           配圖沿用 ORDER-017 已通過文化複核的節點場景圖（NODE_STORY_IMG），無圖就不顯示圖片區塊，不擋文字內容。 */}
       {chapterCard === null && storyCard !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl border border-amber-500/30 bg-slate-950/95 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-[4px] p-4">
+          <div className="repair-modal w-full max-w-md max-h-[85vh] overflow-y-auto overflow-x-hidden">
             {levelCfg(game).nodeStoryImg[storyCard] && (
-              <div className="relative h-40 sm:h-48 w-full overflow-hidden rounded-t-2xl">
+              <div className="relative h-40 sm:h-48 w-full overflow-hidden rounded-t-3xl">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={levelCfg(game).nodeStoryImg[storyCard]}
                   alt=""
                   className="h-full w-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/10 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050d14] via-[#050d14]/10 to-transparent" />
               </div>
             )}
-            <div className="p-8 pt-6 text-center">
+            <div className="relative z-[2] p-8 pt-6 text-center">
               <div
                 className={`${notoSansTC.className} mb-4 inline-block rounded-full border border-amber-500/40 bg-amber-950/30 px-3 py-1 text-xs tracking-[0.3em] text-amber-300/90`}
               >
                 這裡的故事
               </div>
-              <p className={`${notoSansTC.className} text-left text-sm leading-relaxed text-slate-200 whitespace-pre-line`}>
+              <p className={`${notoSansTC.className} text-left text-sm leading-relaxed text-amber-100/90 whitespace-pre-line`}>
                 {levelCfg(game).nodeStory[storyCard]}
               </p>
+              <div className="mt-5 rounded-xl border border-amber-500/25 bg-[#050d14]/65 p-3 text-left">
+                <div className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300/80">→ 你的下一步</div>
+                <p className="mt-1 text-xs leading-relaxed text-amber-50/90">{stepHint(game).todo}</p>
+              </div>
               <button
                 onClick={() => setStoryCard(null)}
-                className={`${notoSerifTC.className} mt-6 rounded-lg border-2 border-amber-500/60 bg-gradient-to-b from-[#32251766] to-[#0f1218f0] px-8 py-2.5 text-sm font-bold tracking-[0.15em] text-amber-100 transition hover:-translate-y-0.5 hover:border-amber-300/90`}
+                className={`${notoSerifTC.className} repair-primary-btn mt-6 rounded-xl px-8 py-2.5 text-sm font-bold tracking-[0.15em] transition hover:-translate-y-0.5`}
               >
                 繼續
               </button>
@@ -3080,8 +3287,9 @@ export default function JourneyPage() {
           改列出這局實際考過的每個詞（去重，取最後一次作答結果），中文＋族語＋可重播發音，
           在離開前給一次完整的視覺＋聽覺總覽。 */}
       {game.status !== "playing" && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl bg-slate-900 border border-slate-700 p-6 text-center">
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-[4px] flex items-center justify-center p-4 z-50">
+          <div className="repair-modal w-full max-w-md max-h-[85vh] overflow-y-auto p-6 text-center">
+            <div className="relative z-[2]">
             <div className="flex justify-center mb-2">
               {game.status === "won" ? (
                 <IconMountain className="w-10 h-10 text-emerald-400" />
@@ -3089,7 +3297,7 @@ export default function JourneyPage() {
                 <IconRain className="w-10 h-10 text-slate-400" />
               )}
             </div>
-            <h3 className="text-xl font-bold mb-1">
+            <h3 className={`${notoSerifTC.className} repair-title text-xl font-black mb-1`}>
               {game.status === "won"
                 ? game.levelId === "l2"
                   ? "安全下了稜線！"
@@ -3098,7 +3306,7 @@ export default function JourneyPage() {
                   ? "未能翻過稜線"
                   : "未能抵達部落"}
             </h3>
-            <p className="text-sm text-slate-400 mb-4">
+            <p className="text-sm text-amber-100/60 mb-4">
               {game.status === "won"
                 ? `第 ${game.day} 日抵達，答題正確率 ${rateLabel}。`
                 : game.pressure >= game.maxPressure
@@ -3165,20 +3373,60 @@ export default function JourneyPage() {
               {game.status === "won" && game.levelId === "l1" && level2Unlocked && (
                 <button
                   onClick={() => restart("l2")}
-                  className="rounded-full bg-sky-600 hover:bg-sky-500 px-5 py-2 text-sm font-semibold"
+                  className="repair-primary-btn rounded-xl px-5 py-2 text-sm font-black"
                 >
                   前進第二關 ▶
                 </button>
               )}
               <button
                 onClick={() => restart()}
-                className="rounded-full bg-emerald-600 hover:bg-emerald-500 px-5 py-2 text-sm font-semibold"
+                className={`${game.status === "won" && game.levelId === "l1" && level2Unlocked ? "repair-secondary-btn" : "repair-primary-btn"} rounded-xl px-5 py-2 text-sm font-black`}
               >
                 再走一次
               </button>
-              <Link href="/" className="rounded-full bg-slate-700 hover:bg-slate-600 px-5 py-2 text-sm">
+              <Link href="/" className="repair-secondary-btn rounded-xl px-5 py-2 text-sm font-bold">
                 回模式選擇
               </Link>
+            </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ORDER-051（引導點 4）：AP=0 紮營提示——全頁輕微降暗（pointer-events:none，不擋彈窗），
+          紮營鈕以 jny-camp-raise 抬升到蒙版之上聚光 */}
+      {campDim && <div className="jny-camp-overlay" aria-hidden />}
+
+      {/* ORDER-051（引導點 3）：首次教學 coach marks——4 站逐步聚光（任務面板→行動聚光燈→手牌→紮營），
+          box-shadow 挖洞聚光目標區域，各一句話，可跳過；完成後寫 localStorage 不再出現。 */}
+      {coach !== null && (
+        <div className="fixed inset-0 z-[70]">
+          {coachRect ? (
+            <div
+              className="jny-coach-cutout"
+              style={{ top: coachRect.top, left: coachRect.left, width: coachRect.width, height: coachRect.height }}
+            />
+          ) : (
+            <div className="fixed inset-0 bg-[#02070c]/80" />
+          )}
+          <div className="fixed inset-x-0 bottom-6 z-[75] flex justify-center px-4">
+            <div className="repair-modal w-full max-w-sm px-5 py-4">
+              <div className="relative z-[2]">
+                <div className="text-[10px] tracking-[0.25em] text-amber-300/80">新手引導 · {coach + 1}/{COACH_STEPS.length}</div>
+                <div className={`${notoSerifTC.className} repair-title mt-1 text-lg font-black`}>{COACH_STEPS[coach].title}</div>
+                <p className="mt-1.5 text-sm leading-relaxed text-amber-100/85">{COACH_STEPS[coach].text}</p>
+                <div className="mt-3 flex justify-end gap-2">
+                  <button onClick={finishCoach} className="repair-secondary-btn rounded-lg px-4 py-1.5 text-xs font-bold">
+                    跳過
+                  </button>
+                  <button
+                    onClick={() => (coach + 1 >= COACH_STEPS.length ? finishCoach() : setCoach(coach + 1))}
+                    className="repair-primary-btn rounded-lg px-5 py-1.5 text-xs font-black"
+                  >
+                    {coach + 1 >= COACH_STEPS.length ? "開始遊戲" : "下一步 ▶"}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -3189,6 +3437,20 @@ export default function JourneyPage() {
 
 function cardTypeLabel(t: CardType): string {
   return { action: "行動", coop: "協作", supply: "補給", watch: "守望", weave: "織圖" }[t];
+}
+
+// ORDER-051（spec 7）：行動籤費用寶石——沿用 /play 的 .hs-gem 定位與字級 class，
+// 形狀比照模式 B 的藍寶石六角柱切（文化紅線：避開菱形輪廓，不觸祖靈之眼紋樣）。
+function CostGem({ n }: { n: number }) {
+  return (
+    <span className="hs-gem hs-gem-md hs-gem-cost" aria-hidden>
+      <svg viewBox="0 0 30 30" className="h-full w-full">
+        <polygon points="15,1.5 27.5,8.25 27.5,21.75 15,28.5 2.5,21.75 2.5,8.25" fill="#1d4ed8" stroke="#93c5fd" strokeWidth="1.5" />
+        <polygon points="15,5.5 23.5,10.2 23.5,19.8 15,24.5 6.5,19.8 6.5,10.2" fill="rgba(255,255,255,0.16)" />
+      </svg>
+      <span className="hs-gem-num text-white">{n}</span>
+    </span>
+  );
 }
 
 // 側邊導覽（ORDER-017 nav 圖示）；桌機顯示，手機隱藏。僅實作頁面為連結，其餘標「敬請期待」。
@@ -3268,7 +3530,7 @@ function OrnateFrame() {
 function SectionHeading({ children }: { children: ReactNode }) {
   return (
     <div className="mb-2">
-      <h2 className="text-xs uppercase tracking-wider text-slate-500">{children}</h2>
+      <h2 className="text-xs uppercase tracking-wider text-amber-300/70">{children}</h2>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={FRAME_DIVIDER} alt="" className="mt-1 h-2 w-40 object-contain object-left opacity-80" />
     </div>
@@ -3328,23 +3590,26 @@ function StatBar({
   tag?: string;
 }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
+  // ORDER-051（spec 4）：量表改「寶石量表」——圓形金框小徽記＋數字，條改漸層填色＋內陰影軌道
   return (
-    <div className={`rounded-lg border bg-slate-900/50 p-2 ${pulse ? "border-red-500/70 animate-pulse" : "border-slate-800"}`}>
-      <div className="flex justify-between text-[11px] mb-1">
-        <span className="text-slate-400 flex items-center gap-1">
+    <div className={`jny-panel rounded-xl p-2 ${pulse ? "animate-pulse !border-red-500/80" : ""}`}>
+      <div className="relative z-[2] flex justify-between items-center text-[11px] mb-1">
+        <span className="text-amber-100/70 flex items-center gap-1.5">
           {icon && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={icon} width={14} height={14} alt="" />
+            <span className="jny-gem-icon !h-5 !w-5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={icon} width={12} height={12} alt="" />
+            </span>
           )}
           {label}
-          {tag && <span className="ml-1 rounded bg-amber-900/50 px-1 text-[10px] text-amber-300">{tag}</span>}
+          {tag && <span className="ml-1 rounded bg-amber-900/60 px-1 text-[10px] text-amber-300">{tag}</span>}
         </span>
-        <span className={invert ? "text-rose-300" : "text-emerald-300"}>
+        <span className={`font-bold ${invert ? "text-rose-300" : "text-emerald-300"}`}>
           {value}/{max}
         </span>
       </div>
-      <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
-        <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />
+      <div className="jny-track relative z-[2] h-2.5">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
