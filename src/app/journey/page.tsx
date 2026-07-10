@@ -90,6 +90,7 @@ type JGame = {
   wordLog: { vocabId: string; correct: boolean }[]; // v4（ORDER-033）：逐題紀錄，供結局回顧「這次學了什麼」
   trialedNodes: string[]; // v7（ORDER-042）：已做過「族語試煉」的節點 id（每節點限一次）
   fastDebt: number | null; // ORDER-048（P1）：事件節點「快速通過」的延遲反噬——記下兩節點後的 idx，走到時壓力+2
+  milletPlanted: number; // ORDER-055（小米接力）：本局紮營時沿路種下的小米數（僅第二關會種；入 localStorage 銀行）
 };
 
 type EventCard = {
@@ -271,6 +272,10 @@ const LS_LEVEL2_UNLOCKED = "cw_level2_unlocked";
 const LS_LAST_LEVEL = "cw_journey_level";
 // ORDER-051：首次教學 coach marks 旗標（做完/跳過即不再出現）
 const LS_COACH_DONE = "cw_journey_coach_done";
+// ORDER-055（小米接力）：第二關紮營時「沿路種下的小米」存入銀行（上限 3），
+// 下一次「新開局」（任一關）開局糧食 +N 並清空——世代接力的機制化呈現（呼應射日傳說）。
+const LS_MILLET_BANK = "cw_millet_bank";
+const MILLET_BANK_CAP = 3;
 // ORDER-051：電影感全頁背景——沿用已過文化複核的既有場景圖（stories/scene-start-v1），暗化 80%＋vignette
 const PAGE_BG = "/images/journey/stories/scene-start-v1.jpg";
 // ORDER-051（引導點 3）：首次教學 4 站（任務面板→行動聚光燈→手牌→紮營），各一句話
@@ -413,6 +418,50 @@ const CHAPTERS_L2: ChapterMeta[] = [
   },
 ];
 
+// ───────────────────────── 傳說篇章系統（ORDER-055，Phase 1：L1＋L2）─────────────────────────
+// 一關一傳說：傳說＝章節骨架。篇章文字**只用** enzo-culture/references/truku-legends-sourced.md
+// 既有核准內容（大洪水／射日）改寫節錄，連接句為中性敘述，不新編傳說內容。
+// 紅線：不演出審判/獵首/紋面、彩虹橋僅意象、不把傳說角色做成可操作單位、不掛 Gaya/Utux/Sisin 當機制。
+// milestones＝解鎖門檻（game.idx 到達該值即解鎖下一段）：L1（6 節點）通過節點 1/3/終點；
+// L2（7 節點）等比放大為通過節點 2/4/終點。
+type LegendConfig = {
+  name: string; // 傳說名（旅途誌／篇章卡標題）
+  sourceNote: string; // 出處標注（忠於記載、標注出處原則）
+  passages: string[]; // 3-4 段，每段 80-150 字
+  closing: string; // 勝利畫面的傳說收束句
+  intro: string; // 章節卡「本章任務」區的傳說開場句（織入使命句前）
+  milestones: number[]; // 各段解鎖的 game.idx 門檻（遞增）
+  img: string; // 篇章卡配圖（沿用已過文化複核的既有場景圖）
+};
+
+const LEGEND_L1: LegendConfig = {
+  name: "大洪水",
+  sourceNote: "傳說改寫節錄自文獻記載（臺灣原住民族事典「洪水」）；忠於記載、標注出處，文化複核進行中。",
+  passages: [
+    "路斷的那個晚上，老人家在火邊又說起那場遠古的大洪水——大水漫過山谷，把大地淹成一片汪洋。傳說裡，陸上的神靈各自尋路：有的升上了天，有的化成了灌木與海鳥，在浪頭上飛。",
+    "傳說裡，也有神靈在大水中溺了水，化作夜空裡的星星，遠遠看著這片土地；而留下來的，就成了太魯閣族人。倖存的人們在退水後的山谷裡，一段一段找回自己的路。老人家說到這裡，總會停一停，看看天上的星。",
+    "大水退去之後，山還是山，溪還是溪，只是位置都重新排過了。留下來的人沒有多說話，把路一段一段接回去，把家一戶一戶蓋回來。路會斷，水會來，但只要人還在，路就接得回來——這是大洪水留給後代的話。",
+  ],
+  closing: "山河重新排過——這次，換你們排了回來。",
+  intro: "老人家起頭講的，是那場大洪水：山曾經倒、水曾經漫，山河整個重新排過——",
+  milestones: [2, 4, 5],
+  img: "/images/journey/stories/scene-start-v1.jpg",
+};
+
+const LEGEND_L2: LegendConfig = {
+  name: "射日",
+  sourceNote: "傳說改寫節錄自文獻記載（原住民族委員會兒童網／臺灣原住民族事典「射日」）；忠於記載、標注出處，文化複核進行中。",
+  passages: [
+    "上稜線前，老人家講的是射日：遠古的天上有兩個太陽，輪流照射，大地被曬得乾枯，沒有黑夜，萬物得不到休息。族人商量之後決定——派人踏上遠路，去把多出來的那個太陽射下來。",
+    "射日的路途極遠，出發的人知道自己這一輩子走不到。他們揹著小孩同行，沿途種下小米和橘子——給後面接力的人留糧，也給將來回家的人留一條認得的路。一代走不完的路，就交給下一代接著走。",
+    "等到太陽終於被射下來，天地有了日夜，當年出發的人早已老去。完成這件事的，是沿著前人種下的作物、一路接力走完長路的後代。回程時，沿途的小米與橘子已經結實，一路把他們送回了家。",
+  ],
+  closing: "長路靠接力走完——這次，換你們沿路把小米種下去。",
+  intro: "老人家起頭講的，是射日的遠行：出發的人揹著孩子、沿路種下小米，把路留給後面的人——",
+  milestones: [3, 5, 6],
+  img: "/images/journey/stories/scene-forest-v1.jpg",
+};
+
 function chaptersOf(levelId: LevelId): ChapterMeta[] {
   return levelId === "l2" ? CHAPTERS_L2 : CHAPTERS_L1;
 }
@@ -532,19 +581,19 @@ const HAZARD_POOL_L2: HazardProto[] = [
     name: "突發性高山暴風雨",
     vocabId: "11-21", // bgihur paru 颱風
     threshold: 4,
-    hazard: { kind: "hp", amount: 2, text: "雨水穿透外衣帶走體溫，隊伍體力 -2" },
+    hazard: { kind: "hp", amount: 3, text: "雨水穿透外衣帶走體溫，隊伍體力 -3" }, // ORDER-055 難度調升：2→3
   },
   {
     name: "劈裂山巔的雷擊",
     vocabId: "11-10", // bruwa 雷
     threshold: 3,
-    hazard: { kind: "hp", amount: 3, text: "雷擊風險持續逼近，隊伍體力 -3" },
+    hazard: { kind: "hp", amount: 4, text: "雷擊風險持續逼近，隊伍體力 -4" }, // ORDER-055 難度調升：3→4
   },
   {
     name: "側風亂流",
     vocabId: "10-04", // bgihur 風
     threshold: 3,
-    hazard: { kind: "pressure", amount: 2, text: "側風不斷把人推離路線，壓力 +2" },
+    hazard: { kind: "pressure", amount: 3, text: "側風不斷把人推離路線，壓力 +3" }, // ORDER-055 難度調升：2→3
   },
 ];
 
@@ -585,7 +634,7 @@ function buildNodesL1(): PathNode[] {
   const ev = EVENT_NODE_POOL[Math.floor(Math.random() * EVENT_NODE_POOL.length)];
   return [
     { id: "n0", name: "立霧溪口（起點）", vocabId: "10-07", type: "start", obstacle: 0, cleared: true },
-    { id: "n1", name: "落石路段", vocabId: "12-05", type: "obstacle", obstacle: 2, cleared: false },
+    { id: "n1", name: "落石路段", vocabId: "12-05", type: "obstacle", obstacle: 3, cleared: false }, // ORDER-055 難度調升：2→3
     { id: "n2", name: "峽谷吊橋", vocabId: "12-07", type: "bridge", obstacle: 1, cleared: false },
     { id: "n3", name: ev.name, vocabId: ev.vocabId, type: "event", obstacle: 0, cleared: false },
     { id: "n4", name: "山腰營地", vocabId: "12-01", type: "supply", obstacle: 0, cleared: false },
@@ -657,7 +706,9 @@ type LevelConfig = {
   pickDesc: string;
   mission: string; // ORDER-052：常駐使命句，讓玩家知道為何出發與如何完成
   maxDay: number;
+  startPressure: number; // ORDER-055（難度調升）：起始壓力依關卡設定（L1 調升 3→4）
   startRes: Record<Resource, number>;
+  legend: LegendConfig; // ORDER-055：一關一傳說（篇章解鎖／旅途誌／勝利收束句）
   buildNodes: () => PathNode[];
   events: EventCard[];
   chapters: ChapterMeta[];
@@ -676,7 +727,9 @@ const LEVELS: Record<LevelId, LevelConfig> = {
     pickDesc: "溪水沖斷了回部落的路，一段一段修好它。",
     mission: "溪水沖斷了回家的路——在第 6 日入夜前，把每一段路重新接起來，帶每個人回到部落。",
     maxDay: 6,
+    startPressure: 4, // ORDER-055 難度調升：3→4
     startRes: { food: 4, wood: 3, stone: 2, rope: 2 },
+    legend: LEGEND_L1,
     buildNodes: buildNodesL1,
     events: EVENTS,
     chapters: CHAPTERS_L1,
@@ -698,9 +751,11 @@ const LEVELS: Record<LevelId, LevelConfig> = {
     pickLabel: "第二關 · 風雨的稜線",
     pickDesc: "暴風雨正面撲向稜線——環境危害不清除，每晚都會消耗隊伍。",
     mission: "風暴壓上稜線——在第 7 日入夜前清除持續消耗隊伍的危害，帶大家下到背風處。",
-    // 7 節點、兩個多點數危害＋3 點石堆：比第一關多一天，但經濟更緊（糧 3、木 2）
+    // 7 節點、兩個多點數危害＋3 點石堆：比第一關多一天，但經濟更緊（ORDER-055：糧 3→2）
     maxDay: 7,
-    startRes: { food: 3, wood: 2, stone: 2, rope: 2 },
+    startPressure: 3,
+    startRes: { food: 2, wood: 2, stone: 2, rope: 2 },
+    legend: LEGEND_L2,
     buildNodes: buildNodesL2,
     events: EVENTS_L2,
     chapters: CHAPTERS_L2,
@@ -732,7 +787,7 @@ function newGame(levelId: LevelId): JGame {
     day: 1,
     ap: 3,
     maxAp: 3,
-    pressure: 3,
+    pressure: cfg.startPressure,
     maxPressure: 10,
     teamHp: 12,
     maxTeamHp: 12,
@@ -752,7 +807,42 @@ function newGame(levelId: LevelId): JGame {
     wordLog: [],
     trialedNodes: [],
     fastDebt: null,
+    milletPlanted: 0,
   };
+}
+
+// ORDER-055（傳說篇章）：目前已解鎖的篇章段數（依 idx 過門檻累計，純函式、可重算不需另存 state）
+function unlockedLegendCount(g: JGame): number {
+  return levelCfg(g).legend.milestones.filter((m) => g.idx >= m).length;
+}
+
+// ORDER-055（難度調升）：答錯卡牌效果由半額改 40%（向下取整、至少 1）
+function wrongAmt(full: number): number {
+  return Math.max(1, Math.floor(full * 0.4));
+}
+
+// ORDER-055（勝利畫面）：本局難度評分＝天數餘裕（每日 15、上限 30）＋正確率（上限 50）＋
+// 傳說收集完整度（上限 20），總分 0-100，給重玩追分目標。
+function difficultyScore(g: JGame): {
+  total: number;
+  daysPts: number;
+  accPts: number;
+  legendPts: number;
+  daysSpare: number;
+  ratePct: number;
+  collected: number;
+  totalPassages: number;
+} {
+  const cfg = levelCfg(g);
+  const daysSpare = Math.max(0, cfg.maxDay - g.day);
+  const daysPts = Math.min(30, daysSpare * 15);
+  const answered = g.correct + g.wrong;
+  const ratePct = answered === 0 ? 0 : Math.round((g.correct / answered) * 100);
+  const accPts = Math.round(ratePct * 0.5);
+  const collected = unlockedLegendCount(g);
+  const totalPassages = cfg.legend.passages.length;
+  const legendPts = totalPassages === 0 ? 0 : Math.round((collected / totalPassages) * 20);
+  return { total: daysPts + accPts + legendPts, daysPts, accPts, legendPts, daysSpare, ratePct, collected, totalPassages };
 }
 
 // ───────────────────────── 壓力分級（v2：情緒曲線）─────────────────────────
@@ -890,10 +980,11 @@ function hardClear(g: JGame, correct: boolean, vocabId: string): JGame {
     node.cleared = true;
     ng.log = pushLog(ng.log, `✓ 答對｜花資源硬清：「${node.name}」已可通行。`, "good");
   } else {
-    const half = Math.ceil(node.obstacle / 2);
-    node.obstacle = half;
+    // ORDER-055（難度調升）：答錯由半額改 40%（向下取整、至少 1）
+    const amt = wrongAmt(node.obstacle);
+    node.obstacle = Math.max(0, node.obstacle - amt);
     if (node.obstacle === 0) node.cleared = true;
-    ng.log = pushLog(ng.log, `✕ 答錯｜花資源硬清：資源已耗，僅清一半（剩 ${node.obstacle}）。`, "info");
+    ng.log = pushLog(ng.log, `✕ 答錯｜花資源硬清：資源已耗，僅清 ${amt} 點（剩 ${node.obstacle}）。`, "info");
   }
   return settle(applyStreakBonus(ng));
 }
@@ -1048,7 +1139,8 @@ function resolveBuildTest(g: JGame, b: BuildMaterials, quizCorrect: boolean, voc
 // 每塊板＝一個族語詞，先聽真實發音再選中文意思（既有題型的反向）。錯了先教再走：
 // 第一次錯給提示（揭示族語書寫、壓力 +1）、第二次錯直接教正解，板子照樣補上（補強樣式）。
 // 中性框架：隊伍邊過橋邊喊出聽到的詞，不掛任何信仰概念。
-const BRIDGE_PLANKS = 5;
+// ORDER-055（難度調升）：搭板 5→6 塊。
+const BRIDGE_PLANKS = 6;
 
 // 聽音搭板的選項：正解的中文意思 + 3 個干擾詞的中文意思（distractors 已保證中文不重複）
 function bridgeListenOptions(vocabId: string): { chinese: string; correct: boolean }[] {
@@ -1059,8 +1151,8 @@ function bridgeListenOptions(vocabId: string): { chinese: string; correct: boole
   ]);
 }
 
-// 五塊板全部釘完後的純結算（比照其他 reducer：複製狀態→清節點→記錄→settle）。
-// results 每塊板一筆，correct＝是否「第一次就聽對」；一次聽懂 ≥4 詞給壓力 -1 的加成。
+// 全部板釘完後的純結算（比照其他 reducer：複製狀態→清節點→記錄→settle）。
+// results 每塊板一筆，correct＝是否「第一次就聽對」；至多錯 1 詞給壓力 -1 的加成。
 function resolveBridgeListen(g: JGame, results: { vocabId: string; correct: boolean }[]): JGame {
   const node = g.nodes[g.idx];
   if (g.status !== "playing" || !node || node.type !== "bridge" || node.cleared) return g;
@@ -1072,8 +1164,8 @@ function resolveBridgeListen(g: JGame, results: { vocabId: string; correct: bool
   const n2 = ng.nodes[ng.idx];
   n2.obstacle = 0;
   n2.cleared = true;
-  ng.log = pushLog(ng.log, "✓ 聽音搭板：五塊板都釘穩了，隊伍踏著自己念出來的路過了橋。", "good");
-  if (correctCount >= 4) {
+  ng.log = pushLog(ng.log, `✓ 聽音搭板：${BRIDGE_PLANKS} 塊板都釘穩了，隊伍踏著自己念出來的路過了橋。`, "good");
+  if (correctCount >= results.length - 1) {
     ng.pressure = Math.max(0, ng.pressure - 1);
     ng.log = pushLog(ng.log, `一次就聽懂 ${correctCount}/${results.length} 個詞——腳步跟發音一樣穩，壓力 -1！`, "good");
   }
@@ -1153,7 +1245,9 @@ function applyNodeTrial(g: JGame, nodeId: string, results: { vocabId: string; co
       );
     }
   } else {
-    ng.log = pushLog(ng.log, `族語試煉 ${correctCount}/${total}：這幾個詞還不熟，路上再多念幾次。`, "info");
+    // ORDER-055（難度調升）：試煉未過改小懲罰——壓力 +1（原本只記錄不懲罰）
+    ng.pressure = Math.min(ng.maxPressure, ng.pressure + 1);
+    ng.log = pushLog(ng.log, `族語試煉 ${correctCount}/${total}：這幾個詞還不熟，隊伍腳步亂了一拍——壓力 +1，路上再多念幾次。`, "bad");
   }
   return settle(ng);
 }
@@ -1213,7 +1307,7 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
       break;
     }
     case "clearStone": {
-      const amt = correct ? 2 : 1;
+      const amt = correct ? 2 : wrongAmt(2);
       if (node && node.type === "obstacle" && !node.cleared) {
         node.obstacle = Math.max(0, node.obstacle - amt);
         if (node.obstacle === 0) node.cleared = true;
@@ -1239,7 +1333,7 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
     }
     case "coopClear": {
       const full = ng.teamHp < 5 ? 2 : 3;
-      const amt = correct ? full : 1;
+      const amt = correct ? full : wrongAmt(full);
       if (node && (node.type === "obstacle" || node.type === "bridge" || node.type === "hazard") && !node.cleared) {
         node.obstacle = Math.max(0, node.obstacle - amt);
         if (node.obstacle === 0) node.cleared = true;
@@ -1261,13 +1355,13 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
       break;
     }
     case "reduceStress": {
-      const amt = correct ? 3 : 1;
+      const amt = correct ? 3 : wrongAmt(3);
       ng.pressure = Math.max(0, ng.pressure - amt);
       ng.log = pushLog(ng.log, `${tag}｜守望：壓力 -${amt}（${ng.pressure}/${ng.maxPressure}）。`, correct ? "good" : "info");
       break;
     }
     case "weaveMark": {
-      const amt = correct ? 2 : 1;
+      const amt = correct ? 2 : wrongAmt(2);
       ng.pressure = Math.max(0, ng.pressure - amt);
       ng.coopDiscount = 1;
       ng.log = pushLog(ng.log, `${tag}｜分工合作：壓力 -${amt}，下一張牌行動點 -1。`, correct ? "good" : "info");
@@ -1275,7 +1369,7 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
     }
     // ORDER-050（P2 第二關）：環境危害清除牌（改編自設計文件第一章 RESOLVE_ACTION）
     case "braceWind": {
-      const amt = correct ? 2 : 1;
+      const amt = correct ? 2 : wrongAmt(2);
       if (node && node.type === "hazard" && !node.cleared) {
         node.obstacle = Math.max(0, node.obstacle - amt);
         if (node.obstacle === 0) node.cleared = true;
@@ -1286,7 +1380,7 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
       break;
     }
     case "shelterBrace": {
-      const amt = correct ? 2 : 1;
+      const amt = correct ? 2 : wrongAmt(2);
       if (node && node.type === "hazard" && !node.cleared) {
         node.obstacle = Math.max(0, node.obstacle - amt);
         if (node.obstacle === 0) node.cleared = true;
@@ -1323,8 +1417,21 @@ function camp(g: JGame): JGame {
     ng.log = pushLog(ng.log, `紮營：消耗 ${foodCost} 糧食（剩 ${ng.res.food}）。`, "sys");
   }
 
-  // 未處理的路段阻礙 → 壓力 +1；環境危害（ORDER-050，P2）→ 套用該危害的 ongoingPenalty
-  // （設計文件第一章：ENVIRONMENT_HAZARD 未清除，每回合結束持續付出代價——取代一般的 +1 壓力）
+  // ORDER-055（小米接力，僅第二關）：扣完糧後若仍有 ≥2 糧，隊伍沿路種下 1 糧的小米——
+  // 呼應射日傳說「沿途種下小米，留給後面接力的人」；存入 localStorage 銀行（上限 3，
+  // 由 UI 層 effect 同步寫入），下一次新開局（任一關）開局糧食 +N。
+  if (ng.levelId === "l2" && ng.res.food >= 2 && ng.milletPlanted < MILLET_BANK_CAP) {
+    ng.res.food -= 1;
+    ng.milletPlanted += 1;
+    ng.log = pushLog(
+      ng.log,
+      `沿路種下一把小米（糧食 -1）——留給後面接力的人，下一局開局糧食 +1（本局已種 ${ng.milletPlanted}，上限 ${MILLET_BANK_CAP}）。`,
+      "good",
+    );
+  }
+
+  // 未處理的路段阻礙 → 壓力 +2（ORDER-055 難度調升：+1→+2）；環境危害（ORDER-050，P2）→
+  // 套用該危害的 ongoingPenalty（設計文件第一章：ENVIRONMENT_HAZARD 未清除，每回合結束持續付出代價）
   const node = ng.nodes[ng.idx];
   if (node && !node.cleared) {
     if (node.type === "hazard" && node.hazard) {
@@ -1335,8 +1442,8 @@ function camp(g: JGame): JGame {
       }
       ng.log = pushLog(ng.log, `環境危害「${node.name}」未清除，整夜肆虐：${node.hazard.text}。`, "bad");
     } else {
-      ng.pressure = Math.min(ng.maxPressure, ng.pressure + 1);
-      ng.log = pushLog(ng.log, `「${node.name}」尚未通行，壓力 +1。`, "bad");
+      ng.pressure = Math.min(ng.maxPressure, ng.pressure + 2);
+      ng.log = pushLog(ng.log, `「${node.name}」尚未通行，壓力 +2。`, "bad");
     }
   }
 
@@ -1377,6 +1484,23 @@ function camp(g: JGame): JGame {
 }
 
 // ───────────────────────── 元件 ─────────────────────────
+
+// ORDER-055（小米接力）：新開局時把小米銀行一次領出——開局糧食 +N 並清空銀行。
+// 只在 client 端（mount 後的 effect／事件處理）呼叫，SSR 期間不觸碰 localStorage。
+function consumeMilletBank(g: JGame): JGame {
+  try {
+    const bank = Math.max(0, Math.min(MILLET_BANK_CAP, parseInt(localStorage.getItem(LS_MILLET_BANK) ?? "0", 10) || 0));
+    if (bank <= 0) return g;
+    localStorage.removeItem(LS_MILLET_BANK);
+    return {
+      ...g,
+      res: { ...g.res, food: g.res.food + bank },
+      log: pushLog(g.log, `前人沿路種下的小米，已在路邊結了穗——開局糧食 +${bank}。`, "good"),
+    };
+  } catch {
+    return g;
+  }
+}
 
 function playAudio(id: string | null) {
   if (!id) return;
@@ -1442,7 +1566,7 @@ function stepHint(g: JGame): { situation: string; todo: string } {
           todo:
             !hasCard && !canListen && !canHardClear(g)
               ? "先按「紮營」換日重抽手牌、囤資源——手上沒有可用行動牌，木材／繩索也不夠搭板（聽音搭板要木材1・繩索1）。"
-              : "聽音搭板，一塊一塊把橋接回來——點「聽音搭板（族語過橋）」（耗木材1・繩索1），聽發音選出意思，釘穩五塊板；也可出「搭橋」／「共同搬運」牌，或花資源硬清（木材×2・繩索×2）。",
+              : "聽音搭板，一塊一塊把橋接回來——點「聽音搭板（族語過橋）」（耗木材1・繩索1），聽發音選出意思，釘穩六塊板；也可出「搭橋」／「共同搬運」牌，或花資源硬清（木材×2・繩索×2）。",
         };
       }
       break;
@@ -1952,19 +2076,25 @@ export default function JourneyPage() {
   // newGame() 內含 Math.random()（洗牌／隨機事件／uid），須在 client mount 後才渲染，
   // 否則 SSR 與 client 首次渲染的牌序不一致 → hydration mismatch。
   const [mounted, setMounted] = useState(false);
+  // ORDER-055：初始化只跑一次（StrictMode 開發模式 effect 會重跑——小米銀行是「讀完即清」的
+  // 消耗性狀態，第二次重跑會讀到 0 並蓋掉加成，故用 ref 擋掉重複初始化）。
+  const initedRef = useRef(false);
   useEffect(() => {
+    if (initedRef.current) return;
+    initedRef.current = true;
     // mount 後讀取解鎖狀態與上次選擇的關卡（皆在 client 端，SSR 期間不觸碰 localStorage）
     let unlocked = false;
+    let lvl: LevelId = "l1";
     try {
       unlocked = localStorage.getItem(LS_LEVEL2_UNLOCKED) === "1";
-      /* eslint-disable react-hooks/set-state-in-effect */
-      if (unlocked) setLevel2Unlocked(true);
-      if (unlocked && localStorage.getItem(LS_LAST_LEVEL) === "l2") setGame(newGame("l2"));
+      if (unlocked && localStorage.getItem(LS_LAST_LEVEL) === "l2") lvl = "l2";
     } catch {
       /* localStorage 不可用（隱私模式等）：維持預設第一關 */
     }
+    if (unlocked) setLevel2Unlocked(true);
+    // 開局套用小米銀行（ORDER-055 小米接力：上一局沿路種下的小米，這一局開局糧 +N）
+    setGame(consumeMilletBank(newGame(lvl)));
     setMounted(true);
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   // 終局音效：抵達終點 / 未能抵達（中性 UI 完成音，非族樂）
@@ -2016,6 +2146,48 @@ export default function JourneyPage() {
     }
   }, [mounted, chapterCard, game, seenStories]);
 
+  // ─────────── 傳說篇章（ORDER-055）：里程碑解鎖 → 全螢幕篇章卡 → 旅途誌可重讀 ───────────
+  // unlockedLegendCount 是 idx 的純函式；seenLegendCount 記「已彈出過幾段」，兩者差額就是待展示的篇章。
+  // 章節卡／節點故事卡優先（同為全螢幕過場，不疊加）；篇章卡 z 序最高，最終段（抵達終點）會蓋在勝利彈窗之上，
+  // 玩家先讀完傳說收束段、關掉後才看到勝利結算（本章傳說 n/n＋難度評分）。
+  const [legendCard, setLegendCard] = useState<number | null>(null);
+  const [seenLegendCount, setSeenLegendCount] = useState(0);
+  const [showJournal, setShowJournal] = useState(false);
+  const unlockedLegend = unlockedLegendCount(game);
+  useEffect(() => {
+    if (!mounted || legendCard !== null) return;
+    // 章節卡／故事卡「即將」在本節點觸發時也先讓路——三個 effect 在同一個 commit 讀到的都是
+    // 更新前的 state（chapterCard/storyCard 皆為 null），只看 null 會三卡同時疊開。
+    // 終局例外：抵達終點時勝利彈窗會蓋住故事卡（既有行為），最終段直接以 z-[60] 蓋在勝利彈窗上呈現。
+    const { index: chIdx } = chapterForIdx(game.levelId, game.idx);
+    const chapterDue = chIdx !== seenChapters && chaptersOf(game.levelId)[chIdx].nodeStart === game.idx;
+    const node = game.nodes[game.idx];
+    const storyDue = !!node && !!levelCfg(game).nodeStory[node.vocabId] && !seenStories.has(node.vocabId);
+    if (game.status === "playing" && (chapterCard !== null || storyCard !== null || chapterDue || storyDue)) return;
+    if (unlockedLegend > seenLegendCount) {
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setLegendCard(seenLegendCount);
+      setSeenLegendCount(seenLegendCount + 1);
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, [mounted, chapterCard, storyCard, legendCard, unlockedLegend, seenLegendCount, game, seenChapters, seenStories]);
+
+  // ORDER-055（小米接力）：本局新種下的小米同步進 localStorage 銀行（上限 3）。
+  // ref 記「已同步到第幾株」，restart 時歸零；只增不減，重複 render 不會重複入帳。
+  const milletSyncedRef = useRef(0);
+  useEffect(() => {
+    const planted = game.milletPlanted;
+    if (planted <= milletSyncedRef.current) return;
+    const delta = planted - milletSyncedRef.current;
+    milletSyncedRef.current = planted;
+    try {
+      const bank = Math.max(0, parseInt(localStorage.getItem(LS_MILLET_BANK) ?? "0", 10) || 0);
+      localStorage.setItem(LS_MILLET_BANK, String(Math.min(MILLET_BANK_CAP, bank + delta)));
+    } catch {
+      /* 忽略寫入失敗 */
+    }
+  }, [game.milletPlanted]);
+
   const quiz = useMemo(() => (pending && pending.quiz ? quizFor(pending) : null), [pending]);
 
   // v3（ORDER-031）：非卡牌動作的答題閘門（硬清／謹慎探勘／補給／v5 修復路段測試）——共用同一套隨機詞庫題型
@@ -2055,9 +2227,9 @@ export default function JourneyPage() {
   const [crossing, setCrossing] = useState(false);
   const buildCanvasRef = useRef<BuildCanvasHandle>(null);
 
-  // ORDER-054：聽音搭板（吊橋語言優先小遊戲）——五塊板＝五個詞，聽真實發音選中文意思。
+  // ORDER-054：聽音搭板（吊橋語言優先小遊戲）——六塊板＝六個詞（ORDER-055：5→6），聽真實發音選中文意思。
   // phase：listen＝作答中；reveal＝答對短暫顯示後自動下一塊；teach＝第二次答錯的教學揭示（按鈕續行）；
-  // crossing＝五塊板完成的過橋短過場。planks 記每塊板是釘穩（solid）還是補強（patched，第二次錯）。
+  // crossing＝全部板完成的過橋短過場。planks 記每塊板是釘穩（solid）還是補強（patched，第二次錯）。
   type BridgeListen = {
     ids: string[];
     idx: number;
@@ -2079,7 +2251,9 @@ export default function JourneyPage() {
     confirmRestart ||
     !!challenge ||
     !!building ||
-    !!bridgeListen;
+    !!bridgeListen ||
+    legendCard !== null ||
+    showJournal;
 
   // ORDER-051（引導點 1）：行動聚光燈——唯一的「現在該按的鈕」
   const primary = primaryAction(game);
@@ -2175,7 +2349,7 @@ export default function JourneyPage() {
     setGame((g) => ({
       ...g,
       res: { ...g.res, wood: g.res.wood - 1, rope: g.res.rope - 1 },
-      log: pushLog(g.log, "聽音搭板開始：耗木材 1・繩索 1。聽準每個詞，把五塊板釘回去。", "sys"),
+      log: pushLog(g.log, `聽音搭板開始：耗木材 1・繩索 1。聽準每個詞，把 ${BRIDGE_PLANKS} 塊板釘回去。`, "sys"),
     }));
     // 從完整已驗證詞庫抽 5 個不重複的詞
     const ids = new Set<string>();
@@ -2437,7 +2611,9 @@ export default function JourneyPage() {
         /* 忽略寫入失敗 */
       }
     }
-    setGame(newGame(target));
+    // ORDER-055：新開局領出小米銀行（開局糧 +N），並歸零本局的篇章／小米同步狀態
+    milletSyncedRef.current = 0;
+    setGame(consumeMilletBank(newGame(target)));
     setPending(null);
     setRevealed(null);
     setConfirmRestart(false);
@@ -2451,6 +2627,9 @@ export default function JourneyPage() {
     setBridgeListen(null);
     setPendingAction(null);
     setActionRevealed(null);
+    setLegendCard(null);
+    setSeenLegendCount(0);
+    setShowJournal(false);
   }
 
   // mount 前：SSR 與 client 首渲染皆輸出此骨架，確保 HTML 一致（避免 hydration mismatch）
@@ -2576,9 +2755,19 @@ export default function JourneyPage() {
               <span className="jny-badge-gold rounded px-2.5 py-1 text-xs font-black">主線</span>
               <span className={`${notoSerifTC.className} text-base font-bold text-amber-50`}>{levelCfg(game).mainQuest}</span>
             </div>
-            <span className="text-xs text-amber-100/60">
-              節點 {game.idx}/{game.nodes.length - 1} · 第 {game.day}/{levelCfg(game).maxDay} 日
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-amber-100/60">
+                節點 {game.idx}/{game.nodes.length - 1} · 第 {game.day}/{levelCfg(game).maxDay} 日
+              </span>
+              {/* 旅途誌（ORDER-055）：已解鎖的傳說篇章可隨時重讀；未解鎖顯示「尚未走到」 */}
+              <button
+                onClick={() => setShowJournal(true)}
+                className="repair-secondary-btn flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold"
+                title={`旅途誌：《${levelCfg(game).legend.name}》傳說篇章 ${unlockedLegend}/${levelCfg(game).legend.passages.length}`}
+              >
+                <IconBook className="w-3.5 h-3.5 shrink-0" /> 旅途誌 {unlockedLegend}/{levelCfg(game).legend.passages.length}
+              </button>
+            </div>
           </div>
           <div className="jny-mission relative z-[2] mt-3 flex items-start gap-2 rounded-xl px-3 py-2.5">
             <IconFlag className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
@@ -2645,7 +2834,7 @@ export default function JourneyPage() {
                   </button>
                 )}
 
-                {/* 聽音搭板（ORDER-054）：吊橋的語言優先小遊戲——聽真實發音、選中文意思，五塊板釘穩即過橋。
+                {/* 聽音搭板（ORDER-054）：吊橋的語言優先小遊戲——聽真實發音、選中文意思，六塊板釘穩即過橋。
                     出「搭橋」牌與「花資源硬清」仍是替代路線（見上／手牌），照舊不動。 */}
                 {game.status === "playing" && !node.cleared && node.type === "bridge" && (
                   <>
@@ -2741,6 +2930,12 @@ export default function JourneyPage() {
                 {q.label}
               </span>
             ))}
+            {/* 小米接力計數（ORDER-055，僅第二關）：本局沿路種下的小米＝下一局的開局糧 */}
+            {game.levelId === "l2" && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-300/85" title="紮營時糧食仍有 2 以上，就會沿路種下 1 糧的小米——下一局開局糧食 +1（上限 3）">
+                <IconPackage className="w-3.5 h-3.5 shrink-0" /> 小米接力：本局已種 {game.milletPlanted}/{MILLET_BANK_CAP}
+              </span>
+            )}
             {game.streak > 0 && (
               <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300">
                 <IconFlame className="w-3.5 h-3.5 shrink-0" /> 連對 {game.streak}
@@ -3185,21 +3380,22 @@ export default function JourneyPage() {
 
       {/* 聽音搭板彈窗（ORDER-054）：吊橋語言優先小遊戲——上方 SVG 橋跨隨進度補板，
           下方聽真實發音選中文意思（既有題型的反向）。錯了先教再走：第一次錯給族語書寫提示＋壓力+1，
-          第二次錯教學揭示正解、板子補強照釘。五塊板完成後播過橋短過場才真正結算。 */}
+          第二次錯教學揭示正解、板子補強照釘。全部板完成後播過橋短過場才真正結算。 */}
       {bridgeListen && (() => {
         const bl = bridgeListen;
         const node = game.nodes[game.idx];
         const entry = vocab(bl.ids[Math.min(bl.idx, bl.ids.length - 1)]);
         const crossingNow = bl.phase === "crossing";
-        // 五個板位沿走道垂弧分佈（純示意幾何，非物理）
+        // 板位沿走道垂弧分佈（純示意幾何，非物理）——ORDER-055：5→6 塊板
         const slots: { x: number; y: number; rot: number }[] = [
-          { x: 85, y: 80.5, rot: -7 },
-          { x: 127, y: 84, rot: -3.5 },
-          { x: 170, y: 85, rot: 0 },
-          { x: 213, y: 84, rot: 3.5 },
-          { x: 255, y: 80.5, rot: 7 },
+          { x: 78, y: 79.5, rot: -8 },
+          { x: 115, y: 83, rot: -4.5 },
+          { x: 152, y: 85, rot: -1.5 },
+          { x: 189, y: 85, rot: 1.5 },
+          { x: 226, y: 83, rot: 4.5 },
+          { x: 263, y: 79.5, rot: 8 },
         ];
-        const upperY = [50, 52.5, 53.5, 52.5, 50];
+        const upperY = [49.5, 52, 53.5, 53.5, 52, 49.5];
         return (
           <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/75 p-3 backdrop-blur-[6px] sm:p-6">
             <div className="repair-modal w-full max-w-md px-5 py-6 my-4 sm:px-7">
@@ -3282,7 +3478,7 @@ export default function JourneyPage() {
 
               {crossingNow ? (
                 <p className="relative z-[2] mt-4 text-center text-sm font-bold text-emerald-300">
-                  五塊板都釘穩了——隊伍踏著自己念出來的路過橋……
+                  {BRIDGE_PLANKS} 塊板都釘穩了——隊伍踏著自己念出來的路過橋……
                 </p>
               ) : (
                 <>
@@ -3531,7 +3727,7 @@ export default function JourneyPage() {
               </li>
               <li className="flex gap-2">
                 <IconSpeaker className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
-                <span>吊橋主打<b>「聽音搭板」</b>：耗木材1・繩索1，聽五個族語真實發音、選出中文意思，聽準一個詞就釘穩一塊板。答錯先給族語書寫提示（壓力 +1）再選一次；再錯會直接教你正解，板子補強照釘、不卡關。也可打「搭橋」／「共同搬運」牌，或花<b>雙倍資源「硬清」</b>（一樣要答族語題）。</span>
+                <span>吊橋主打<b>「聽音搭板」</b>：耗木材1・繩索1，聽六個族語真實發音、選出中文意思，聽準一個詞就釘穩一塊板。答錯先給族語書寫提示（壓力 +1）再選一次；再錯會直接教你正解，板子補強照釘、不卡關。也可打「搭橋」／「共同搬運」牌，或花<b>雙倍資源「硬清」</b>（一樣要答族語題）。</span>
               </li>
               <li className="flex gap-2">
                 <IconQuestion className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
@@ -3543,9 +3739,19 @@ export default function JourneyPage() {
                   <span>第二關限定・<b>環境危害</b>：暴風雨／雷擊／側風擋在路上，要用「頂風前行」「架設臨時遮蔽」「共同搬運」或花資源架遮蔽清除。<b>不清除的話，每次紮營都會持續付出代價</b>（扣體力或加壓力，依危害而異）。</span>
                 </li>
               )}
+              {game.levelId === "l2" && (
+                <li className="flex gap-2">
+                  <IconPackage className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                  <span>第二關限定・<b>小米接力</b>：紮營扣完糧後若仍有 2 以上糧食，隊伍會沿路種下 1 糧的小米——<b>下一局（任一關）開局糧食 +1</b>（最多存 3），像射日傳說裡留給後面接力的人。</span>
+                </li>
+              )}
               <li className="flex gap-2">
                 <IconBook className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
-                <span>每個路段都有一次<b>「族語試煉」</b>：3 題（含這個路段自己的詞），通過（答對 2 題以上）依情境給獎勵——路段有阻礙時阻礙 -1，否則壓力 -1。免費、不佔行動點。</span>
+                <span><b>傳說篇章</b>：通過路上的里程碑會解鎖本章傳說的下一段，收進「旅途誌」（任務面板右上角）可隨時重讀；全部收集完，勝利結算的難度評分更高。</span>
+              </li>
+              <li className="flex gap-2">
+                <IconBook className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                <span>每個路段都有一次<b>「族語試煉」</b>：3 題（含這個路段自己的詞），通過（答對 2 題以上）依情境給獎勵——路段有阻礙時阻礙 -1，否則壓力 -1；<b>未通過則壓力 +1</b>。不佔行動點。</span>
               </li>
               <li className="flex gap-2">
                 <IconFlame className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
@@ -3557,7 +3763,7 @@ export default function JourneyPage() {
               </li>
               <li className="flex gap-2">
                 <IconMoon className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
-                <span><b>紮營</b>收束當日：消耗糧食（見上）；糧食不足則隊伍體力 -2；當前路段未通行則壓力 +1。</span>
+                <span><b>紮營</b>收束當日：消耗糧食（見上）；糧食不足則隊伍體力 -2；當前路段未通行則壓力 +2。</span>
               </li>
               <li className="flex gap-2">
                 <IconAlert className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
@@ -3624,6 +3830,10 @@ export default function JourneyPage() {
             <p className={`${notoSansTC.className} mt-4 text-sm leading-relaxed text-amber-100/80`}>{chaptersOf(game.levelId)[chapterCard].sub}</p>
             <div className="mt-5 rounded-xl border border-amber-500/25 bg-[#050d14]/65 p-3 text-left">
               <div className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300/80">本章任務</div>
+              {/* ORDER-055：傳說開場句織入本章任務（首章）——傳說是章節骨架，不是外掛花絮 */}
+              {chapterCard === 0 && (
+                <p className="mt-1 text-xs leading-relaxed text-amber-200/85">{levelCfg(game).legend.intro}</p>
+              )}
               <p className="mt-1 text-xs leading-relaxed text-amber-50/90">{levelCfg(game).mission}</p>
             </div>
             <button
@@ -3712,6 +3922,29 @@ export default function JourneyPage() {
                     : "任務天數耗盡，尚未抵達。"}
             </p>
 
+            {/* ORDER-055：勝利結算——本章傳說收集＋收束句＋本局難度評分（給重玩追分目標） */}
+            {game.status === "won" && (() => {
+              const legend = levelCfg(game).legend;
+              const ds = difficultyScore(game);
+              return (
+                <div className="mb-4 rounded-xl border border-amber-700/50 bg-amber-950/25 p-3 text-left">
+                  <div className="text-xs uppercase tracking-wider text-amber-400 font-semibold mb-1">
+                    本章傳說《{legend.name}》：已收集 {ds.collected}/{ds.totalPassages} 段
+                  </div>
+                  <p className={`${notoSansTC.className} text-sm leading-relaxed text-amber-100/90`}>{legend.closing}</p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-xs uppercase tracking-wider text-sky-400 font-semibold">本局難度評分</span>
+                    <span className={`${notoSerifTC.className} text-lg font-black text-amber-200`}>{ds.total}/100</span>
+                  </div>
+                  <ul className="mt-1 space-y-0.5 text-[11px] text-slate-300">
+                    <li>・天數餘裕 +{ds.daysPts}（提前 {ds.daysSpare} 日抵達，每日 15 分、上限 30）</li>
+                    <li>・答題正確率 +{ds.accPts}（{ds.ratePct}%，上限 50）</li>
+                    <li>・傳說收集 +{ds.legendPts}（{ds.collected}/{ds.totalPassages} 段，上限 20）</li>
+                  </ul>
+                </div>
+              );
+            })()}
+
             {/* ORDER-050（P2）：第一關通關 → 下一關預告鉤子＋直接前進第二關 */}
             {game.status === "won" && game.levelId === "l1" && level2Unlocked && (
               <div className="mb-4 rounded-xl border border-sky-700/50 bg-sky-950/30 p-3 text-left">
@@ -3788,6 +4021,92 @@ export default function JourneyPage() {
           </div>
         </div>
       )}
+
+      {/* 傳說篇章卡（ORDER-055）：節點里程碑解鎖時的全螢幕過場，沿用故事卡外觀（配圖＋徽章＋內文）。
+          z-[60] 高於勝利彈窗：最終段在抵達終點時解鎖，先讀完收束段、關掉後才看到勝利結算。
+          文字只用已核准傳說（大洪水／射日）改寫節錄，出處標注於卡末。 */}
+      {legendCard !== null && (() => {
+        const legend = levelCfg(game).legend;
+        return (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-[4px] p-4">
+            <div className="repair-modal w-full max-w-md max-h-[85vh] overflow-y-auto overflow-x-hidden">
+              <div className="relative h-40 sm:h-48 w-full overflow-hidden rounded-t-3xl">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={legend.img} alt="" className="h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050d14] via-[#050d14]/10 to-transparent" />
+              </div>
+              <div className="relative z-[2] p-8 pt-6 text-center">
+                <div
+                  className={`${notoSansTC.className} mb-3 inline-block rounded-full border border-amber-500/40 bg-amber-950/30 px-3 py-1 text-xs tracking-[0.3em] text-amber-300/90`}
+                >
+                  傳說・第 {legendCard + 1} 段
+                </div>
+                <div className={`${notoSerifTC.className} repair-title text-xl font-bold`}>{legend.name}</div>
+                <p className={`${notoSansTC.className} mt-4 text-left text-sm leading-relaxed text-amber-100/90`}>
+                  {legend.passages[legendCard]}
+                </p>
+                <p className="mt-3 text-left text-[10px] leading-snug text-amber-300/60">{legend.sourceNote}</p>
+                <button
+                  onClick={() => setLegendCard(null)}
+                  className={`${notoSerifTC.className} repair-primary-btn mt-5 rounded-xl px-8 py-2.5 text-sm font-bold tracking-[0.15em] transition hover:-translate-y-0.5`}
+                >
+                  收進旅途誌 ▶
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* 旅途誌（ORDER-055）：已解鎖的傳說篇章可隨時重讀；未解鎖段顯示「尚未走到」。 */}
+      {showJournal && (() => {
+        const legend = levelCfg(game).legend;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-[4px] p-4">
+            <div className="repair-modal w-full max-w-md max-h-[85vh] overflow-y-auto p-5">
+              <div className="relative z-[2]">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-300 mb-1">
+                  <IconBook className="w-4 h-4 shrink-0" /> 旅途誌 · 本章傳說《{legend.name}》
+                </div>
+                <p className="text-[11px] text-amber-100/60 mb-3">
+                  沿路走過的里程碑，會解鎖傳說的下一段——已收集 {unlockedLegend}/{legend.passages.length} 段。
+                </p>
+                <div className="space-y-2.5">
+                  {legend.passages.map((p, i) => {
+                    const open = i < unlockedLegend;
+                    return (
+                      <div
+                        key={i}
+                        className={`rounded-xl border p-3 ${
+                          open ? "border-amber-500/30 bg-[#0b1722]/85" : "border-slate-700/60 bg-slate-950/60"
+                        }`}
+                      >
+                        <div className={`text-[10px] font-black tracking-[0.2em] ${open ? "text-amber-300/85" : "text-slate-500"}`}>
+                          第 {i + 1} 段
+                        </div>
+                        {open ? (
+                          <p className={`${notoSansTC.className} mt-1 text-xs leading-relaxed text-amber-100/90`}>{p}</p>
+                        ) : (
+                          <p className="mt-1 text-xs text-slate-500">尚未走到——繼續往前，路會把故事講完。</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="mt-3 text-[10px] leading-snug text-amber-300/60">{legend.sourceNote}</p>
+                <div className="text-right mt-3">
+                  <button
+                    onClick={() => setShowJournal(false)}
+                    className="repair-primary-btn rounded-xl px-6 py-2 text-sm font-black"
+                  >
+                    收起
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ORDER-051（引導點 4）：AP=0 紮營提示——全頁輕微降暗（pointer-events:none，不擋彈窗），
           紮營鈕以 jny-camp-raise 抬升到蒙版之上聚光 */}
