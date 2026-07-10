@@ -179,6 +179,48 @@ const THEME_ICON = {
   tool: IconBow,
 } satisfies Record<Theme, (props: IconProps) => JSX.Element>;
 
+// ───────────────────────── 卡面美術（ORDER-044，enzo-culture 複核 35/35 通過）─────────────────────────
+// 依卡 id 對應卡面圖；沒有對應圖的卡維持原本純文字版型（UI 必須容忍缺圖）。
+
+const CARD_ART: Record<string, string> = {
+  "leg-l01": "/images/cards/l01-millet.jpg",
+  "leg-l02": "/images/cards/l02-bow.jpg",
+  "leg-l03": "/images/cards/l03-footprint.jpg",
+  "leg-l04": "/images/cards/l04-flashflood.jpg",
+  "leg-l05": "/images/cards/l05-crystal.jpg",
+  "leg-l06": "/images/cards/l06-twosuns.jpg",
+  "leg-l07": "/images/cards/l07-rainbow.jpg",
+  "leg-l08": "/images/cards/l08-arrow.jpg",
+  "leg-l09": "/images/cards/l09-flood.jpg",
+  "leg-l10": "/images/cards/l10-pusuqhuni.jpg",
+  "leg-l11": "/images/cards/l11-mawi.jpg",
+  "leg-n01": "/images/cards/n01-stars.jpg",
+  "leg-n02": "/images/cards/n02-fog.jpg",
+  "leg-n03": "/images/cards/n03-thunder.jpg",
+  "leg-n04": "/images/cards/n04-moon.jpg",
+  "leg-n05": "/images/cards/n05-mist.jpg",
+  "leg-n06": "/images/cards/n06-lightning.jpg",
+  "leg-n07": "/images/cards/n07-typhoon.jpg",
+  "leg-a01": "/images/cards/a01-muntjac.jpg",
+  "leg-a02": "/images/cards/a02-boar.jpg",
+  "leg-a03": "/images/cards/a03-squirrel.jpg",
+  "leg-a04": "/images/cards/a04-dog.jpg",
+  "leg-a05": "/images/cards/a05-waterbird.jpg",
+  "leg-a06": "/images/cards/a06-pangolin.jpg",
+  "leg-a07": "/images/cards/a07-leopard.jpg",
+  "leg-a08": "/images/cards/a08-sambar.jpg",
+  "leg-a09": "/images/cards/a09-bear.jpg",
+  "leg-p01": "/images/cards/p01-wade.jpg",
+  "leg-p02": "/images/cards/p02-trap.jpg",
+  "leg-p03": "/images/cards/p03-mushroom.jpg",
+  "leg-p04": "/images/cards/p04-hearth.jpg",
+  "leg-p05": "/images/cards/p05-cypress.jpg",
+  "leg-token-sapling": "/images/cards/token-sapling.jpg",
+};
+
+const BOARD_BG = "/images/cards/board-battle.jpg";
+const CARDBACK = "/images/cards/cardback.jpg";
+
 // ───────────────────────── 工具 ─────────────────────────
 
 function shuffle<T>(arr: T[]): T[] {
@@ -1015,7 +1057,9 @@ export default function PlayPage() {
           >
             <span className="text-sm font-semibold flex items-center gap-1">
               <IconMountain className="w-3.5 h-3.5 shrink-0" /> 山林試煉（系統）
-              <span className="text-[10px] text-slate-500 ml-1">手牌 {game.eHand.length} · 牌庫 {game.eDeck.length}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={CARDBACK} alt="" className="w-4 h-5 rounded-[3px] object-cover border border-slate-600 ml-1" />
+              <span className="text-[10px] text-slate-500">手牌 {game.eHand.length} · 牌庫 {game.eDeck.length}</span>
             </span>
             <span className="text-rose-300 font-bold flex items-center gap-1">
               <IconHeart className="w-3.5 h-3.5 shrink-0" /> {game.enemyHp}/{HERO_HP}
@@ -1037,8 +1081,15 @@ export default function PlayPage() {
           )}
         </section>
 
+        {/* 戰場區（雙方）：board-battle 卡面戰場背景 + 深色壓暗層，維持棋子可讀性 */}
+        <div
+          className="relative rounded-xl overflow-hidden mb-2 bg-cover bg-center"
+          style={{ backgroundImage: `url(${BOARD_BG})` }}
+        >
+          <div className="absolute inset-0 bg-slate-950/70" aria-hidden />
+          <div className="relative p-2 space-y-2">
         {/* 敵方戰場 */}
-        <section className="mb-2">
+        <section>
           <div className="min-h-24 rounded-xl border border-rose-900/40 bg-rose-950/10 p-2 flex flex-wrap gap-2">
             {game.eBoard.length === 0 && (
               <span className="text-slate-600 text-xs self-center px-2">山林試煉尚無隨從。</span>
@@ -1060,12 +1111,17 @@ export default function PlayPage() {
                   {e.stealth && (
                     <span className="absolute -top-2 -right-1 text-[9px] bg-indigo-400 text-black rounded-full px-1">潛行</span>
                   )}
-                  <div className="text-base flex justify-center">
-                    {(() => {
-                      const ThemeIcon = THEME_ICON[e.card.theme];
-                      return <ThemeIcon className="w-4 h-4" />;
-                    })()}
-                  </div>
+                  {CARD_ART[e.card.id] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={CARD_ART[e.card.id]} alt="" className="w-10 h-10 object-cover rounded mx-auto" />
+                  ) : (
+                    <div className="text-base flex justify-center">
+                      {(() => {
+                        const ThemeIcon = THEME_ICON[e.card.theme];
+                        return <ThemeIcon className="w-4 h-4" />;
+                      })()}
+                    </div>
+                  )}
                   <div className="text-[10px] font-semibold truncate">{e.card.nameZh}</div>
                   <div className="flex justify-between text-[11px] mt-0.5">
                     <span className="text-amber-300 flex items-center gap-0.5"><IconSword className="w-3 h-3 shrink-0" />{e.attack}</span>
@@ -1078,7 +1134,7 @@ export default function PlayPage() {
         </section>
 
         {/* 我方戰場 */}
-        <section className="mb-2">
+        <section>
           <div className="min-h-24 rounded-xl border border-sky-900/40 bg-sky-950/10 p-2 flex flex-wrap gap-2">
             {game.pBoard.length === 0 && (
               <span className="text-slate-600 text-xs self-center px-2">
@@ -1113,12 +1169,17 @@ export default function PlayPage() {
                   {e.stealth && (
                     <span className="absolute -bottom-2 -left-1 text-[9px] bg-indigo-400 text-black rounded-full px-1">潛行</span>
                   )}
-                  <div className="text-base flex justify-center">
-                    {(() => {
-                      const ThemeIcon = THEME_ICON[e.card.theme];
-                      return <ThemeIcon className="w-4 h-4" />;
-                    })()}
-                  </div>
+                  {CARD_ART[e.card.id] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={CARD_ART[e.card.id]} alt="" className="w-10 h-10 object-cover rounded mx-auto" />
+                  ) : (
+                    <div className="text-base flex justify-center">
+                      {(() => {
+                        const ThemeIcon = THEME_ICON[e.card.theme];
+                        return <ThemeIcon className="w-4 h-4" />;
+                      })()}
+                    </div>
+                  )}
                   <div className="text-[10px] font-semibold truncate">{e.card.nameZh}</div>
                   <div className="flex justify-between text-[11px] mt-0.5">
                     <span className="text-amber-300 flex items-center gap-0.5"><IconSword className="w-3 h-3 shrink-0" />{e.attack}</span>
@@ -1129,6 +1190,8 @@ export default function PlayPage() {
             })}
           </div>
         </section>
+          </div>
+        </div>
 
         {/* 我方英雄 + 控制 */}
         <section className="mb-2 flex items-center justify-between rounded-xl border border-sky-400/40 bg-sky-950/30 px-3 py-2">
@@ -1178,6 +1241,10 @@ export default function PlayPage() {
                   className={`w-28 text-left rounded-xl border-2 ${RARITY_COLOR[c.rarity]} p-2 transition
                     ${playable ? "bg-slate-800 hover:-translate-y-1 hover:bg-slate-700" : "bg-slate-900 opacity-40 cursor-not-allowed"}`}
                 >
+                  {CARD_ART[c.id] && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={CARD_ART[c.id]} alt={c.nameZh} className="w-full h-16 object-cover rounded-lg mb-1" />
+                  )}
                   <div className="flex justify-between items-center">
                     <span className="text-sky-300 font-bold text-sm flex items-center gap-0.5">
                       <IconGem className="w-3.5 h-3.5 shrink-0" />{c.cost}
@@ -1240,6 +1307,14 @@ export default function PlayPage() {
       {quiz && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
           <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-5">
+            {CARD_ART[quiz.card.id] && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={CARD_ART[quiz.card.id]}
+                alt={quiz.card.nameZh}
+                className="w-full h-40 object-cover rounded-xl mb-3 border border-slate-700"
+              />
+            )}
             <div className="text-xs text-slate-400 mb-1">
               打出「{quiz.card.nameZh}」— 答對觸發加成「{quiz.card.bonusText}」
             </div>
