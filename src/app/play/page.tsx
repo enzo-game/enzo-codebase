@@ -14,6 +14,7 @@ import {
   QuizState,
   Target,
   TargetKind,
+  Difficulty,
   HERO_HP,
   BOARD_MAX,
   attackTargets,
@@ -278,6 +279,8 @@ export default function PlayPage() {
   const [pending, setPending] = useState<{ card: Card; isCorrect: boolean } | null>(null);
   // 開場規則說明：第一次進來自動彈出（localStorage 記過就不再自動彈），header 的「規則」可隨時再開
   const [showRules, setShowRules] = useState(false);
+  // 電腦難度：預設普通，記憶上次選擇。切換即刻套用（影響下一個系統回合）。
+  const [difficulty, setDifficulty] = useState<Difficulty>("normal");
 
   useEffect(() => {
     // 刻意的客戶端 mount 初始化：newGame() 內含 Math.random()，須在 client 產生以避免 SSR/CSR hydration 不一致
@@ -286,6 +289,8 @@ export default function PlayPage() {
     setGame(newGame());
     try {
       if (!localStorage.getItem("enzo-play-rules-seen")) setShowRules(true);
+      const d = localStorage.getItem("enzo-play-difficulty");
+      if (d === "easy" || d === "normal" || d === "hard") setDifficulty(d);
     } catch {
       setShowRules(true); // localStorage 不可用（隱私模式）時仍給第一次說明
     }
@@ -314,6 +319,15 @@ export default function PlayPage() {
     setSelected(null);
     setPending(null);
     setGame(newGame());
+  }
+
+  function changeDifficulty(d: Difficulty) {
+    setDifficulty(d);
+    try {
+      localStorage.setItem("enzo-play-difficulty", d);
+    } catch {
+      // 記不住就算了
+    }
   }
 
   function tryPlay(card: Card) {
@@ -419,7 +433,7 @@ export default function PlayPage() {
     setTimeout(() => {
       setGame((g) => {
         if (g.winner) return g;
-        const afterEnemy = runEnemyTurn(g);
+        const afterEnemy = runEnemyTurn(g, difficulty);
         if (afterEnemy.winner) return afterEnemy;
         return startPlayerTurn(afterEnemy);
       });
@@ -470,6 +484,30 @@ export default function PlayPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs">
+            <div
+              className="flex items-center rounded border border-slate-600/60 overflow-hidden"
+              role="group"
+              aria-label="電腦難度"
+            >
+              {([
+                ["easy", "簡單"],
+                ["normal", "普通"],
+                ["hard", "困難"],
+              ] as [Difficulty, string][]).map(([d, label]) => (
+                <button
+                  key={d}
+                  onClick={() => changeDifficulty(d)}
+                  aria-pressed={difficulty === d}
+                  className={`px-2 py-1 transition ${
+                    difficulty === d
+                      ? "bg-sky-500 text-black font-semibold"
+                      : "bg-slate-800/70 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <button
               onClick={() => setShowRules(true)}
               className="rounded border border-amber-400/40 bg-amber-950/40 px-2 py-1 text-amber-200 hover:bg-amber-900/50"

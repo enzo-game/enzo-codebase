@@ -3,6 +3,7 @@
 import { CARDS, Card, TOKEN_SAPLING } from "@/data/cards";
 import { vocab, distractors } from "@/data/truku";
 import {
+  Difficulty,
   Game,
   LogEntry,
   Minion,
@@ -518,7 +519,10 @@ export function aiSpellTarget(ng: Game, c: Card): Target | undefined {
   return pick ? { kind: "minion", side: "player", key: pick.key } : undefined;
 }
 
-export function runEnemyTurn(g: Game): Game {
+/** 各難度「答對觸發加成」的機率：簡單從不加成、困難幾乎必加成 */
+const AI_BONUS_CHANCE: Record<Difficulty, number> = { easy: 0, normal: 0.3, hard: 0.85 };
+
+export function runEnemyTurn(g: Game, difficulty: Difficulty = "normal"): Game {
   let ng = cloneGame(g);
   ng.eMaxMana = Math.min(ng.eMaxMana + 1, 10);
   let mana = ng.eMaxMana;
@@ -526,54 +530,121 @@ export function runEnemyTurn(g: Game): Game {
   drawCards(ng, "enemy", 1);
   ng.eBoard = ng.eBoard.map((m) => ({ ...m, canAttack: true }));
 
-  // 出牌：出得起就出，費用高的優先（戰吼／法術一律基礎效果，AI 不答題）
+  const bonusChance = AI_BONUS_CHANCE[difficulty];
+
+  // 出牌：出得起就出。難度差異——
+  //  easy：偶爾提前收手、故意留法力（打得比較鬆）、從不答題加成
+  //  normal：高費優先，基礎效果為主
+  //  hard：場上隨從少時優先鋪隨從，且高機率答對觸發加成
   let guard = 24;
   while (guard-- > 0 && !ng.winner) {
+    if (difficulty === "easy" && Math.random() < 0.25) break;
+
     const playable = ng.eHand
       .map((c, i) => ({ c, i }))
-      .filter((x) => aiCanPlay(ng, x.c, mana))
-      .sort((a, b) => b.c.cost - a.c.cost);
+      .filter((x) => aiCanPlay(ng, x.c, mana));
     if (playable.length === 0) break;
-    const { c, i } = playable[0];
+
+    playable.sort((a, b) => b.c.cost - a.c.cost);
+    let pick = playable[0];
+    if (difficulty === "hard" && ng.eBoard.length < 3) {
+      const minionPick = playable.find((x) => x.c.type === "minion");
+      if (minionPick) pick = minionPick;
+    }
+
+    const { c, i } = pick;
     ng.eHand = ng.eHand.filter((_, j) => j !== i);
     mana -= c.cost;
+    const isCorrect = Math.random() < bonusChance;
     if (c.type === "minion") {
-      ng = playMinionFor(ng, "enemy", c, false);
+      ng = playMinionFor(ng, "enemy", c, isCorrect);
     } else {
       const target = aiSpellTarget(ng, c);
-      ng = castSpell(ng, "enemy", c, false, target);
+      ng = castSpell(ng, "enemy", c, isCorrect, target);
     }
   }
   if (ng.winner) return ng;
 
-  // 攻擊：遵守嘲諷／潛行——先解會致命的嘲諷，否則找有價值的換血，否則打臉
-  let guard2 = 24;
-  while (!ng.winner && guard2-- > 0) {
-    const cur = ng.eBoard.find((m) => m.canAttack && m.attack > 0);
-    if (!cur) break;
-    const legal = attackTargets(ng.pBoard);
-    let target: Target;
-    if (!legal.heroAllowed) {
-      const taunts = ng.pBoard.filter((m) => legal.keys.has(m.key));
-      const killable = taunts.filter((t) => cur.attack >= t.health).sort((a, b) => b.attack - a.attack);
-      const pick = killable[0] ?? [...taunts].sort((a, b) => b.attack - a.attack)[0];
-      if (!pick) break;
-      target = { kind: "minion", side: "player", key: pick.key };
-    } else {
-      const cands = ng.pBoard.filter((m) => legal.keys.has(m.key));
-      const trade = cands
-        .filter((t) => cur.attack >= t.health && t.attack >= 3)
-        .sort((a, b) => b.attack - a.attack)[0];
-      target = trade ? { kind: "minion", side: "player", key: trade.key } : { kind: "hero" };
-    }
-    const after = resolveAttack(ng, "enemy", cur.key, target);
-    if (after === ng) break; // 防呆：攻擊沒有生效就跳出
-    ng = after;
-  }
+  ng = runEnemyAttacks(ng, difficulty);
   if (ng.winner) return ng;
 
   ng = endOfTurnEffects(ng, "enemy");
   return checkWinner(ng);
+}
+
+/** 系統回合的攻擊階段（遵守嘲諷／潛行）。困難會先偵測斬殺、做價值換血。 */
+function runEnemyAttacks(g: Game, difficulty: Difficulty): Game {
+  let ng = g;
+
+  // 困難：斬殺偵測——沒有嘲諷擋路且總攻擊足以打死玩家英雄，就全員打臉
+  if (difficulty === "hard") {
+    const taunts = ng.pBoard.filter((m) => m.taunt && !m.stealth);
+    const ready = ng.eBoard.filter((m) => m.canAttack && m.attack > 0);
+    const totalAtk = ready.reduce((s, m) => s + m.attack, 0);
+    if (taunts.length === 0 && totalAtk >= ng.playerHp) {
+      for (const m of ready) {
+        if (ng.winner) break;
+        ng = resolveAttack(ng, "enemy", m.key, { kind: "hero" });
+      }
+      return checkWinner(ng);
+    }
+  }
+
+  let guard = 24;
+  while (!ng.winner && guard-- > 0) {
+    const cur = ng.eBoard.find((m) => m.canAttack && m.attack > 0);
+    if (!cur) break;
+    const legal = attackTargets(ng.pBoard);
+    const target = chooseEnemyAttackTarget(ng, cur, legal, difficulty);
+    if (!target) break;
+    const after = resolveAttack(ng, "enemy", cur.key, target);
+    if (after === ng) break; // 防呆：攻擊沒有生效就跳出
+    ng = after;
+  }
+  return ng;
+}
+
+/** 依難度替單一攻擊者挑目標；回 null 代表這隻沒有可打的目標。 */
+function chooseEnemyAttackTarget(
+  ng: Game,
+  cur: Minion,
+  legal: { heroAllowed: boolean; keys: Set<string>; mustTaunt: boolean },
+  difficulty: Difficulty,
+): Target | null {
+  // 被嘲諷擋住：一定要先打嘲諷
+  if (!legal.heroAllowed) {
+    const taunts = ng.pBoard.filter((m) => legal.keys.has(m.key));
+    if (taunts.length === 0) return null;
+    if (difficulty === "easy") {
+      return { kind: "minion", side: "player", key: taunts[0].key };
+    }
+    const killable = taunts.filter((t) => cur.attack >= t.health).sort((a, b) => b.attack - a.attack);
+    const pick = killable[0] ?? [...taunts].sort((a, b) => b.attack - a.attack)[0];
+    return { kind: "minion", side: "player", key: pick.key };
+  }
+
+  const cands = ng.pBoard.filter((m) => legal.keys.has(m.key));
+
+  // 簡單：幾乎只打臉（放生玩家隨從），玩家更容易翻盤
+  if (difficulty === "easy") {
+    if (cands.length === 0 || Math.random() < 0.8) return { kind: "hero" };
+    return { kind: "minion", side: "player", key: cands[0].key };
+  }
+
+  // 困難：價值換血——這一擊能殺掉的目標裡，優先「換完自己還活」或「對方比我兇」
+  if (difficulty === "hard") {
+    const killable = cands.filter((t) => cur.attack >= t.health).sort((a, b) => b.attack - a.attack);
+    const survives = killable.find((t) => cur.health > t.attack);
+    const worthy = killable.find((t) => t.attack >= cur.attack);
+    const trade = survives ?? worthy;
+    return trade ? { kind: "minion", side: "player", key: trade.key } : { kind: "hero" };
+  }
+
+  // 普通：能殺且對方攻擊 >=3 才換，否則打臉
+  const trade = cands
+    .filter((t) => cur.attack >= t.health && t.attack >= 3)
+    .sort((a, b) => b.attack - a.attack)[0];
+  return trade ? { kind: "minion", side: "player", key: trade.key } : { kind: "hero" };
 }
 
 export function startPlayerTurn(g: Game): Game {

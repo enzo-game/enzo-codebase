@@ -45,6 +45,9 @@ export type Target = { kind: "hero" } | { kind: "minion"; side: Side; key: strin
 
 export type TargetKind = "none" | "any" | "anyMinion" | "enemyMinion" | "friendMinion";
 
+/** 電腦對手強度。影響：是否答題觸發加成、出牌取捨、攻擊/換血/斬殺判斷。 */
+export type Difficulty = "easy" | "normal" | "hard";
+
 export type QuizState = {
   card: Card;
   prompt: string;
