@@ -1,6 +1,6 @@
 // 對戰引擎核心邏輯 —— 純函式，無 React 依賴。
 // P0：從 src/app/play/page.tsx 抽出，供前端 UI 與（未來）Supabase Edge Function 共用。
-import { CARDS, Card, TOKEN_SAPLING } from "@/data/cards";
+import { CARDS, Card, TOKEN_SAPLING, Theme } from "@/data/cards";
 import { vocab, distractors } from "@/data/truku";
 import {
   Difficulty,
@@ -668,9 +668,17 @@ export function buildDeck(): Card[] {
   );
 }
 
-export function newGame(): Game {
+/** 敵方牌組：可選主題偏向（該主題多一份，抽到機率提高 → 不同對手手感）。 */
+export function buildEnemyDeck(theme?: Theme): Card[] {
+  const base = CARDS.flatMap((c) => (c.rarity === "common" || c.rarity === "rare" ? [c, c] : [c]));
+  if (!theme) return shuffle(base);
+  const biased = [...base, ...CARDS.filter((c) => c.theme === theme)];
+  return shuffle(biased);
+}
+
+export function newGame(opponentTheme?: Theme): Game {
   const p = buildDeck();
-  const e = buildDeck();
+  const e = buildEnemyDeck(opponentTheme);
   return {
     phase: "player",
     turn: 1,

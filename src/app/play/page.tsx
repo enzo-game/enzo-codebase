@@ -38,6 +38,15 @@ const notoSerifTC = Noto_Serif_TC({ weight: ["700"], subsets: ["latin"], display
 
 const DIFF_ZH: Record<Difficulty, string> = { easy: "簡單", normal: "普通", hard: "困難" };
 
+// 多套對手（頭目）：中性的「山林試煉」變體，以牌組主題偏向做出不同手感。
+// 文化中性——皆為自然生態意象，非擬人化祖靈/神格；難度(easy/normal/hard)另外正交控制。
+const OPPONENTS: { id: string; name: string; tagline: string; theme?: Theme }[] = [
+  { id: "trial", name: "山林試煉", tagline: "均衡的試煉，各類牌都有。" },
+  { id: "beasts", name: "山林試煉 · 獸群", tagline: "獸群偏重，前期就壓上來。", theme: "animal" },
+  { id: "forest", name: "山林試煉 · 深林", tagline: "草木叢生，嘲諷防守、後期反打。", theme: "plant" },
+  { id: "storm", name: "山林試煉 · 風雨", tagline: "風雨為主，法術節奏壓制。", theme: "nature" },
+];
+
 // 新手引導步驟（互動分步教學；文字＋簡易示意圖，無 emoji）
 const ONB_STEPS: { k: string; title: string; body: string }[] = [
   {
@@ -399,6 +408,10 @@ export default function PlayPage() {
   const [onbStep, setOnbStep] = useState(0);
   // 電腦難度：預設普通，記憶上次選擇。切換即刻套用（影響下一個系統回合）。
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
+  // 對手（頭目）：決定敵方牌組主題。切換＝開新局。
+  const [opponentId, setOpponentId] = useState("trial");
+  const [showOpponents, setShowOpponents] = useState(false);
+  const opponent = OPPONENTS.find((o) => o.id === opponentId) ?? OPPONENTS[0];
   // 耐玩循環：開局換牌、連勝計數、認輸確認
   const [mulliganPhase, setMulliganPhase] = useState(false);
   const [mulliganSel, setMulliganSel] = useState<Set<number>>(new Set());
@@ -418,6 +431,11 @@ export default function PlayPage() {
       if (d === "easy" || d === "normal" || d === "hard") setDifficulty(d);
       const best = Number(localStorage.getItem("enzo-play-best-streak"));
       if (Number.isFinite(best) && best > 0) setBestStreak(best);
+      const opp = OPPONENTS.find((o) => o.id === localStorage.getItem("enzo-play-opponent"));
+      if (opp) {
+        setOpponentId(opp.id);
+        if (opp.theme) setGame(newGame(opp.theme)); // 有偏向的對手重發一次牌
+      }
     } catch {
       setOnboarding(true); // localStorage 不可用（隱私模式）時仍給第一次引導
     }
@@ -546,7 +564,27 @@ export default function PlayPage() {
     setPending(null);
     setConfirmConcede(false);
     setMulliganSel(new Set());
-    setGame(newGame());
+    setGame(newGame(opponent.theme));
+    setMulliganPhase(true);
+  }
+
+  // 選對手＝開新局（敵方牌組隨主題重建）。記憶選擇。
+  function pickOpponent(id: string) {
+    const opp = OPPONENTS.find((o) => o.id === id) ?? OPPONENTS[0];
+    setOpponentId(id);
+    try {
+      localStorage.setItem("enzo-play-opponent", id);
+    } catch {
+      // 記不住就算了
+    }
+    setShowOpponents(false);
+    setQuiz(null);
+    setRevealed(null);
+    setSelected(null);
+    setPending(null);
+    setConfirmConcede(false);
+    setMulliganSel(new Set());
+    setGame(newGame(opp.theme));
     setMulliganPhase(true);
   }
 
@@ -771,6 +809,13 @@ export default function PlayPage() {
               ))}
             </div>
             <button
+              onClick={() => setShowOpponents(true)}
+              title="更換對手（頭目）"
+              className="rounded border border-sky-500/50 bg-sky-950/40 px-2 py-1 text-sky-200 hover:bg-sky-900/50"
+            >
+              對手：{opponent.id === "trial" ? "均衡" : opponent.name.split("· ")[1]} ▾
+            </button>
+            <button
               onClick={() => setShowRules(true)}
               className="rounded border border-amber-400/40 bg-amber-950/40 px-2 py-1 text-amber-200 hover:bg-amber-900/50"
             >
@@ -847,7 +892,7 @@ export default function PlayPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={HERO_ART.enemy} alt="山林試煉頭像" />
             </span>
-            <span className="hs-portrait-name">山林試煉</span>
+            <span className="hs-portrait-name">{opponent.name}</span>
             <span className="hs-portrait-sub">手牌 {game.eHand.length} · 牌庫 {game.eDeck.length}</span>
             <span className="hs-portrait-hp">
               <span className="hs-hp-label">生命 HP</span>
@@ -1141,6 +1186,51 @@ export default function PlayPage() {
         </div>
       </div>
 
+      {/* 選擇對手（頭目）：不同牌組主題 = 不同手感；選擇即開新局 */}
+      {showOpponents && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-[65]">
+          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-sky-400/25 p-5 sm:p-6">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-sky-200/60">選擇對手</p>
+                <h3 className={`${notoSerifTC.className} text-xl font-bold text-sky-100`}>山林試煉的不同面貌</h3>
+              </div>
+              <button
+                onClick={() => setShowOpponents(false)}
+                className="text-xs text-slate-500 hover:text-slate-300 underline"
+              >
+                取消
+              </button>
+            </div>
+            <p className="text-xs text-slate-400 mb-4">
+              每個對手偏重不同牌組，打起來手感各異。選擇會開始新的一局。難度（簡單／普通／困難）另外調整。
+            </p>
+            <div className="space-y-2">
+              {OPPONENTS.map((o) => {
+                const active = o.id === opponentId;
+                return (
+                  <button
+                    key={o.id}
+                    onClick={() => pickOpponent(o.id)}
+                    className={`w-full text-left rounded-lg border px-4 py-3 transition ${
+                      active ? "border-sky-400 bg-sky-950/50" : "border-slate-700 bg-slate-800/40 hover:bg-slate-800"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-slate-100">{o.name}</span>
+                      {active && (
+                        <span className="rounded-full bg-sky-500 px-2 py-0.5 text-[10px] text-black">目前</span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-xs text-slate-400">{o.tagline}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 新手引導：第一次進來的互動分步教學 */}
       {onboarding && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[70]">
@@ -1416,7 +1506,7 @@ export default function PlayPage() {
                 game.winner === "player" ? "text-amber-300" : "text-slate-300"
               }`}
             >
-              {game.winner === "player" ? "通過山林試煉！" : "山林試煉未過"}
+              {game.winner === "player" ? `通過${opponent.name}！` : `${opponent.name}未過`}
             </h3>
             <p className="text-sm text-slate-400 mb-3">
               命中率 {rate}%（答對 {game.correct} · 答錯 {game.wrong}）
