@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Noto_Serif_TC } from "next/font/google";
 import { useEffect, useState } from "react";
 import type { JSX } from "react";
-import { CARDS, Card, RARITY_COLOR, Rarity, Theme, TOKEN_SAPLING } from "@/data/cards";
+import { CARDS, CARD_LEARNING, Card, RARITY_COLOR, Rarity, Theme, TOKEN_SAPLING } from "@/data/cards";
 import { vocab, distractors, audioUrl } from "@/data/truku";
 import AmbientAudio from "@/components/AmbientAudio";
 import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose } from "@/lib/sfx";
@@ -179,6 +179,8 @@ const CARD_ART: Record<string, string> = {
   "leg-l09": "/images/cards/l09-flood.jpg",
   "leg-l10": "/images/cards/l10-pusuqhuni.jpg",
   "leg-l11": "/images/cards/l11-mawi.jpg",
+  "leg-l12": "/images/cards/l12-citrus.jpg",
+  "leg-l13": "/images/cards/l13-road.jpg",
   "leg-n01": "/images/cards/n01-stars.jpg",
   "leg-n02": "/images/cards/n02-fog.jpg",
   "leg-n03": "/images/cards/n03-thunder.jpg",
@@ -186,6 +188,9 @@ const CARD_ART: Record<string, string> = {
   "leg-n05": "/images/cards/n05-mist.jpg",
   "leg-n06": "/images/cards/n06-lightning.jpg",
   "leg-n07": "/images/cards/n07-typhoon.jpg",
+  "leg-n08": "/images/cards/n08-night-rest.jpg",
+  "leg-n09": "/images/cards/n09-creek-supply.jpg",
+  "leg-n10": "/images/cards/n10-headwind-pass.jpg",
   "leg-a01": "/images/cards/a01-muntjac.jpg",
   "leg-a02": "/images/cards/a02-boar.jpg",
   "leg-a03": "/images/cards/a03-squirrel.jpg",
@@ -200,6 +205,9 @@ const CARD_ART: Record<string, string> = {
   "leg-p03": "/images/cards/p03-mushroom.jpg",
   "leg-p04": "/images/cards/p04-hearth.jpg",
   "leg-p05": "/images/cards/p05-cypress.jpg",
+  "leg-p06": "/images/cards/p06-after-wind-road.jpg",
+  "leg-p07": "/images/cards/p07-stone-marker.jpg",
+  "leg-p08": "/images/cards/p08-night-fire.jpg",
   "leg-token-sapling": "/images/cards/token-sapling.jpg",
 };
 
@@ -1127,10 +1135,10 @@ export default function PlayPage() {
   const friendMinionTargetable = pending !== null && (pendingKind === "friendMinion" || pendingKind === "anyMinion");
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 text-slate-100 p-3 sm:p-5">
+    <main className="play-page min-h-screen text-slate-100 p-3 sm:p-5">
       <AmbientAudio />
       <GemDefs />
-      <div className="max-w-5xl mx-auto">
+      <div className="play-shell mx-auto">
         {/* 標題列 */}
         <header className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
@@ -1142,7 +1150,7 @@ export default function PlayPage() {
                 模式 B
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold">峽谷行者 · 山林試煉（vs 系統）</h1>
+            <h1 className="text-lg sm:text-xl font-bold">峽谷行者 · 山林試煉（vs 系統）</h1>
             <p className="text-[11px] text-slate-400">
               傳說牌組：出牌先答太魯閣族語題（真實詞庫，揭曉後自動播發音），答對觸發加成效果。
             </p>
@@ -1156,52 +1164,74 @@ export default function PlayPage() {
           </div>
         </header>
 
-        {/* 系統（敵方）英雄 */}
-        <section className="mb-2">
+        <div
+          className="hs-table relative overflow-hidden bg-cover bg-center"
+          style={{ backgroundImage: `url(${BOARD_BG})` }}
+        >
+          <div className="hs-table-shade absolute inset-0" aria-hidden />
+
+          <div className="hs-opponent-hand" aria-label={`敵方手牌 ${game.eHand.length} 張`}>
+            {Array.from({ length: Math.min(game.eHand.length, 7) }).map((_, i, arr) => (
+              <span
+                key={i}
+                className="hs-cardback-mini"
+                style={{
+                  transform: `translateX(${(i - (arr.length - 1) / 2) * 16}px) rotate(${(i - (arr.length - 1) / 2) * 5}deg)`,
+                  zIndex: i,
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={CARDBACK} alt="" />
+              </span>
+            ))}
+          </div>
+
+          <div className="hs-resource-strip hs-resource-enemy" aria-label={`敵方法力 ${game.eMaxMana}/10`}>
+            <span className="hs-mana-text">{game.eMaxMana}/10</span>
+            <span className="hs-crystals" aria-hidden>
+              {Array.from({ length: 10 }).map((_, i) => (
+                <span key={i} className={i < game.eMaxMana ? "hs-crystal is-filled" : "hs-crystal"} />
+              ))}
+            </span>
+          </div>
+
+          {/* 系統（敵方）英雄 */}
           <button
             onClick={onEnemyHero}
             disabled={!enemyHeroTargetable}
-            className={`w-full flex items-center justify-between rounded-xl border px-3 py-2 transition
-              ${enemyHeroTargetable ? "border-rose-400 bg-rose-950/40 hover:bg-rose-900/50 cursor-pointer" : "border-slate-800 bg-slate-900/50"}`}
+            className={`hs-portrait hs-portrait-enemy transition ${enemyHeroTargetable ? "hs-hero-targetable cursor-pointer" : ""}`}
           >
-            <span className="text-sm font-semibold flex items-center gap-1">
-              <IconMountain className="w-3.5 h-3.5 shrink-0" /> 山林試煉（系統）
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={CARDBACK} alt="" className="w-4 h-5 rounded-[3px] object-cover border border-slate-600 ml-1" />
-              <span className="text-[10px] text-slate-500">手牌 {game.eHand.length} · 牌庫 {game.eDeck.length}</span>
+            <span className="hs-portrait-icon">
+              <IconMountain className="w-7 h-7" />
             </span>
-            <span className="text-rose-300 font-bold flex items-center gap-1">
-              <IconHeart className="w-3.5 h-3.5 shrink-0" /> {game.enemyHp}/{HERO_HP}
+            <span className="hs-portrait-name">山林試煉</span>
+            <span className="hs-portrait-sub">手牌 {game.eHand.length} · 牌庫 {game.eDeck.length}</span>
+            <span className="hs-portrait-hp">
+              <IconHeart className="w-3.5 h-3.5 shrink-0" /> {game.enemyHp}
             </span>
           </button>
-          {selected && !pending && atkLegal.mustTaunt && (
-            <p className="text-[11px] text-amber-300 mt-1">
-              敵方有嘲諷隨從，必須先攻擊嘲諷者（無法打英雄或其他隨從）。
-            </p>
-          )}
-          {pending && (
-            <p className="text-[11px] text-amber-300 mt-1">
-              選擇「{pending.card.nameZh}」的目標
-              {pendingKind === "any" && "（任一隨從或敵方英雄）"}
-              {pendingKind === "anyMinion" && "（任一隨從）"}
-              {pendingKind === "enemyMinion" && "（一個敵方隨從，潛行者不可指定）"}
-              {pendingKind === "friendMinion" && "（一個友方隨從）"}
-            </p>
-          )}
-        </section>
 
-        {/* 戰場區（雙方）：board-battle 卡面戰場背景 + 深色壓暗層，維持棋子可讀性 */}
-        <div
-          className="relative rounded-xl overflow-hidden mb-2 bg-cover bg-center"
-          style={{ backgroundImage: `url(${BOARD_BG})` }}
-        >
-          <div className="absolute inset-0 bg-slate-950/70" aria-hidden />
-          <div className="relative p-2 space-y-2">
+          {(selected && !pending && atkLegal.mustTaunt) || pending ? (
+            <div className="hs-target-callout">
+              {selected && !pending && atkLegal.mustTaunt && "敵方有嘲諷隨從，必須先攻擊嘲諷者。"}
+              {pending && (
+                <>
+                  選擇「{pending.card.nameZh}」的目標
+                  {pendingKind === "any" && "（任一隨從或敵方英雄）"}
+                  {pendingKind === "anyMinion" && "（任一隨從）"}
+                  {pendingKind === "enemyMinion" && "（一個敵方隨從，潛行者不可指定）"}
+                  {pendingKind === "friendMinion" && "（一個友方隨從）"}
+                </>
+              )}
+            </div>
+          ) : null}
+
+          <div className="hs-combat-lane relative">
         {/* 敵方戰場 */}
         <section>
-          <div className="min-h-24 rounded-xl border border-rose-900/40 bg-rose-950/10 px-2 pt-2 pb-4 flex flex-wrap gap-x-3 gap-y-4">
+          <div className="hs-board-row hs-board-row-enemy min-h-20 px-2 pt-2 pb-4 flex flex-wrap justify-center gap-x-3 gap-y-4">
             {game.eBoard.length === 0 && (
-              <span className="text-slate-600 text-xs self-center px-2">山林試煉尚無隨從。</span>
+              <span className="hs-board-empty text-xs self-center px-2">山林試煉尚無隨從。</span>
             )}
             {game.eBoard.map((e) => {
               const targetable = enemyMinionTargetable(e);
@@ -1247,9 +1277,9 @@ export default function PlayPage() {
 
         {/* 我方戰場 */}
         <section>
-          <div className="min-h-24 rounded-xl border border-sky-900/40 bg-sky-950/10 px-2 pt-2 pb-4 flex flex-wrap gap-x-3 gap-y-4">
+          <div className="hs-board-row hs-board-row-player min-h-20 px-2 pt-2 pb-4 flex flex-wrap justify-center gap-x-3 gap-y-4">
             {game.pBoard.length === 0 && (
-              <span className="text-slate-600 text-xs self-center px-2">
+              <span className="hs-board-empty text-xs self-center px-2">
                 尚無隨從，從手牌打出吧。
               </span>
             )}
@@ -1305,42 +1335,52 @@ export default function PlayPage() {
           </div>
         </section>
           </div>
-        </div>
 
-        {/* 我方英雄 + 控制 */}
-        <section className="mb-2 flex items-center justify-between rounded-xl border border-sky-400/40 bg-sky-950/30 px-3 py-2">
-          <span className="text-sm font-semibold flex items-center gap-1">
-            <IconPerson className="w-3.5 h-3.5 shrink-0" /> 織者（你）
-          </span>
-          <div className="flex items-center gap-3">
-            <span className="text-sky-300 font-bold flex items-center gap-1">
-              <IconHeart className="w-3.5 h-3.5 shrink-0" /> {game.playerHp}/{HERO_HP}
+          <button
+            onClick={endTurn}
+            disabled={game.phase !== "player" || !!game.winner || !!pending || !!quiz}
+            className="hs-end-turn hs-end-turn-big disabled:opacity-40"
+          >
+            {game.phase === "enemy" ? "系統行動中" : "結束回合 ▶"}
+          </button>
+
+          <button
+            onClick={reset}
+            className="hs-reset hs-reset-small"
+          >
+            重新開始
+          </button>
+
+          {/* 我方英雄 + 資源 */}
+          <section className="hs-portrait hs-portrait-player">
+            <span className="hs-portrait-icon">
+              <IconPerson className="w-7 h-7" />
             </span>
-            <button
-              onClick={endTurn}
-              disabled={game.phase !== "player" || !!game.winner || !!pending || !!quiz}
-              className="rounded bg-sky-600 hover:bg-sky-500 disabled:opacity-40 px-3 py-1 text-sm font-medium"
-            >
-              {game.phase === "enemy" ? "系統行動中…" : "結束回合 ▶"}
-            </button>
-            <button
-              onClick={reset}
-              className="rounded bg-slate-700 hover:bg-slate-600 px-3 py-1 text-sm"
-            >
-              重新開始
-            </button>
+            <span className="hs-portrait-name">織者</span>
+            <span className="hs-portrait-sub">答題命中 {rate}%</span>
+            <span className="hs-portrait-hp">
+              <IconHeart className="w-3.5 h-3.5 shrink-0" /> {game.playerHp}
+            </span>
+          </section>
+
+          <div className="hs-resource-strip hs-resource-player" aria-label={`我方法力 ${game.pMana}/${game.pMaxMana}`}>
+            <span className="hs-mana-text">{game.pMana}/{game.pMaxMana}</span>
+            <span className="hs-crystals" aria-hidden>
+              {Array.from({ length: 10 }).map((_, i) => (
+                <span key={i} className={i < game.pMana ? "hs-crystal is-filled" : i < game.pMaxMana ? "hs-crystal is-empty" : "hs-crystal"} />
+              ))}
+            </span>
           </div>
-        </section>
 
         {/* 手牌 */}
-        <section className="mb-3">
-          <h2 className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">
+        <section className="hs-hand-zone">
+          <h2 className="hs-hand-label text-[11px] uppercase tracking-wider text-amber-200/60 mb-1">
             手牌（牌庫剩 {game.pDeck.length}）
             {selected && !pending && (
               <span className="text-amber-300 ml-2">▶ 已選攻擊者，點敵方目標</span>
             )}
           </h2>
-          <div className="flex flex-wrap gap-x-3 gap-y-4 pt-2 pb-2">
+          <div className="hs-hand-rail flex gap-x-3 gap-y-4 pt-3 pb-3">
             {game.pHand.length === 0 && (
               <span className="text-slate-600 text-xs">手牌已空，結束回合抽牌。</span>
             )}
@@ -1349,13 +1389,14 @@ export default function PlayPage() {
                 c.cost <= game.pMana && game.phase === "player" && !game.winner && !pending && !quiz;
               const ThemeIcon = THEME_ICON[c.theme];
               const art = CARD_ART[c.id];
+              const learningText = CARD_LEARNING[c.id];
               return (
                 <button
                   key={`${c.id}-${i}`}
                   onClick={() => tryPlay(c)}
                   disabled={!playable}
-                  title={c.nameZh}
-                  className={`hs-card ${RARITY_GLOW[c.rarity]} w-[124px] sm:w-[150px] aspect-[5/7] shrink-0 text-left border-2 ${RARITY_COLOR[c.rarity]}
+                  title={`${c.nameZh}\n學習小註：${learningText}`}
+                  className={`hs-card ${RARITY_GLOW[c.rarity]} w-[112px] sm:w-[132px] aspect-[5/7] shrink-0 text-left border-2 ${RARITY_COLOR[c.rarity]}
                     ${playable ? "hs-card-playable cursor-pointer" : "opacity-40 cursor-not-allowed"}`}
                 >
                   {/* 內容層：切圓角、蓋在稀有度外框內 */}
@@ -1379,12 +1420,15 @@ export default function PlayPage() {
                         {c.type === "minion" ? "隨從" : "法術"} · {RARITY_ZH[c.rarity]}
                       </span>
                       {c.effectText !== "—" && (
-                        <span title={c.effectText} className="text-[9px] leading-tight text-slate-200 mt-0.5 line-clamp-2">
+                        <span title={c.effectText} className="text-[9px] leading-tight text-slate-200 mt-0.5 line-clamp-1">
                           {c.effectText}
                         </span>
                       )}
-                      <span title={c.bonusText} className="text-[9px] leading-tight text-amber-300/90 mt-0.5 line-clamp-2">
+                      <span title={c.bonusText} className="text-[9px] leading-tight text-amber-300/90 mt-0.5 line-clamp-1">
                         ★ {c.bonusText}
+                      </span>
+                      <span title={learningText} className="hs-card-learning line-clamp-2">
+                        學｜{learningText}
                       </span>
                     </span>
                   </span>
@@ -1413,9 +1457,9 @@ export default function PlayPage() {
         </section>
 
         {/* 紀錄 */}
-        <section>
-          <h2 className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">戰鬥紀錄</h2>
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-2 min-h-16 space-y-0.5 text-xs">
+          <aside className="play-log-panel">
+            <h2 className="text-[11px] uppercase tracking-wider text-amber-200/60 mb-2">戰鬥紀錄</h2>
+            <div className="space-y-1 text-xs">
             {game.log.map((l) => (
               <div
                 key={l.key}
@@ -1432,8 +1476,9 @@ export default function PlayPage() {
                 {l.text}
               </div>
             ))}
-          </div>
-        </section>
+            </div>
+          </aside>
+        </div>
       </div>
 
       {/* 答題彈窗（真實太魯閣語詞庫；揭曉後自動播發音，手動按「繼續 ▶」結算） */}
@@ -1455,6 +1500,10 @@ export default function PlayPage() {
             <div className="text-xs text-slate-400 mb-1">
               打出「{quiz.card.nameZh}」— 答對觸發加成「{quiz.card.bonusText}」
             </div>
+            <p className="rounded-lg border border-amber-400/25 bg-amber-950/20 px-3 py-2 text-xs leading-relaxed text-amber-100/90 mb-3">
+              <span className="font-semibold text-amber-200">卡片學習小註：</span>
+              {CARD_LEARNING[quiz.card.id]}
+            </p>
             <h3 className="text-lg font-bold mb-4">{quiz.prompt}</h3>
             <div className="grid gap-2">
               {quiz.options.map((opt, idx) => {
