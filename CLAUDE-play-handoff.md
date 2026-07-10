@@ -67,9 +67,35 @@ This is an information-architecture reference to Hearthstone, not an asset copy.
 - `npm run build` passes after the 8 Wave A card additions and art mappings.
 - Full `npm run lint` may still fail because `/journey` has concurrent work in progress. Do not treat that as caused by `/play` unless the error references `src/app/play/page.tsx`.
 
+## 2026-07-11 Codex Size Pass
+
+User feedback: the battle board still felt too small compared with Hearthstone. This pass intentionally makes the desktop `/play` board read as a large card-battle table instead of a compact dashboard panel.
+
+Changed:
+
+- `src/app/play/page.tsx`
+  - Reduced outer page padding from `p-3 sm:p-5` to `p-2 sm:p-4`.
+  - Enlarged board minion tokens from `w-[72px]` to `w-[86px] md:w-[102px]`.
+  - Enlarged player hand cards from `w-[112px] sm:w-[132px]` to `w-[132px] md:w-[164px] xl:w-[178px]`.
+
+- `src/app/globals.css`
+  - Expanded `.play-shell` from `1240px` to `1560px`.
+  - Increased `.hs-table` viewport usage, top/bottom padding, and combat lane height.
+  - Enlarged opponent card backs, hero portraits, HP pill, mana strip spacing, board row minimum height, and bottom hand rail.
+  - Moved player portrait/resource strip upward to stay above the larger hand.
+  - Pulled `.hs-hand-zone` upward on desktop/tablet so the enlarged hand still peeks into a 1280x720 first viewport.
+  - Added tablet/mobile overrides so the larger desktop sizing does not dominate narrow screens.
+
+Intent:
+
+- Desktop should now feel much closer to a full-screen board.
+- Hand cards should be inspectable without feeling like thumbnails.
+- Field minions should be large enough that their art and attack/health gems are readable.
+- Mobile should remain usable, even if desktop is the main target for this size pass.
+
 ## Known Visual Follow-Ups
 
-- Desktop 1280x720: the hand is intentionally bottom-anchored and partially visible, similar to a card battle table. If the user wants full cards visible above the fold, reduce `.hs-combat-lane` height/margins or move `.hs-portrait-player` upward.
+- Desktop 1280x720: after the 2026-07-11 size pass, the hand is larger and horizontally scrollable. If it crowds the board too much, reduce only the hand width first (`w-[132px] md:w-[164px] xl:w-[178px]`) before shrinking the whole table.
 - Mobile 390x844: the core vertical flow is visible, but further tuning may be needed after Claude's concurrent UI work stabilizes.
 - The battle log is now a small floating panel. If it competes with board readability, collapse it behind a small button.
 

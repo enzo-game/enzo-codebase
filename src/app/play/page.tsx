@@ -276,14 +276,30 @@ export default function PlayPage() {
   const [revealed, setRevealed] = useState<number | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [pending, setPending] = useState<{ card: Card; isCorrect: boolean } | null>(null);
+  // 開場規則說明：第一次進來自動彈出（localStorage 記過就不再自動彈），header 的「規則」可隨時再開
+  const [showRules, setShowRules] = useState(false);
 
   useEffect(() => {
     // 刻意的客戶端 mount 初始化：newGame() 內含 Math.random()，須在 client 產生以避免 SSR/CSR hydration 不一致
     /* eslint-disable react-hooks/set-state-in-effect */
     setMounted(true);
     setGame(newGame());
+    try {
+      if (!localStorage.getItem("enzo-play-rules-seen")) setShowRules(true);
+    } catch {
+      setShowRules(true); // localStorage 不可用（隱私模式）時仍給第一次說明
+    }
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
+
+  function closeRules() {
+    setShowRules(false);
+    try {
+      localStorage.setItem("enzo-play-rules-seen", "1");
+    } catch {
+      // 記不住就算了，不阻斷開始遊戲
+    }
+  }
 
   // 終局音效：勝利 / 落敗（中性 UI 完成音，非族樂）
   const winner = game.winner;
@@ -433,7 +449,7 @@ export default function PlayPage() {
   const friendMinionTargetable = pending !== null && (pendingKind === "friendMinion" || pendingKind === "anyMinion");
 
   return (
-    <main className="play-page min-h-screen text-slate-100 p-3 sm:p-5">
+    <main className="play-page min-h-screen text-slate-100 p-2 sm:p-4">
       <AmbientAudio />
       <GemDefs />
       <div className="play-shell mx-auto">
@@ -454,6 +470,12 @@ export default function PlayPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs">
+            <button
+              onClick={() => setShowRules(true)}
+              className="rounded border border-amber-400/40 bg-amber-950/40 px-2 py-1 text-amber-200 hover:bg-amber-900/50"
+            >
+              規則
+            </button>
             <span className="rounded bg-slate-800 px-2 py-1">回合 {game.turn}</span>
             <span className="rounded bg-sky-900/60 px-2 py-1">
               法力 {game.pMana}/{game.pMaxMana}
@@ -544,7 +566,7 @@ export default function PlayPage() {
                   onClick={() => onEnemyMinion(e.key)}
                   disabled={!targetable}
                   title={`${e.card.nameZh}${kw ? `（${kw}）` : ""}`}
-                  className={`hs-token w-[72px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
+                  className={`hs-token w-[86px] md:w-[102px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
                     ${e.taunt ? "hs-token-taunt" : ""}
                     ${e.stealth ? "opacity-60 blur-[0.5px] ring-1 ring-slate-400" : ""}
                     ${targetable ? "hover:ring-2 hover:ring-rose-400 cursor-pointer" : ""}`}
@@ -595,7 +617,7 @@ export default function PlayPage() {
                   key={e.key}
                   onClick={() => onPlayerMinion(e.key)}
                   title={`${e.card.nameZh}${kw ? `（${kw}）` : ""}`}
-                  className={`hs-token w-[72px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
+                  className={`hs-token w-[86px] md:w-[102px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
                     ${e.taunt ? "hs-token-taunt" : ""}
                     ${e.stealth ? "opacity-60 blur-[0.5px] ring-1 ring-slate-400" : ""}
                     ${ready && selected !== e.key && !spellTarget ? "hs-ready-pulse" : ""}
@@ -697,7 +719,7 @@ export default function PlayPage() {
                   onClick={() => tryPlay(c)}
                   disabled={!playable}
                   title={`${c.nameZh}\n學習小註：${learningText}`}
-                  className={`hs-card ${RARITY_GLOW[c.rarity]} w-[112px] sm:w-[132px] aspect-[5/7] shrink-0 text-left border-2 ${RARITY_COLOR[c.rarity]}
+                  className={`hs-card ${RARITY_GLOW[c.rarity]} w-[132px] md:w-[164px] xl:w-[178px] aspect-[5/7] shrink-0 text-left border-2 ${RARITY_COLOR[c.rarity]}
                     ${playable ? "hs-card-playable cursor-pointer" : "opacity-40 cursor-not-allowed"}`}
                 >
                   {/* 內容層：切圓角、蓋在稀有度外框內 */}
@@ -780,6 +802,76 @@ export default function PlayPage() {
           </aside>
         </div>
       </div>
+
+      {/* 開場規則說明（第一次自動彈，之後可從 header「規則」再開） */}
+      {showRules && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-[60]">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-slate-900 border border-amber-400/25 p-5 sm:p-6">
+            <div className="mb-4">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-amber-200/60">怎麼玩</p>
+              <h3 className={`${notoSerifTC.className} text-xl font-bold text-amber-100`}>
+                山林試煉 · 規則說明
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                爐石式卡牌，但每張牌出手前要先答一題太魯閣族語 — 答對就更強。
+              </p>
+            </div>
+
+            <ol className="space-y-3 text-sm text-slate-200">
+              <li className="flex gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-amber-500/90 text-black text-xs font-bold grid place-items-center">1</span>
+                <span>
+                  <span className="font-semibold text-amber-100">目標</span>：把「山林試煉」的生命打到 0，你就通過。你和對手都從 {HERO_HP} 點生命開始。
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-amber-500/90 text-black text-xs font-bold grid place-items-center">2</span>
+                <span>
+                  <span className="font-semibold text-amber-100">出牌先答族語題</span>：每打一張牌會跳出一題族語選擇。
+                  <span className="text-emerald-300">答對 → 觸發卡片的 ★加成（更強）</span>；
+                  <span className="text-rose-300">答錯 → 以基礎效果打出</span>（還是能出牌）。揭曉後會自動播正確發音。
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-amber-500/90 text-black text-xs font-bold grid place-items-center">3</span>
+                <span>
+                  <span className="font-semibold text-amber-100">法力</span>：每回合法力上限 +1（最多 10）。牌左上角的藍寶石是費用，法力不夠不能打。
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-amber-500/90 text-black text-xs font-bold grid place-items-center">4</span>
+                <span>
+                  <span className="font-semibold text-amber-100">隨從與攻擊</span>：隨從有攻擊／生命，剛打出的隨從要「下一回合」才能攻擊。輪到你時，先點自己的隨從、再點敵方隨從或英雄發動攻擊。
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-amber-500/90 text-black text-xs font-bold grid place-items-center">5</span>
+                <span>
+                  <span className="font-semibold text-amber-100">關鍵字</span>：
+                  <span className="text-slate-100">嘲諷</span>＝敵方有嘲諷隨從時必須先打它；
+                  <span className="text-slate-100">潛行</span>＝不能被指定攻擊；
+                  <span className="text-amber-300">★加成</span>＝答對題目才會生效。
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-amber-500/90 text-black text-xs font-bold grid place-items-center">6</span>
+                <span>
+                  <span className="font-semibold text-amber-100">回合</span>：出完牌點「結束回合」，換系統行動、再抽一張牌換你。戰場最多 {BOARD_MAX} 個隨從。
+                </span>
+              </li>
+            </ol>
+
+            <div className="flex justify-end mt-5">
+              <button
+                onClick={closeRules}
+                className="rounded bg-amber-500 hover:bg-amber-400 px-5 py-2 text-sm font-bold text-black"
+              >
+                開始試煉 ▶
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 答題彈窗（真實太魯閣語詞庫；揭曉後自動播發音，手動按「繼續 ▶」結算） */}
       {quiz && (
