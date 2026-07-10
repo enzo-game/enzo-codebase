@@ -490,29 +490,62 @@ body {
   pointer-events: none;
 }
 
-/* 法力水晶：壓在左上角外側的天藍寶石 */
-.hs-cost-gem {
+/* 切面寶石（SVG 畫的，形狀見 play/page.tsx 的 StatGem）：
+ * 費用＝藍寶石六角柱切、攻擊＝琥珀石六角切、生命＝紅寶石盾形切。
+ * 文化紅線：一律避開菱形輪廓（祖靈之眼紋樣），只用六角／盾形切割。 */
+.hs-gem {
   position: absolute;
-  top: -9px;
-  left: -9px;
   z-index: 10;
-  width: 29px;
-  height: 29px;
-  border-radius: 999px;
+  display: block;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.6));
+}
+.hs-gem-md {
+  width: 30px;
+  height: 30px;
+}
+.hs-gem-sm {
+  width: 23px;
+  height: 23px;
+}
+.hs-gem-num {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 35% 30%, #7dd3fc 0%, #0ea5e9 45%, #075985 100%);
-  border: 1px solid rgba(224, 242, 254, 0.85);
-  box-shadow:
-    0 3px 8px rgba(0, 0, 0, 0.55),
-    inset 0 -3px 6px rgba(2, 44, 79, 0.6),
-    inset 0 2px 3px rgba(255, 255, 255, 0.5);
-  color: #fff;
   font-weight: 800;
-  font-size: 15px;
   line-height: 1;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  letter-spacing: -0.02em;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.9),
+    0 0 4px rgba(0, 0, 0, 0.6);
+}
+.hs-gem-md .hs-gem-num {
+  font-size: 13px;
+}
+.hs-gem-sm .hs-gem-num {
+  font-size: 11px;
+}
+/* 位置：費用壓左上角外側；攻／血壓卡片下緣兩角 */
+.hs-gem-cost {
+  top: -10px;
+  left: -10px;
+}
+.hs-gem-atk {
+  bottom: -10px;
+  left: -10px;
+}
+.hs-gem-hp {
+  bottom: -10px;
+  right: -10px;
+}
+.hs-gem-sm.hs-gem-atk {
+  bottom: -8px;
+  left: -8px;
+}
+.hs-gem-sm.hs-gem-hp {
+  bottom: -8px;
+  right: -8px;
 }
 
 /* 名條：跨在畫窗與文字欄接縫上的金邊深色橫帶 */
@@ -523,54 +556,6 @@ body {
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
   color: #ffedc2;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
-}
-
-/* 攻／血寶石：壓在卡片下緣角落 */
-.hs-stat {
-  position: absolute;
-  bottom: -8px;
-  z-index: 10;
-  min-width: 27px;
-  height: 27px;
-  padding: 0 5px;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-  font-weight: 800;
-  font-size: 13px;
-  line-height: 1;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
-  box-shadow:
-    0 3px 8px rgba(0, 0, 0, 0.55),
-    inset 0 2px 3px rgba(255, 255, 255, 0.35),
-    inset 0 -3px 6px rgba(0, 0, 0, 0.4);
-}
-.hs-stat-atk {
-  left: -8px;
-  background: radial-gradient(circle at 35% 30%, #fde68a 0%, #f59e0b 50%, #92400e 100%);
-  border: 1px solid rgba(254, 243, 199, 0.8);
-}
-.hs-stat-hp {
-  right: -8px;
-  background: radial-gradient(circle at 35% 30%, #fda4af 0%, #e11d48 50%, #881337 100%);
-  border: 1px solid rgba(255, 228, 230, 0.8);
-}
-/* 戰場棋子用的小號寶石 */
-.hs-stat-sm {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 3px;
-  font-size: 11px;
-  bottom: -7px;
-}
-.hs-stat-sm.hs-stat-atk {
-  left: -7px;
-}
-.hs-stat-sm.hs-stat-hp {
-  right: -7px;
 }
 
 /* 法術卡：底部置中的類型小牌 */
