@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Noto_Serif_TC, Noto_Sans_TC } from "next/font/google";
-import { useEffect, useImperativeHandle, useMemo, useRef, useState, forwardRef, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { vocab, audioUrl, distractors, ATTRIBUTION, SOURCE, SOURCE_URL, VOCAB } from "@/data/truku";
 import AmbientAudio from "@/components/AmbientAudio";
 import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose, sfxStreak } from "@/lib/sfx";
@@ -140,14 +140,6 @@ function IconMoon({ className = "w-4 h-4" }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 14.5A8.5 8.5 0 1110.5 4a7 7 0 009.5 10.5z" />
-    </svg>
-  );
-}
-function IconFootprint({ className = "w-4 h-4" }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <ellipse cx="9" cy="8" rx="3" ry="4" />
-      <ellipse cx="15" cy="16" rx="3" ry="4" />
     </svg>
   );
 }
@@ -444,7 +436,7 @@ const LEGEND_L1: LegendConfig = {
   ],
   closing: "山河重新排過——這次，換你們排了回來。",
   intro: "老人家起頭講的，是那場大洪水：山曾經倒、水曾經漫，山河整個重新排過——",
-  milestones: [2, 4, 5],
+  milestones: [0, 3, 5],
   img: "/images/journey/stories/scene-start-v1.jpg",
 };
 
@@ -458,7 +450,7 @@ const LEGEND_L2: LegendConfig = {
   ],
   closing: "長路靠接力走完——這次，換你們沿路把小米種下去。",
   intro: "老人家起頭講的，是射日的遠行：出發的人揹著孩子、沿路種下小米，把路留給後面的人——",
-  milestones: [3, 5, 6],
+  milestones: [0, 4, 6],
   img: "/images/journey/stories/scene-forest-v1.jpg",
 };
 
@@ -1057,83 +1049,6 @@ function resolveSupplyChoice(g: JGame, resource: Resource, correct: boolean, voc
   return settle(applyStreakBonus(ng));
 }
 
-// ───────────────────────── 修復路段（v5，ORDER-036：動手建造，落石節點專用）─────────────────────────
-// 司令回饋：故事寫了「這次換你們重新排一次路」，結果玩家只是點按鈕答題，敘事沒兌現、遊戲太單薄。
-// 改成真的要動手選材料疊路：頁岩堆疊路基、蛇木架橫樑（可省略，改走純疊石工法）、藤索綁緊固定（必要）。
-// 簡化版規則式穩定度判定（非真實物理引擎，依司令拍板）。族語題仍保留、但降為輔助加成，不是唯一內容。
-type BuildMaterials = { stone: number; wood: number; rope: number };
-
-// ORDER-053：把落石與吊橋拆成兩種工法。玩家不是只在堆同一種分數，
-// 而是要看眼前的山況決定「穩住路基」或「把兩岸接回來」。
-// ORDER-054：司令實測回饋吊橋的拖拉建造「不太OK」——吊橋改走語言優先的「聽音搭板」
-// 小遊戲（見 resolveBridgeListen 與 BridgeListen 狀態），拖拉建造只保留給落石節點。
-// buildScore／resolveBuildTest 的 bridge 分支暫留（規則已驗證，未來若回頭用得上）。
-type BuildMode = "rockfall" | "bridge";
-
-function buildModeForNode(node: PathNode | undefined): BuildMode | null {
-  if (node?.type === "obstacle") return "rockfall";
-  return null;
-}
-
-function buildScore(b: BuildMaterials, mode: BuildMode): number {
-  return mode === "bridge"
-    ? Math.min(100, b.wood * 25 + b.rope * 15 + b.stone * 5)
-    : Math.min(100, b.stone * 10 + b.wood * 20);
-}
-
-// 環境機制（純自然力，不掛任何族語信仰概念）：石頭堆太密會擋住水路，測試時有機率被溪水沖毀部分結構
-function resolveBuildTest(g: JGame, b: BuildMaterials, quizCorrect: boolean, vocabId: string): JGame {
-  const node = g.nodes[g.idx];
-  const mode = buildModeForNode(node);
-  if (g.status !== "playing" || !node || !mode || node.cleared || b.rope < 1) return g;
-  // 吊橋需要至少兩根橫樑才有跨距；這是玩家在畫面上看得懂的硬條件，不靠隱藏數值猜答案。
-  if (mode === "bridge" && b.wood < 2) return g;
-  const ng: JGame = { ...g, nodes: g.nodes.map((n) => ({ ...n })) };
-  ng.wordLog = [...ng.wordLog, { vocabId, correct: quizCorrect }];
-  if (quizCorrect) {
-    ng.correct += 1;
-    ng.streak += 1;
-  } else {
-    ng.wrong += 1;
-    ng.streak = 0;
-  }
-
-  let score = buildScore(b, mode) + (quizCorrect ? 15 : 0);
-  const stormPenalty = mode === "bridge" && pressureTier(g) === "critical" ? 15 : 0;
-  score = Math.max(0, score - stormPenalty);
-  let envPenalty = false;
-  if (mode === "rockfall" && b.stone > 8 && Math.random() < 0.3) {
-    score = Math.max(0, score - 25);
-    envPenalty = true;
-  }
-  const n2 = ng.nodes[ng.idx];
-  const pass = score >= 60;
-  if (pass) {
-    n2.obstacle = 0;
-    n2.cleared = true;
-    if (mode === "rockfall" && b.wood === 0) {
-      const cap = effectiveMaxAp(ng);
-      if (ng.ap < cap) ng.ap = Math.min(cap, ng.ap + 1);
-      ng.log = pushLog(ng.log, `✓ 「${n2.name}」重新排好了路——全程沒砍一根木材，工法巧思獎勵：行動點 +1！`, "good");
-    } else if (mode === "bridge") {
-      ng.log = pushLog(
-        ng.log,
-        stormPenalty > 0
-          ? `✓ 「${n2.name}」在暴風裡接回兩岸——你用足橫樑與藤索，橋身撐住了。`
-          : `✓ 「${n2.name}」兩岸重新接起，隊伍踩著有彈性的橋面安全通過。`,
-        "good",
-      );
-    } else {
-      ng.log = pushLog(ng.log, `✓ 「${n2.name}」重新排好了路，隊伍安全通過。`, "good");
-    }
-  } else if (envPenalty) {
-    ng.log = pushLog(ng.log, `石頭堆太密擋住了水路，溪水暴漲沖毀了部分結構，得再加固一次。`, "bad");
-  } else {
-    ng.log = pushLog(ng.log, `✕ 結構還不夠穩，山羌走到一半又跳了回來，得再加固一次。`, "info");
-  }
-  return settle(applyStreakBonus(ng));
-}
-
 // ───────────────────────── 聽音搭板（ORDER-054：吊橋語言優先小遊戲）─────────────────────────
 // 司令回饋 ORDER-053 的吊橋拖拉建造「不太OK」——改成語言優先：過斷橋＝釘回五塊板，
 // 每塊板＝一個族語詞，先聽真實發音再選中文意思（既有題型的反向）。錯了先教再走：
@@ -1543,13 +1458,13 @@ function stepHint(g: JGame): { situation: string; todo: string } {
         s = { situation: "落石已清除", todo: "按「前進」，繼續上路（行動點 -1）。" };
       } else {
         const hasCard = g.hand.some((c) => neededEffects(n).includes(c.effect));
-        const canHard = g.res.rope >= 1;
+        const canHard = canHardClear(g);
         s = {
           situation: `落石擋道（剩 ${n.obstacle} 點）`,
           todo:
             !hasCard && !canHard
-              ? "先按「紮營」換日重抽手牌、囤資源——手上沒有可用行動牌，繩索也不夠（修復路段至少要 1 繩索）。"
-              : "把落石清掉——出「搬石」／「共同搬運」牌快速清，或點「修復路段」動手疊石架橋（可省木材，答題只是加成不是唯一內容）。",
+              ? "先按「紮營」換日重抽手牌、囤資源——手上沒有可用行動牌，石材也不夠硬清（花資源硬清需石材×2）。"
+              : "把落石清掉——出「搬石」／「共同搬運」牌，或花資源硬清（石材×2，需答族語題）。",
         };
       }
       break;
@@ -1606,7 +1521,7 @@ function stepHint(g: JGame): { situation: string; todo: string } {
 }
 
 // ORDER-051（引導點 1）：行動聚光燈——任何時刻只有一顆「當前該按的鈕」。
-// 判定優先序：終局→無；當前節點未清（落石→修復路段；吊橋/危害→硬清；事件→兩選項；補給→資源選項）；
+// 判定優先序：終局→無；當前節點未清（落石/危害→花資源硬清；吊橋→聽音搭板；事件→兩選項；補給→資源選項）；
 // 已清且可前進（AP≥1）→前進；AP=0→紮營。
 type PrimaryAction = "repair" | "hazard" | "event" | "supply" | "advance" | "camp" | null;
 
@@ -1645,424 +1560,6 @@ function sideQuests(g: JGame): SideQuest[] {
       state: g.res.food >= 4 ? "ok" : won ? "fail" : "pending",
     },
   ];
-}
-
-// ───────────────────────── 修復路段：動手拖拉建造畫布（v6，ORDER-040）─────────────────────────
-// 司令分享了一份參考原型（canvas 拖拉連線 + 彈簧鬆弛視覺 + 山羌沿路徑走過的動畫），
-// 想把「搭橋」做得更有實感。決定：真正的過關判定（穩定度公式、資源扣除、答題閘門）
-// 沿用已上線且測試過的 resolveBuildTest／building 狀態（見上方），不讓一個全新的物理權威
-// 取代已驗證的規則——避免在沒有充分測試的情況下引入新的破綻。這個畫布純粹是「動手建造」的
-// 互動與視覺層：拖拉頁岩/橫樑/藤索連線＋輕量鬆弛動畫＋依實際判定結果播放山羌沿路徑通過或摔落的
-// 過場動畫。不做應力斷裂判定（沒有這個必要，也避免額外的失敗模式）。
-//
-// 文化把關：原型用「祖靈祝福(Gaya)」當分數、把占卜鳥 Sisin 寫成會講話的教學吉祥物——
-// 兩者都被拿掉。Gaya 是太魯閣族現在仍在使用的祖訓/生活規範系統，不當分數或評語角色；
-// Sisin 占卜鳥是真實仍在使用的占卜方式，不裝萌當導覽員。提示文字改用中性的「工法筆記」。
-// 材料標籤也一併修正：原型誤用「Urung」當黃藤（已驗證 urung＝動物的角，對不上）、
-// 「Qwarux」查無來源——一律改用遊戲既有已驗證詞：qhuni（木材）／gasil（繩索）。
-
-type PNode = { id: string; x: number; y: number; fixed: boolean; anchor: boolean; side?: "left" | "right"; vx: number; vy: number };
-type PSpring = { a: string; b: string; length: number; kind: "wood" | "rope" };
-type Pier = { x: number; y: number; width: number; nodeId: string };
-
-type BuildCanvasHandle = {
-  runCrossing: (pass: boolean, onDone: () => void) => void;
-};
-
-const BuildCanvas = forwardRef<
-  BuildCanvasHandle,
-  { tool: "stone" | "wood" | "rope"; onUseMaterial: (kind: "stone" | "wood" | "rope") => boolean; interactive: boolean }
->(function BuildCanvas({ tool, onUseMaterial, interactive }, ref) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const toolRef = useRef(tool);
-  toolRef.current = tool;
-  const interactiveRef = useRef(interactive);
-  interactiveRef.current = interactive;
-  const onUseMaterialRef = useRef(onUseMaterial);
-  onUseMaterialRef.current = onUseMaterial;
-
-  const stateRef = useRef({
-    nodes: [] as PNode[],
-    springs: [] as PSpring[],
-    piers: [] as Pier[],
-    dragFrom: null as PNode | null,
-    mouse: { x: 0, y: 0 },
-    hover: null as PNode | null,
-    deer: { active: false, x: 0, y: 0, path: [] as PNode[], t: 0, dur: 0, fallAt: 1, done: false },
-  });
-
-  function findWalkPath(): PNode[] | null {
-    const s = stateRef.current;
-    const left = s.nodes.find((n) => n.id === "L1");
-    if (!left) return null;
-    const visited = new Set<string>();
-    let found: PNode[] | null = null;
-    function dfs(node: PNode, path: PNode[]) {
-      if (visited.has(node.id) || found) return;
-      visited.add(node.id);
-      path.push(node);
-      if (node.fixed && node.side === "right") {
-        found = [...path];
-        return;
-      }
-      const neighbors: PNode[] = [];
-      for (const sp of s.springs) {
-        if (sp.a === node.id) {
-          const n2 = s.nodes.find((n) => n.id === sp.b);
-          if (n2) neighbors.push(n2);
-        } else if (sp.b === node.id) {
-          const n2 = s.nodes.find((n) => n.id === sp.a);
-          if (n2) neighbors.push(n2);
-        }
-      }
-      neighbors.sort((a, b) => b.x - a.x);
-      for (const n2 of neighbors) dfs(n2, path);
-      path.pop();
-    }
-    dfs(left, []);
-    return found;
-  }
-
-  useImperativeHandle(ref, () => ({
-    runCrossing(pass, onDone) {
-      const s = stateRef.current;
-      const path = findWalkPath();
-      const usablePath = path && path.length >= 2 ? path : null;
-      const dur = 1400;
-      if (usablePath) {
-        s.deer = { active: true, x: usablePath[0].x, y: usablePath[0].y - 10, path: usablePath, t: 0, dur, fallAt: pass ? 1 : 0.35 + Math.random() * 0.3, done: false };
-      } else {
-        // 沒有連通路徑：山羌原地表示「走不過去」，直接判定為未通過的短動畫
-        const left = s.nodes.find((n) => n.id === "L1");
-        s.deer = {
-          active: true,
-          x: left ? left.x : 0,
-          y: left ? left.y - 10 : 0,
-          path: left ? [left, left] : [],
-          t: 0,
-          dur: 500,
-          fallAt: pass ? 1 : 0,
-          done: false,
-        };
-      }
-      const check = setInterval(() => {
-        if (s.deer.done) {
-          clearInterval(check);
-          onDone();
-        }
-      }, 100);
-    },
-  }));
-
-  // 初始化與畫布尺寸（掛載一次；resize 監聽用 ResizeObserver）
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const container = canvas.parentElement;
-    if (!container) return;
-
-    function initNodes(w: number, h: number) {
-      // 錨點座標對齊 repair-river-board.jpg 上「畫在圖裡」的四個金色光圈（ORDER-046：
-      // 底圖換成俯視溪谷實景圖，canvas 只疊互動層），改圖時要一併校正這組比例。
-      stateRef.current.nodes = [
-        { id: "L1", x: w * 0.184, y: h * 0.237, fixed: true, anchor: true, side: "left", vx: 0, vy: 0 },
-        { id: "L2", x: w * 0.171, y: h * 0.674, fixed: true, anchor: true, side: "left", vx: 0, vy: 0 },
-        { id: "R1", x: w * 0.792, y: h * 0.231, fixed: true, anchor: true, side: "right", vx: 0, vy: 0 },
-        { id: "R2", x: w * 0.816, y: h * 0.663, fixed: true, anchor: true, side: "right", vx: 0, vy: 0 },
-      ];
-      stateRef.current.springs = [];
-      stateRef.current.piers = [];
-      stateRef.current.deer = { active: false, x: 0, y: 0, path: [], t: 0, dur: 0, fallAt: 1, done: false };
-    }
-
-    function resize() {
-      const w = container!.clientWidth;
-      const h = container!.clientHeight;
-      canvas!.width = w;
-      canvas!.height = h;
-      initNodes(w, h);
-    }
-    resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(container);
-
-    function getPos(clientX: number, clientY: number) {
-      const rect = canvas!.getBoundingClientRect();
-      return { x: (clientX - rect.left) * (canvas!.width / rect.width), y: (clientY - rect.top) * (canvas!.height / rect.height) };
-    }
-
-    function nodeAt(pos: { x: number; y: number }): PNode | null {
-      let found: PNode | null = null;
-      for (const n of stateRef.current.nodes) {
-        const d = Math.hypot(n.x - pos.x, n.y - pos.y);
-        if (d < 13) found = n;
-      }
-      return found;
-    }
-
-    function onPointerDown(e: PointerEvent) {
-      if (!interactiveRef.current) return;
-      const pos = getPos(e.clientX, e.clientY);
-      const s = stateRef.current;
-      if (toolRef.current === "stone") {
-        // 俯視圖：溪面約佔畫面中段（兩岸各留邊），頁岩樁只能放在溪面範圍
-        const inRiver =
-          pos.x > canvas!.width * 0.24 && pos.x < canvas!.width * 0.76 && pos.y > canvas!.height * 0.08 && pos.y < canvas!.height * 0.92;
-        if (inRiver) {
-          if (!onUseMaterialRef.current("stone")) return;
-          const id = "P" + Math.random().toString(36).slice(2);
-          s.nodes.push({ id, x: pos.x, y: pos.y, fixed: true, anchor: false, vx: 0, vy: 0 });
-          s.piers.push({ x: pos.x, y: pos.y, width: 28, nodeId: id });
-        }
-        return;
-      }
-      const hit = nodeAt(pos);
-      if (hit) s.dragFrom = hit;
-    }
-
-    function onPointerMove(e: PointerEvent) {
-      const pos = getPos(e.clientX, e.clientY);
-      stateRef.current.mouse = pos;
-      stateRef.current.hover = nodeAt(pos);
-    }
-
-    function onPointerUp(e: PointerEvent) {
-      if (!interactiveRef.current) return;
-      const s = stateRef.current;
-      if (!s.dragFrom) return;
-      const pos = getPos(e.clientX, e.clientY);
-      const from = s.dragFrom;
-      s.dragFrom = null;
-      const dist = Math.hypot(pos.x - from.x, pos.y - from.y);
-      if (dist < 18 || dist > 260) return;
-      if (toolRef.current !== "wood" && toolRef.current !== "rope") return;
-      let to = nodeAt(pos);
-      if (to && to.id === from.id) return;
-      const kind = toolRef.current;
-      if (!onUseMaterialRef.current(kind)) return;
-      if (!to) {
-        to = { id: "N" + Math.random().toString(36).slice(2), x: pos.x, y: pos.y, fixed: false, anchor: false, vx: 0, vy: 0 };
-        s.nodes.push(to);
-      }
-      const already = s.springs.some((sp) => (sp.a === from.id && sp.b === to!.id) || (sp.a === to!.id && sp.b === from.id));
-      if (!already) s.springs.push({ a: from.id, b: to.id, length: dist, kind });
-    }
-
-    canvas!.addEventListener("pointerdown", onPointerDown);
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-
-    let raf = 0;
-    function tick() {
-      const s = stateRef.current;
-      const w = canvas!.width;
-      const h = canvas!.height;
-
-      // 輕量鬆弛（僅視覺垂墜感，不判斷斷裂——過關與否由外部已驗證的規則決定）。
-      // 調校備註：重力/勁度原本讓自由節點大幅盪離放置點，容易讓第二段連線超出可及距離
-      // （220px 上限），變成怎麼接都接不到——這裡把重力調輕、勁度調高、迭代加多，
-      // 讓下垂感明顯但收斂快、不會盪出太遠。
-      for (const n of s.nodes) {
-        if (n.fixed) continue;
-        n.vy += 0.04;
-        n.x += n.vx;
-        n.y += n.vy;
-        n.vx *= 0.85;
-        n.vy *= 0.85;
-        if (n.y > h * 0.86) {
-          n.y = h * 0.86;
-          n.vy = 0;
-        }
-      }
-      for (let iter = 0; iter < 10; iter++) {
-        for (const sp of s.springs) {
-          const a = s.nodes.find((n) => n.id === sp.a);
-          const b = s.nodes.find((n) => n.id === sp.b);
-          if (!a || !b) continue;
-          const dx = b.x - a.x;
-          const dy = b.y - a.y;
-          const dist = Math.hypot(dx, dy) || 0.001;
-          const diff = sp.length - dist;
-          if (sp.kind === "rope" && dist < sp.length) continue; // 繩索不吃壓縮力
-          const k = sp.kind === "wood" ? 0.6 : 0.35;
-          const pct = (diff / dist) * k * 0.5;
-          const ox = dx * pct;
-          const oy = dy * pct;
-          if (!a.fixed) {
-            a.x -= ox;
-            a.y -= oy;
-          }
-          if (!b.fixed) {
-            b.x += ox;
-            b.y += oy;
-          }
-        }
-      }
-
-      // 山羌過場動畫推進
-      const deer = s.deer;
-      if (deer.active && !deer.done) {
-        deer.t += 16.7 / deer.dur;
-        const segCount = Math.max(1, deer.path.length - 1);
-        const travel = Math.min(deer.t, deer.fallAt);
-        const segF = travel * segCount;
-        const segI = Math.min(segCount - 1, Math.floor(segF));
-        const localT = segF - segI;
-        const p0 = deer.path[segI];
-        const p1 = deer.path[Math.min(deer.path.length - 1, segI + 1)];
-        if (p0 && p1) {
-          deer.x = p0.x + (p1.x - p0.x) * localT;
-          deer.y = p0.y - 10 + (p1.y - p0.y) * localT;
-        }
-        if (deer.t >= deer.fallAt && deer.fallAt < 1) {
-          // 未通過：從當前點墜落
-          deer.y += (deer.t - deer.fallAt) * 240;
-        }
-        if (deer.t >= 1) {
-          deer.done = true;
-        }
-      }
-
-      draw(canvas!.getContext("2d")!, w, h, s, interactiveRef.current, toolRef.current);
-      raf = requestAnimationFrame(tick);
-    }
-    raf = requestAnimationFrame(tick);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-      canvas!.removeEventListener("pointerdown", onPointerDown);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-    };
-  }, []);
-
-  // ORDER-046：canvas 改為「透明互動疊層」，鋪滿呼叫端提供的相對定位容器
-  // （容器底下是 repair-river-board.jpg 俯視溪谷實景圖）。resize() 讀的是這層的尺寸。
-  return (
-    <div className="absolute inset-0">
-      <canvas ref={canvasRef} className="block h-full w-full touch-none" />
-    </div>
-  );
-});
-
-function draw(
-  ctx: CanvasRenderingContext2D,
-  w: number,
-  h: number,
-  s: {
-    nodes: PNode[];
-    springs: PSpring[];
-    piers: Pier[];
-    dragFrom: PNode | null;
-    mouse: { x: number; y: number };
-    hover: PNode | null;
-    deer: { active: boolean; x: number; y: number; path: PNode[]; t: number; dur: number; fallAt: number; done: boolean };
-  },
-  interactive: boolean,
-  tool: "stone" | "wood" | "rope",
-) {
-  ctx.clearRect(0, 0, w, h);
-  // ORDER-046：背景改由底下的 repair-river-board.jpg 實景圖呈現，canvas 只畫互動元素
-  // （俯視視角：頁岩樁畫成圓形石砌墩座，非側視石柱）。
-
-  // 頁岩墩座（俯視）
-  for (const pier of s.piers) {
-    const r = pier.width / 2;
-    ctx.beginPath();
-    ctx.arc(pier.x, pier.y, r, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(71, 85, 105, 0.92)";
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#94a3b8";
-    ctx.stroke();
-    // 內圈石紋
-    ctx.beginPath();
-    ctx.arc(pier.x, pier.y, r * 0.55, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-
-  // 連線（橫樑/藤索）
-  for (const sp of s.springs) {
-    const a = s.nodes.find((n) => n.id === sp.a);
-    const b = s.nodes.find((n) => n.id === sp.b);
-    if (!a || !b) continue;
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    if (sp.kind === "wood") {
-      ctx.strokeStyle = "#b45309";
-      ctx.lineWidth = 7;
-      ctx.setLineDash([]);
-    } else {
-      ctx.strokeStyle = "#a3a3a3";
-      ctx.lineWidth = 2.5;
-      ctx.setLineDash([4, 3]);
-    }
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // 拖拉預覽線
-  if (s.dragFrom && interactive) {
-    ctx.beginPath();
-    ctx.moveTo(s.dragFrom.x, s.dragFrom.y);
-    ctx.lineTo(s.mouse.x, s.mouse.y);
-    ctx.strokeStyle = tool === "wood" ? "rgba(180,83,9,0.7)" : "rgba(163,163,163,0.7)";
-    ctx.lineWidth = tool === "wood" ? 5 : 2;
-    ctx.stroke();
-  }
-
-  // 節點（ORDER-046：錨點改描邊光圈，讓底圖裡畫好的金圈透出來、canvas 只做強化與 hover 提示）
-  for (const n of s.nodes) {
-    if (n.anchor) {
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, 9, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(255, 213, 91, 0.9)";
-      ctx.lineWidth = 2.5;
-      ctx.shadowColor = "rgba(255, 188, 56, 0.8)";
-      ctx.shadowBlur = 8;
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-    } else {
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, n.fixed ? 5 : 4, 0, Math.PI * 2);
-      ctx.fillStyle = n.fixed ? "#94a3b8" : "#10b981";
-      ctx.fill();
-    }
-    if (s.hover === n && interactive) {
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, 13, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(251,191,36,0.65)";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-    }
-  }
-
-  // 山羌
-  if (s.deer.active) {
-    ctx.save();
-    ctx.translate(s.deer.x, s.deer.y);
-    ctx.fillStyle = "#92400e";
-    ctx.beginPath();
-    ctx.ellipse(0, -6, 10, 6, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#713f12";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-5, -1);
-    ctx.lineTo(-6, 4);
-    ctx.moveTo(5, -1);
-    ctx.lineTo(6, 4);
-    ctx.stroke();
-    ctx.fillStyle = "#78350f";
-    ctx.beginPath();
-    ctx.arc(-9, -10, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
 }
 
 export default function JourneyPage() {
@@ -2129,13 +1626,28 @@ export default function JourneyPage() {
     }
   }, [mounted, game.levelId, game.idx, game.nodes, seenChapters]);
 
-  // 節點故事過場卡：抵達有 NODE_STORY 的節點時，彈出跟章節卡同樣的全螢幕過場（司令指示「一張一張卡」比較好看，
-  // 取代原本埋在面板裡的斜體小字）。依賴 chapterCard 才觸發，讓章節卡與故事卡不會同時疊加——
-  // 同一節點若兩者皆滿足，章節卡先彈出，玩家關閉後（chapterCard 變回 null）此 effect 才重新判斷並顯示故事卡。
+  // 節點故事過場卡狀態（司令指示「一張一張卡」比較好看，取代原本埋在面板裡的斜體小字）。
+  // 觸發 effect 見下方（移到 legend state 之後，才能讓故事卡讓路給尚未播出的開場傳說）。
   const [storyCard, setStoryCard] = useState<string | null>(null);
   const [seenStories, setSeenStories] = useState<Set<string>>(new Set());
+
+  // ─────────── 傳說篇章（ORDER-055；ORDER-056 前置首段）：里程碑解鎖 → 全螢幕篇章卡 → 旅途誌可重讀 ───────────
+  // unlockedLegendCount 是 idx 的純函式；seenLegendCount 記「已彈出過幾段」，兩者差額就是待展示的篇章。
+  // ORDER-056：第一段傳說里程碑改為 idx 0（開局即解鎖），要在「章節卡之後、起點故事卡與教學之前」插播，
+  // 所以把 legend state 上移到故事卡 effect 之前，讓故事卡能讓路給尚未播出的開場傳說。
+  // 篇章卡 z 序最高，最終段（抵達終點）會蓋在勝利彈窗之上，玩家先讀完收束段再看到勝利結算。
+  const [legendCard, setLegendCard] = useState<number | null>(null);
+  const [seenLegendCount, setSeenLegendCount] = useState(0);
+  const [showJournal, setShowJournal] = useState(false);
+  const unlockedLegend = unlockedLegendCount(game);
+  // 開場傳說第一段「待播且尚未播出」：起點（idx 0）、還沒彈過任何篇章、且已解鎖至少一段（里程碑[0]=0）。
+  const openingLegendPending = game.idx === 0 && seenLegendCount === 0 && unlockedLegend > 0;
+
+  // 節點故事過場卡：抵達有 NODE_STORY 的節點時，彈出跟章節卡同樣的全螢幕過場。
+  // 依賴 chapterCard／legendCard 才觸發，讓三種全螢幕卡不會同時疊加；ORDER-056：開場時起點故事卡
+  // 還要讓路給尚未播出的第一段傳說（openingLegendPending），確保順序是 章節卡 → 傳說首段 → 起點故事卡。
   useEffect(() => {
-    if (!mounted || chapterCard !== null) return;
+    if (!mounted || chapterCard !== null || legendCard !== null || openingLegendPending) return;
     const node = game.nodes[game.idx];
     if (!node) return;
     const story = levelCfg(game).nodeStory[node.vocabId];
@@ -2144,26 +1656,24 @@ export default function JourneyPage() {
       setStoryCard(node.vocabId);
       setSeenStories((prev) => new Set(prev).add(node.vocabId));
     }
-  }, [mounted, chapterCard, game, seenStories]);
+  }, [mounted, chapterCard, legendCard, openingLegendPending, game, seenStories]);
 
-  // ─────────── 傳說篇章（ORDER-055）：里程碑解鎖 → 全螢幕篇章卡 → 旅途誌可重讀 ───────────
-  // unlockedLegendCount 是 idx 的純函式；seenLegendCount 記「已彈出過幾段」，兩者差額就是待展示的篇章。
-  // 章節卡／節點故事卡優先（同為全螢幕過場，不疊加）；篇章卡 z 序最高，最終段（抵達終點）會蓋在勝利彈窗之上，
-  // 玩家先讀完傳說收束段、關掉後才看到勝利結算（本章傳說 n/n＋難度評分）。
-  const [legendCard, setLegendCard] = useState<number | null>(null);
-  const [seenLegendCount, setSeenLegendCount] = useState(0);
-  const [showJournal, setShowJournal] = useState(false);
-  const unlockedLegend = unlockedLegendCount(game);
   useEffect(() => {
     if (!mounted || legendCard !== null) return;
-    // 章節卡／故事卡「即將」在本節點觸發時也先讓路——三個 effect 在同一個 commit 讀到的都是
-    // 更新前的 state（chapterCard/storyCard 皆為 null），只看 null 會三卡同時疊開。
+    // 章節卡／故事卡「即將」在本節點觸發時也先讓路——effect 在同一個 commit 讀到的都是更新前的 state，
+    // 只看 null 會多卡同時疊開。ORDER-056：開場第一段（openingLegend）例外——只讓章節卡、不讓起點故事卡
+    // （故事卡 effect 已改為等它先播），達成 章節卡 → 傳說首段 → 起點故事卡 的順序。
     // 終局例外：抵達終點時勝利彈窗會蓋住故事卡（既有行為），最終段直接以 z-[60] 蓋在勝利彈窗上呈現。
     const { index: chIdx } = chapterForIdx(game.levelId, game.idx);
     const chapterDue = chIdx !== seenChapters && chaptersOf(game.levelId)[chIdx].nodeStart === game.idx;
     const node = game.nodes[game.idx];
     const storyDue = !!node && !!levelCfg(game).nodeStory[node.vocabId] && !seenStories.has(node.vocabId);
-    if (game.status === "playing" && (chapterCard !== null || storyCard !== null || chapterDue || storyDue)) return;
+    const openingLegend = game.idx === 0 && seenLegendCount === 0;
+    if (
+      game.status === "playing" &&
+      (chapterCard !== null || chapterDue || (!openingLegend && (storyCard !== null || storyDue)))
+    )
+      return;
     if (unlockedLegend > seenLegendCount) {
       /* eslint-disable react-hooks/set-state-in-effect */
       setLegendCard(seenLegendCount);
@@ -2190,9 +1700,9 @@ export default function JourneyPage() {
 
   const quiz = useMemo(() => (pending && pending.quiz ? quizFor(pending) : null), [pending]);
 
-  // v3（ORDER-031）：非卡牌動作的答題閘門（硬清／謹慎探勘／補給／v5 修復路段測試）——共用同一套隨機詞庫題型
+  // v3（ORDER-031）：非卡牌動作的答題閘門（硬清／謹慎探勘／補給）——共用同一套隨機詞庫題型
   const [pendingAction, setPendingAction] = useState<{
-    kind: "hardClear" | "eventCareful" | "supply" | "buildTest";
+    kind: "hardClear" | "eventCareful" | "supply";
     resource?: Resource;
   } | null>(null);
   const [actionRevealed, setActionRevealed] = useState<number | null>(null);
@@ -2217,16 +1727,6 @@ export default function JourneyPage() {
   );
   const [challengeRevealed, setChallengeRevealed] = useState<number | null>(null);
 
-  // v5（ORDER-036）：修復路段——動手疊石／架橫樑／綁藤索，取代落石節點原本的「花資源硬清」單鍵答題。
-  // building 只存本次已放的材料數（資源在放置當下就從 game.res 扣，不設暫存/退還——跟遊戲其他機制一致：
-  // 資源花下去就是花下去了，就算這次沒測過關，也不退回）。
-  const [building, setBuilding] = useState<BuildMaterials | null>(null);
-  // v6（ORDER-040）：畫布互動工具選擇 + 過場動畫狀態（拖拉建造期間 crossing=false；
-  // 答題確認後 crossing=true，畫布播完山羌動畫才真正結算並關窗，不是答完題立刻跳結果）。
-  const [buildTool, setBuildTool] = useState<"stone" | "wood" | "rope">("stone");
-  const [crossing, setCrossing] = useState(false);
-  const buildCanvasRef = useRef<BuildCanvasHandle>(null);
-
   // ORDER-054：聽音搭板（吊橋語言優先小遊戲）——六塊板＝六個詞（ORDER-055：5→6），聽真實發音選中文意思。
   // phase：listen＝作答中；reveal＝答對短暫顯示後自動下一塊；teach＝第二次答錯的教學揭示（按鈕續行）；
   // crossing＝全部板完成的過橋短過場。planks 記每塊板是釘穩（solid）還是補強（patched，第二次錯）。
@@ -2250,7 +1750,6 @@ export default function JourneyPage() {
     showRules ||
     confirmRestart ||
     !!challenge ||
-    !!building ||
     !!bridgeListen ||
     legendCard !== null ||
     showJournal;
@@ -2322,20 +1821,6 @@ export default function JourneyPage() {
 
   // ORDER-051（引導點 4）：AP=0 且下一步就是紮營時，全頁輕微降暗、只留紮營鈕聚光（不擋彈窗與教學）
   const campDim = primary === "camp" && !anyModalOpen && coach === null;
-
-  function addMaterial(kind: keyof BuildMaterials) {
-    if (!building || game.res[kind] < 1) return false;
-    setGame((g) => ({ ...g, res: { ...g.res, [kind]: g.res[kind] - 1 } }));
-    setBuilding((b) => (b ? { ...b, [kind]: b[kind] + 1 } : b));
-    return true;
-  }
-
-  function startBuildTest() {
-    const mode = buildModeForNode(game.nodes[game.idx]);
-    if (!building || !mode || building.rope < 1 || (mode === "bridge" && building.wood < 2)) return;
-    setActionRevealed(null);
-    setPendingAction({ kind: "buildTest" });
-  }
 
   // ─────────── 聽音搭板（ORDER-054）：開始／作答／續行／中止 ───────────
 
@@ -2582,21 +2067,6 @@ export default function JourneyPage() {
     } else if (pendingAction.kind === "supply" && pendingAction.resource) {
       const resource = pendingAction.resource;
       setGame((g) => resolveSupplyChoice(g, resource, correct, vocabId));
-    } else if (pendingAction.kind === "buildTest" && building) {
-      // v6（ORDER-040）：結果已經算好了（沿用已驗證的 resolveBuildTest 規則），
-      // 但先讓畫布播山羌過橋／摔落的動畫，動畫播完才真正 setGame 結算並關窗——
-      // 讓「答完題」跟「看到結果」之間有一段有意義的動態呈現，不是答完立刻跳畫面。
-      const result = resolveBuildTest(game, building, correct, vocabId);
-      const pass = !!result.nodes[game.idx]?.cleared;
-      setPendingAction(null);
-      setActionRevealed(null);
-      setCrossing(true);
-      buildCanvasRef.current?.runCrossing(pass, () => {
-        setGame(result);
-        setCrossing(false);
-        if (pass) setBuilding(null);
-      });
-      return;
     }
     setPendingAction(null);
     setActionRevealed(null);
@@ -2623,7 +2093,6 @@ export default function JourneyPage() {
     setStoryCard(null);
     setChallenge(null);
     setChallengeRevealed(null);
-    setBuilding(null);
     setBridgeListen(null);
     setPendingAction(null);
     setActionRevealed(null);
@@ -2804,35 +2273,31 @@ export default function JourneyPage() {
                   </button>
                 )}
 
-                {/* 花資源硬清：bridge 未清時的替代方案（v3：一樣要答題，答對全額答錯半額）。
-                    obstacle（落石）改走下面的「修復路段」動手建造玩法（v5，ORDER-036）。 */}
-                {game.status === "playing" && !node.cleared && (node.type === "bridge" || node.type === "hazard") && (
-                  <button
-                    onClick={doHardClear}
-                    disabled={!canGoHardClear}
-                    className={`repair-primary-btn relative mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-black transition disabled:cursor-not-allowed ${
-                      primary === "hazard" ? "jny-spotlight" : primary !== null ? "jny-dim" : ""
-                    }`}
-                  >
-                    {primary === "hazard" && nowPill}
-                    <IconPickaxe className="w-4 h-4 shrink-0" />{" "}
-                    {node.type === "hazard" ? "花資源架遮蔽硬撐（木材×2・繩索×2）" : "花資源硬清（木材×2・繩索×2）"}
-                  </button>
-                )}
-
-                {/* 修復路段（v5／ORDER-053）：落石節點的動手拖拉建造（ORDER-054：吊橋不再走這條，改聽音搭板）。 */}
-                {game.status === "playing" && !node.cleared && node.type === "obstacle" && (
-                  <button
-                    onClick={() => setBuilding({ stone: 0, wood: 0, rope: 0 })}
-                    disabled={anyModalOpen}
-                    className={`repair-primary-btn relative mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-black transition disabled:cursor-not-allowed ${
-                      primary === "repair" ? "jny-spotlight" : primary !== null ? "jny-dim" : ""
-                    }`}
-                  >
-                    {primary === "repair" && nowPill}
-                    <IconHammer className="w-4 h-4 shrink-0" /> 修復路段（動手疊石架橋）
-                  </button>
-                )}
+                {/* 花資源硬清（ORDER-056：落石也走這條）：落石／吊橋／危害未清時的資源解——一樣要答族語題，答對全額答錯半額。
+                    落石＝石材×2、吊橋／危害＝木材×2・繩索×2。落石節點的聚光燈落在這顆鈕（primary==="repair" 且落石）。 */}
+                {game.status === "playing" &&
+                  !node.cleared &&
+                  (node.type === "bridge" || node.type === "hazard" || node.type === "obstacle") &&
+                  (() => {
+                    const hardClearSpot = primary === "hazard" || (primary === "repair" && node.type === "obstacle");
+                    return (
+                      <button
+                        onClick={doHardClear}
+                        disabled={!canGoHardClear}
+                        className={`repair-primary-btn relative mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-black transition disabled:cursor-not-allowed ${
+                          hardClearSpot ? "jny-spotlight" : primary !== null ? "jny-dim" : ""
+                        }`}
+                      >
+                        {hardClearSpot && nowPill}
+                        <IconPickaxe className="w-4 h-4 shrink-0" />{" "}
+                        {node.type === "hazard"
+                          ? "花資源架遮蔽硬撐（木材×2・繩索×2）"
+                          : node.type === "obstacle"
+                            ? "花資源硬清（石材×2）"
+                            : "花資源硬清（木材×2・繩索×2）"}
+                      </button>
+                    );
+                  })()}
 
                 {/* 聽音搭板（ORDER-054）：吊橋的語言優先小遊戲——聽真實發音、選中文意思，六塊板釘穩即過橋。
                     出「搭橋」牌與「花資源硬清」仍是替代路線（見上／手牌），照舊不動。 */}
@@ -3242,142 +2707,6 @@ export default function JourneyPage() {
         </div>
       )}
 
-      {/* 修復路段建造彈窗（v5 ORDER-036；v6 ORDER-040 換成拖拉建造畫布）：動手拖拉頁岩/橫樑/藤索，
-          取代原本「花資源硬清」的單鍵答題。building 非 null 就一直渲染（含 pendingAction/crossing 期間），
-          讓答題彈窗疊在上層、動畫播放時畫布仍可見；過關判定沿用已驗證的 resolveBuildTest。 */}
-      {building && (() => {
-        const node = game.nodes[game.idx];
-        const mode = buildModeForNode(node) ?? "rockfall";
-        const bridgeMode = mode === "bridge";
-        const score = buildScore(building, mode);
-        const tier = score >= 60 ? "safe" : score >= 35 ? "risky" : "weak";
-        const textColor = tier === "safe" ? "text-emerald-400" : tier === "risky" ? "text-amber-400" : "text-rose-400";
-        const interactive = !pendingAction && !crossing;
-        return (
-          <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/75 p-3 backdrop-blur-[6px] sm:p-6">
-            <div className="repair-modal w-full max-w-2xl px-5 py-6 sm:px-8 sm:py-7 my-4">
-              {/* 標題區（RPG 任務面板：分類小字＋大標＋說明） */}
-              <header className="relative z-[2] mb-4 text-center">
-                <p className={`${notoSansTC.className} mb-1.5 text-sm font-bold tracking-[0.08em] text-amber-300`}>
-                  {bridgeMode ? "章節試煉 · 把兩岸重新接起來" : "修復路段 · 這次，換你們重新排一次路"}
-                </p>
-                <h3 className={`${notoSerifTC.className} repair-title text-3xl font-black sm:text-4xl`}>{node.name}</h3>
-                <p className="mx-auto mt-3 max-w-xl text-left text-xs leading-relaxed text-amber-100/70 sm:text-sm">
-                  {bridgeMode
-                    ? "兩岸還隔著急流。先在溪面安好頁岩樁，再用至少兩根橫樑接住跨距，最後以藤索固定；暴風越急，橋身就越考驗你的取捨。"
-                    : "溪水沖垮了這段路。拖拉手邊的材料，把它重新接起來——頁岩固定樁可以直接點在溪面上；橫樑跟藤索則從一個節點拖到另一個節點，牽出連線。"}
-                </p>
-              </header>
-
-              {/* 結構穩定度 */}
-              <div className="relative z-[2] mb-3">
-                <div className="mb-1.5 flex items-center justify-between text-xs font-bold text-amber-100/85">
-                  <span>結構穩定度</span>
-                  <span className={`text-base ${textColor}`}>{Math.min(100, score)}%</span>
-                </div>
-                <div className="h-3 overflow-hidden rounded-full bg-slate-500/25 shadow-[inset_0_2px_5px_rgba(0,0,0,0.45)]">
-                  <div
-                    className={`repair-progress-fill h-full rounded-full transition-all ${tier === "weak" ? "opacity-70" : ""}`}
-                    style={{ width: `${Math.min(100, score)}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* 大型互動操作區：俯視溪谷實景圖（ORDER-046 素材，司令 mockup 裁切、已過複核）
-                  ＋ 透明 canvas 疊層負責拖拉建造與山羌過場（v6 ORDER-040 邏輯不變） */}
-              <div className="relative z-[2] aspect-[803/338] w-full overflow-hidden rounded-xl border border-amber-500/50 shadow-[0_24px_42px_rgba(0,0,0,0.45),inset_0_0_38px_rgba(0,0,0,0.4)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/images/journey/repair/repair-river-board.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
-                <BuildCanvas ref={buildCanvasRef} tool={buildTool} onUseMaterial={addMaterial} interactive={interactive} />
-              </div>
-
-              <p className="relative z-[2] mt-3 text-center text-xs tracking-[0.06em] text-amber-200/80">
-                {buildTool === "stone" ? "點溪面即可放置頁岩樁" : "拖曳材料至節點或兩節點之間以搭建結構"}
-                {bridgeMode && <span className="ml-2 text-amber-300/90">吊橋最低需求：橫樑×2・藤索×1</span>}
-              </p>
-
-              {/* 材料道具卡 */}
-              <div className="relative z-[2] mt-3 grid grid-cols-3 gap-2.5 sm:gap-4">
-                {(
-                  [
-                    { key: "stone" as const, name: "頁岩樁", word: "btunux", img: "/images/journey/repair/material-slate-pile.jpg", left: game.res.stone },
-                    { key: "wood" as const, name: "橫樑", word: "qhuni", img: "/images/journey/repair/material-wood-beam.jpg", left: game.res.wood },
-                    { key: "rope" as const, name: "藤索", word: "gasil", img: "/images/journey/repair/material-vine-rope.jpg", left: game.res.rope },
-                  ]
-                ).map((m) => (
-                  <button
-                    key={m.key}
-                    onClick={() => setBuildTool(m.key)}
-                    disabled={m.left < 1}
-                    className={`material-card rounded-2xl px-2 py-3 text-center disabled:opacity-35 sm:px-4 sm:py-4 ${
-                      buildTool === m.key ? "selected" : ""
-                    }`}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={m.img}
-                      alt=""
-                      className="mx-auto mb-1.5 h-12 w-12 rounded-lg object-cover drop-shadow-[0_10px_12px_rgba(0,0,0,0.45)] sm:h-16 sm:w-16"
-                    />
-                    <span className={`${notoSerifTC.className} block text-sm font-black tracking-[0.08em] text-amber-50 sm:text-lg`}>
-                      {m.name}
-                    </span>
-                    <span className="mt-0.5 block text-[11px] text-sky-200/70 sm:text-sm">{m.word}</span>
-                    <span className="mt-1 block text-[11px] text-amber-200/90 sm:text-sm">
-                      剩餘 <b>{m.left}</b>
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              {/* 說明框 */}
-              <div className="relative z-[2] mt-4 rounded-xl border border-teal-700/25 bg-teal-950/40 px-4 py-3 text-xs leading-relaxed text-amber-100/75">
-                <p>◈ 點溪面即可放置頁岩樁。</p>
-                <p className="mt-1">
-                  ◈{" "}
-                  {bridgeMode
-                    ? "吊橋工法：至少兩根橫樑承住跨距，再用藤索固定；石樁越多不一定越穩，留出水路才是關鍵。"
-                    : building.wood === 0
-                    ? "純疊石工法：省下橫樑木材，測試通過後有額外行動點獎勵。"
-                    : "架橫樑能更快墊高穩定度，但這次用了木材，沒有省料獎勵。"}
-                </p>
-                {building.stone > 8 && (
-                  <p className="mt-1 inline-flex items-center gap-1 text-rose-300">
-                    <IconAlert className="w-3 h-3 shrink-0" /> 石頭堆太密，可能擋住水路，測試時有風險——大自然的路，要留給水走。
-                  </p>
-                )}
-              </div>
-
-              {/* 底部操作 */}
-              <footer className="relative z-[2] mt-5 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <button
-                  onClick={() => setBuilding(null)}
-                  disabled={!interactive}
-                  className="repair-secondary-btn rounded-xl px-8 py-3 text-sm font-bold tracking-[0.08em] disabled:opacity-40"
-                >
-                  ✦ 先不修了
-                </button>
-                <div className="text-left sm:text-right">
-                  {building.rope < 1 && (
-                    <p className="mb-1.5 text-xs font-bold text-rose-400">還沒綁緊固定，至少要用 1 個藤索。</p>
-                  )}
-                  {bridgeMode && building.wood < 2 && (
-                    <p className="mb-1.5 text-xs font-bold text-rose-400">吊橋跨距還沒接住，至少要用 2 根橫樑。</p>
-                  )}
-                  <button
-                    onClick={startBuildTest}
-                    disabled={building.rope < 1 || (bridgeMode && building.wood < 2) || !interactive}
-                    className="repair-primary-btn inline-flex w-full items-center justify-center gap-2 rounded-xl px-10 py-3 text-sm font-black tracking-[0.08em] sm:w-auto"
-                  >
-                    <IconFootprint className="w-4 h-4 shrink-0" /> 測試通行
-                  </button>
-                </div>
-              </footer>
-            </div>
-          </div>
-        );
-      })()}
-
       {/* 聽音搭板彈窗（ORDER-054）：吊橋語言優先小遊戲——上方 SVG 橋跨隨進度補板，
           下方聽真實發音選中文意思（既有題型的反向）。錯了先教再走：第一次錯給族語書寫提示＋壓力+1，
           第二次錯教學揭示正解、板子補強照釘。全部板完成後播過橋短過場才真正結算。 */}
@@ -3572,7 +2901,6 @@ export default function JourneyPage() {
                 {pendingAction.kind === "hardClear" && "花資源硬清 — 答對則全額生效"}
                 {pendingAction.kind === "eventCareful" && "謹慎探勘 — 答對則全額生效"}
                 {pendingAction.kind === "supply" && `補給（${RES_NAME[pendingAction.resource as Resource]}）— 答對則全額生效`}
-                {pendingAction.kind === "buildTest" && "測試通行前，先答一題（答對：隊伍信心加成，結構穩定度 +15）"}
               </div>
               <h3 className={`${notoSerifTC.className} repair-title text-lg font-black mb-1`}>{actionQuiz.prompt}</h3>
               <p className="text-[10px] text-amber-300/70 mb-3">{actionQuiz.note}</p>
@@ -3605,13 +2933,7 @@ export default function JourneyPage() {
                       ) : (
                         <IconCross className="w-3.5 h-3.5 shrink-0 text-rose-400" />
                       )}
-                      {pendingAction.kind === "buildTest"
-                        ? actionRevealed === actionQuiz.answer
-                          ? "答對！穩定度 +15。"
-                          : "答錯，沒有加成。"
-                        : actionRevealed === actionQuiz.answer
-                          ? "答對！全額生效。"
-                          : "答錯，半額生效。"}
+                      {actionRevealed === actionQuiz.answer ? "答對！全額生效。" : "答錯，半額生效。"}
                     </p>
                     <button
                       onClick={() => playAudio(actionQuiz.audioId)}
@@ -3625,13 +2947,7 @@ export default function JourneyPage() {
                     onClick={confirmActionAnswer}
                     className="repair-primary-btn flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-black"
                   >
-                    {pendingAction.kind === "buildTest" ? (
-                      <>
-                        <IconFootprint className="w-3.5 h-3.5 shrink-0" /> 測試通行
-                      </>
-                    ) : (
-                      "繼續 ▶"
-                    )}
+                    繼續 ▶
                   </button>
                 </div>
               )}
@@ -3723,7 +3039,7 @@ export default function JourneyPage() {
               <li>▶ 路段清除後，隨時可點常駐的<b>「前進」</b>（花 1 行動點）走到下一段，不需要特定卡牌。</li>
               <li className="flex gap-2">
                 <IconHammer className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
-                <span>落石路段是<b>動手建造</b>：點「修復路段」，用頁岩／橫樑／藤索疊出穩定度（至少要 1 藤索才能測試），或直接打「搬石」／「共同搬運」牌快速清除。純疊石不用木材完工有額外行動點獎勵。</span>
+                <span>落石路段：打<b>「搬石」／「共同搬運」</b>牌快速清除，或花<b>資源硬清</b>（石材×2，一樣要答族語題，答對全額、答錯半額）。</span>
               </li>
               <li className="flex gap-2">
                 <IconSpeaker className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
