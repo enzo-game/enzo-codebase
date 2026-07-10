@@ -974,11 +974,13 @@ type BuildMaterials = { stone: number; wood: number; rope: number };
 
 // ORDER-053：把落石與吊橋拆成兩種工法。玩家不是只在堆同一種分數，
 // 而是要看眼前的山況決定「穩住路基」或「把兩岸接回來」。
+// ORDER-054：司令實測回饋吊橋的拖拉建造「不太OK」——吊橋改走語言優先的「聽音搭板」
+// 小遊戲（見 resolveBridgeListen 與 BridgeListen 狀態），拖拉建造只保留給落石節點。
+// buildScore／resolveBuildTest 的 bridge 分支暫留（規則已驗證，未來若回頭用得上）。
 type BuildMode = "rockfall" | "bridge";
 
 function buildModeForNode(node: PathNode | undefined): BuildMode | null {
   if (node?.type === "obstacle") return "rockfall";
-  if (node?.type === "bridge") return "bridge";
   return null;
 }
 
@@ -1039,6 +1041,43 @@ function resolveBuildTest(g: JGame, b: BuildMaterials, quizCorrect: boolean, voc
     ng.log = pushLog(ng.log, `✕ 結構還不夠穩，山羌走到一半又跳了回來，得再加固一次。`, "info");
   }
   return settle(applyStreakBonus(ng));
+}
+
+// ───────────────────────── 聽音搭板（ORDER-054：吊橋語言優先小遊戲）─────────────────────────
+// 司令回饋 ORDER-053 的吊橋拖拉建造「不太OK」——改成語言優先：過斷橋＝釘回五塊板，
+// 每塊板＝一個族語詞，先聽真實發音再選中文意思（既有題型的反向）。錯了先教再走：
+// 第一次錯給提示（揭示族語書寫、壓力 +1）、第二次錯直接教正解，板子照樣補上（補強樣式）。
+// 中性框架：隊伍邊過橋邊喊出聽到的詞，不掛任何信仰概念。
+const BRIDGE_PLANKS = 5;
+
+// 聽音搭板的選項：正解的中文意思 + 3 個干擾詞的中文意思（distractors 已保證中文不重複）
+function bridgeListenOptions(vocabId: string): { chinese: string; correct: boolean }[] {
+  const ans = vocab(vocabId);
+  return shuffle([
+    { chinese: ans.chinese, correct: true },
+    ...distractors(vocabId, 3).map((d) => ({ chinese: d.chinese, correct: false })),
+  ]);
+}
+
+// 五塊板全部釘完後的純結算（比照其他 reducer：複製狀態→清節點→記錄→settle）。
+// results 每塊板一筆，correct＝是否「第一次就聽對」；一次聽懂 ≥4 詞給壓力 -1 的加成。
+function resolveBridgeListen(g: JGame, results: { vocabId: string; correct: boolean }[]): JGame {
+  const node = g.nodes[g.idx];
+  if (g.status !== "playing" || !node || node.type !== "bridge" || node.cleared) return g;
+  const ng: JGame = { ...g, nodes: g.nodes.map((n) => ({ ...n })) };
+  ng.wordLog = [...ng.wordLog, ...results];
+  const correctCount = results.filter((r) => r.correct).length;
+  ng.correct += correctCount;
+  ng.wrong += results.length - correctCount;
+  const n2 = ng.nodes[ng.idx];
+  n2.obstacle = 0;
+  n2.cleared = true;
+  ng.log = pushLog(ng.log, "✓ 聽音搭板：五塊板都釘穩了，隊伍踏著自己念出來的路過了橋。", "good");
+  if (correctCount >= 4) {
+    ng.pressure = Math.max(0, ng.pressure - 1);
+    ng.log = pushLog(ng.log, `一次就聽懂 ${correctCount}/${results.length} 個詞——腳步跟發音一樣穩，壓力 -1！`, "good");
+  }
+  return settle(ng);
 }
 
 // ───────────────────────── 出牌結算 ─────────────────────────
@@ -1375,24 +1414,35 @@ function stepHint(g: JGame): { situation: string; todo: string } {
   const apNote = g.ap <= 0 ? "　行動點用完了——按「紮營」收束今日，換日補滿行動點。" : "";
   let s: { situation: string; todo: string };
   switch (n.type) {
-    case "obstacle":
-    case "bridge": {
-      const label = n.type === "obstacle" ? `落石擋道（剩 ${n.obstacle} 點）` : "峽谷吊橋斷裂";
+    case "obstacle": {
       if (n.cleared) {
-        s = { situation: n.type === "obstacle" ? "落石已清除" : "吊橋已完成", todo: "按「前進」，繼續上路（行動點 -1）。" };
+        s = { situation: "落石已清除", todo: "按「前進」，繼續上路（行動點 -1）。" };
       } else {
         const hasCard = g.hand.some((c) => neededEffects(n).includes(c.effect));
-        const canHard = n.type === "obstacle" ? g.res.rope >= 1 : canHardClear(g);
+        const canHard = g.res.rope >= 1;
         s = {
-          situation: label,
+          situation: `落石擋道（剩 ${n.obstacle} 點）`,
           todo:
             !hasCard && !canHard
-              ? n.type === "obstacle"
-                ? "先按「紮營」換日重抽手牌、囤資源——手上沒有可用行動牌，繩索也不夠（修復路段至少要 1 繩索）。"
-                : "先按「紮營」換日重抽手牌、囤資源——手上沒有可用行動牌，資源也不夠硬清。"
-              : n.type === "obstacle"
-                ? "把落石清掉——出「搬石」／「共同搬運」牌快速清，或點「修復路段」動手疊石架橋（可省木材，答題只是加成不是唯一內容）。"
-                : "把橋接起來——出「搭橋」／「共同搬運」牌、點「搭建吊橋」動手接兩岸，或花資源硬清（木材×2・繩索×2）；每條路都會留下不同代價。",
+              ? "先按「紮營」換日重抽手牌、囤資源——手上沒有可用行動牌，繩索也不夠（修復路段至少要 1 繩索）。"
+              : "把落石清掉——出「搬石」／「共同搬運」牌快速清，或點「修復路段」動手疊石架橋（可省木材，答題只是加成不是唯一內容）。",
+        };
+      }
+      break;
+    }
+    case "bridge": {
+      // ORDER-054：吊橋主打「聽音搭板」語言小遊戲，出牌／硬清仍是替代路線
+      if (n.cleared) {
+        s = { situation: "吊橋已完成", todo: "按「前進」，繼續上路（行動點 -1）。" };
+      } else {
+        const hasCard = g.hand.some((c) => neededEffects(n).includes(c.effect));
+        const canListen = g.res.wood >= 1 && g.res.rope >= 1;
+        s = {
+          situation: "峽谷吊橋斷裂",
+          todo:
+            !hasCard && !canListen && !canHardClear(g)
+              ? "先按「紮營」換日重抽手牌、囤資源——手上沒有可用行動牌，木材／繩索也不夠搭板（聽音搭板要木材1・繩索1）。"
+              : "聽音搭板，一塊一塊把橋接回來——點「聽音搭板（族語過橋）」（耗木材1・繩索1），聽發音選出意思，釘穩五塊板；也可出「搭橋」／「共同搬運」牌，或花資源硬清（木材×2・繩索×2）。",
         };
       }
       break;
@@ -2004,6 +2054,22 @@ export default function JourneyPage() {
   const [buildTool, setBuildTool] = useState<"stone" | "wood" | "rope">("stone");
   const [crossing, setCrossing] = useState(false);
   const buildCanvasRef = useRef<BuildCanvasHandle>(null);
+
+  // ORDER-054：聽音搭板（吊橋語言優先小遊戲）——五塊板＝五個詞，聽真實發音選中文意思。
+  // phase：listen＝作答中；reveal＝答對短暫顯示後自動下一塊；teach＝第二次答錯的教學揭示（按鈕續行）；
+  // crossing＝五塊板完成的過橋短過場。planks 記每塊板是釘穩（solid）還是補強（patched，第二次錯）。
+  type BridgeListen = {
+    ids: string[];
+    idx: number;
+    options: { chinese: string; correct: boolean }[];
+    misses: number;
+    wrongPicks: number[];
+    planks: ("solid" | "patched")[];
+    results: { vocabId: string; correct: boolean }[];
+    phase: "listen" | "reveal" | "teach" | "crossing";
+    revealPick: number | null;
+  };
+  const [bridgeListen, setBridgeListen] = useState<BridgeListen | null>(null);
   const anyModalOpen =
     !!pending ||
     !!pendingAction ||
@@ -2012,7 +2078,8 @@ export default function JourneyPage() {
     showRules ||
     confirmRestart ||
     !!challenge ||
-    !!building;
+    !!building ||
+    !!bridgeListen;
 
   // ORDER-051（引導點 1）：行動聚光燈——唯一的「現在該按的鈕」
   const primary = primaryAction(game);
@@ -2095,6 +2162,125 @@ export default function JourneyPage() {
     setActionRevealed(null);
     setPendingAction({ kind: "buildTest" });
   }
+
+  // ─────────── 聽音搭板（ORDER-054）：開始／作答／續行／中止 ───────────
+
+  const canStartBridgeListen = game.res.wood >= 1 && game.res.rope >= 1;
+
+  function startBridgeListen() {
+    const node = game.nodes[game.idx];
+    if (game.status !== "playing" || anyModalOpen || !node || node.type !== "bridge" || node.cleared) return;
+    if (!canStartBridgeListen) return; // 按鈕已 disabled，面板另有資源不足提示
+    // 開始即扣料（木材1・繩索1）——與遊戲其他機制一致：花下去就是花下去了，中途離開不退
+    setGame((g) => ({
+      ...g,
+      res: { ...g.res, wood: g.res.wood - 1, rope: g.res.rope - 1 },
+      log: pushLog(g.log, "聽音搭板開始：耗木材 1・繩索 1。聽準每個詞，把五塊板釘回去。", "sys"),
+    }));
+    // 從完整已驗證詞庫抽 5 個不重複的詞
+    const ids = new Set<string>();
+    while (ids.size < Math.min(BRIDGE_PLANKS, VOCAB.length)) ids.add(randomVocabId());
+    const list = [...ids];
+    setBridgeListen({
+      ids: list,
+      idx: 0,
+      options: bridgeListenOptions(list[0]),
+      misses: 0,
+      wrongPicks: [],
+      planks: [],
+      results: [],
+      phase: "listen",
+      revealPick: null,
+    });
+  }
+
+  function answerBridgeListen(i: number) {
+    if (!bridgeListen || bridgeListen.phase !== "listen" || bridgeListen.wrongPicks.includes(i)) return;
+    const bl = bridgeListen;
+    const vocabId = bl.ids[bl.idx];
+    if (bl.options[i].correct) {
+      sfxCorrect();
+      setBridgeListen({
+        ...bl,
+        planks: [...bl.planks, "solid"],
+        results: [...bl.results, { vocabId, correct: bl.misses === 0 }],
+        phase: "reveal",
+        revealPick: i,
+      });
+    } else {
+      sfxWrong();
+      if (bl.misses === 0) {
+        // 第一次錯：壓力 +1，揭示族語書寫當提示、重播發音，讓玩家在剩下的選項裡再選
+        setGame((g) => settle({ ...g, pressure: Math.min(g.maxPressure, g.pressure + 1) }));
+        setBridgeListen({ ...bl, misses: 1, wrongPicks: [...bl.wrongPicks, i] });
+        setTimeout(() => playAudio(vocabId), 350);
+      } else {
+        // 第二次錯：教學揭示正解（詞＋中文），板子照樣補上（補強樣式），不懲罰迴圈
+        setBridgeListen({
+          ...bl,
+          planks: [...bl.planks, "patched"],
+          results: [...bl.results, { vocabId, correct: false }],
+          phase: "teach",
+          wrongPicks: [...bl.wrongPicks, i],
+          revealPick: i,
+        });
+      }
+    }
+  }
+
+  function nextBridgePlank() {
+    setBridgeListen((bl) => {
+      if (!bl || (bl.phase !== "reveal" && bl.phase !== "teach")) return bl;
+      if (bl.idx + 1 >= bl.ids.length) return { ...bl, phase: "crossing" };
+      const nextId = bl.ids[bl.idx + 1];
+      return {
+        ...bl,
+        idx: bl.idx + 1,
+        options: bridgeListenOptions(nextId),
+        misses: 0,
+        wrongPicks: [],
+        phase: "listen",
+        revealPick: null,
+      };
+    });
+  }
+
+  function abortBridgeListen() {
+    if (!bridgeListen || bridgeListen.phase === "crossing") return;
+    setBridgeListen(null);
+    setGame((g) => settle({ ...g, log: pushLog(g.log, "先不搭了：材料已耗在橋頭，搭板進度得重來。", "info") }));
+  }
+
+  // 每塊板的題目開始時自動播一次發音（延遲約 300ms，避免跟開窗動畫打架）
+  const blRunKey = bridgeListen ? bridgeListen.ids.join(",") : null;
+  const blIdx = bridgeListen ? bridgeListen.idx : -1;
+  useEffect(() => {
+    if (!blRunKey || blIdx < 0) return;
+    const id = blRunKey.split(",")[blIdx];
+    const t = setTimeout(() => playAudio(id), 300);
+    return () => clearTimeout(t);
+  }, [blRunKey, blIdx]);
+
+  // 答對的短暫揭示後自動進下一塊板（教學揭示 teach 則等玩家自己按）
+  const blPhase = bridgeListen?.phase ?? null;
+  useEffect(() => {
+    if (blPhase !== "reveal") return;
+    const t = setTimeout(() => nextBridgePlank(), 900);
+    return () => clearTimeout(t);
+  }, [blPhase, blIdx]);
+
+  // 過橋短過場：隊伍標記滑過橋面（CSS 動畫），播抵達音效，結束後才真正結算清節點
+  useEffect(() => {
+    if (blPhase !== "crossing" || !bridgeListen) return;
+    sfxArrive();
+    const results = bridgeListen.results;
+    const t = setTimeout(() => {
+      setGame((g) => resolveBridgeListen(g, results));
+      setBridgeListen(null);
+    }, 1700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blPhase]);
 
   function startNodeTrial() {
     const node = game.nodes[game.idx];
@@ -2262,6 +2448,7 @@ export default function JourneyPage() {
     setChallenge(null);
     setChallengeRevealed(null);
     setBuilding(null);
+    setBridgeListen(null);
     setPendingAction(null);
     setActionRevealed(null);
   }
@@ -2444,8 +2631,8 @@ export default function JourneyPage() {
                   </button>
                 )}
 
-                {/* 修復路段（v5／ORDER-053）：落石與吊橋共用動手建造，但工法目標不同。 */}
-                {game.status === "playing" && !node.cleared && (node.type === "obstacle" || node.type === "bridge") && (
+                {/* 修復路段（v5／ORDER-053）：落石節點的動手拖拉建造（ORDER-054：吊橋不再走這條，改聽音搭板）。 */}
+                {game.status === "playing" && !node.cleared && node.type === "obstacle" && (
                   <button
                     onClick={() => setBuilding({ stone: 0, wood: 0, rope: 0 })}
                     disabled={anyModalOpen}
@@ -2454,8 +2641,30 @@ export default function JourneyPage() {
                     }`}
                   >
                     {primary === "repair" && nowPill}
-                    <IconHammer className="w-4 h-4 shrink-0" /> {node.type === "bridge" ? "搭建吊橋（動手接回兩岸）" : "修復路段（動手疊石架橋）"}
+                    <IconHammer className="w-4 h-4 shrink-0" /> 修復路段（動手疊石架橋）
                   </button>
+                )}
+
+                {/* 聽音搭板（ORDER-054）：吊橋的語言優先小遊戲——聽真實發音、選中文意思，五塊板釘穩即過橋。
+                    出「搭橋」牌與「花資源硬清」仍是替代路線（見上／手牌），照舊不動。 */}
+                {game.status === "playing" && !node.cleared && node.type === "bridge" && (
+                  <>
+                    <button
+                      onClick={startBridgeListen}
+                      disabled={anyModalOpen || !canStartBridgeListen}
+                      className={`repair-primary-btn relative mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                        primary === "repair" ? "jny-spotlight" : primary !== null ? "jny-dim" : ""
+                      }`}
+                    >
+                      {primary === "repair" && nowPill}
+                      <IconSpeaker className="w-4 h-4 shrink-0" /> 聽音搭板（族語過橋・耗木材1・繩索1）
+                    </button>
+                    {!canStartBridgeListen && (
+                      <p className="mt-1.5 text-[11px] leading-snug text-rose-300">
+                        木材或繩索不足（各需 1）——先紮營囤料，或出「搭橋」／「共同搬運」牌、花資源硬清過橋。
+                      </p>
+                    )}
+                  </>
                 )}
 
                 {/* 林間捷徑選擇（事件節點是「二選一」——兩顆都是當前該按的選項，一起聚光） */}
@@ -2974,6 +3183,190 @@ export default function JourneyPage() {
         );
       })()}
 
+      {/* 聽音搭板彈窗（ORDER-054）：吊橋語言優先小遊戲——上方 SVG 橋跨隨進度補板，
+          下方聽真實發音選中文意思（既有題型的反向）。錯了先教再走：第一次錯給族語書寫提示＋壓力+1，
+          第二次錯教學揭示正解、板子補強照釘。五塊板完成後播過橋短過場才真正結算。 */}
+      {bridgeListen && (() => {
+        const bl = bridgeListen;
+        const node = game.nodes[game.idx];
+        const entry = vocab(bl.ids[Math.min(bl.idx, bl.ids.length - 1)]);
+        const crossingNow = bl.phase === "crossing";
+        // 五個板位沿走道垂弧分佈（純示意幾何，非物理）
+        const slots: { x: number; y: number; rot: number }[] = [
+          { x: 85, y: 80.5, rot: -7 },
+          { x: 127, y: 84, rot: -3.5 },
+          { x: 170, y: 85, rot: 0 },
+          { x: 213, y: 84, rot: 3.5 },
+          { x: 255, y: 80.5, rot: 7 },
+        ];
+        const upperY = [50, 52.5, 53.5, 52.5, 50];
+        return (
+          <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/75 p-3 backdrop-blur-[6px] sm:p-6">
+            <div className="repair-modal w-full max-w-md px-5 py-6 my-4 sm:px-7">
+              <header className="relative z-[2] mb-3 text-center">
+                <p className={`${notoSansTC.className} mb-1 text-sm font-bold tracking-[0.08em] text-amber-300`}>
+                  聽音搭板 · 族語過橋
+                </p>
+                <h3 className={`${notoSerifTC.className} repair-title text-2xl font-black sm:text-3xl`}>{node.name}</h3>
+                <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-amber-100/70">
+                  隊伍一邊釘板一邊喊出聽到的詞——聽準一個詞，就釘穩一塊板。
+                </p>
+              </header>
+
+              {/* 橋跨示意圖：兩岸＋雙索＋五個板位，釘上的板以 build-pop 彈入；補強板歪斜示意 */}
+              <div className="relative z-[2] overflow-hidden rounded-xl border border-amber-500/40 bg-[#050d14]/80">
+                <svg viewBox="0 0 340 130" className="block h-auto w-full" aria-hidden>
+                  {/* 兩岸 */}
+                  <path d="M0 40 L44 44 L40 130 L0 130 Z" fill="#243244" stroke="#3b4d63" strokeWidth="1.5" />
+                  <path d="M340 40 L296 44 L300 130 L340 130 Z" fill="#243244" stroke="#3b4d63" strokeWidth="1.5" />
+                  {/* 溪谷水面 */}
+                  <path d="M40 130 L42 112 Q170 122 298 112 L300 130 Z" fill="#0c2233" opacity="0.9" />
+                  {/* 上扶手索與走道索 */}
+                  <path d="M44 46 Q170 62 296 46" fill="none" stroke="#a3a3a3" strokeWidth="2" strokeDasharray="4 3" />
+                  <path d="M44 74 Q170 96 296 74" fill="none" stroke="#a3a3a3" strokeWidth="2.5" />
+                  {/* 吊索（板位對應的垂直細索） */}
+                  {slots.map((s, i) => (
+                    <line key={`h${i}`} x1={s.x} y1={upperY[i]} x2={s.x} y2={s.y - 5} stroke="#8b8b8b" strokeWidth="1" />
+                  ))}
+                  {/* 板位：未釘＝虛線框；釘穩＝金木色實板；補強＝歪斜暗色板 */}
+                  {slots.map((s, i) => {
+                    const placed = bl.planks[i];
+                    if (!placed) {
+                      return (
+                        <rect
+                          key={`s${i}`}
+                          x={s.x - 15}
+                          y={s.y - 4.5}
+                          width="30"
+                          height="9"
+                          rx="2"
+                          fill="none"
+                          stroke="#7a6134"
+                          strokeWidth="1.2"
+                          strokeDasharray="3 3"
+                          transform={`rotate(${s.rot} ${s.x} ${s.y})`}
+                        />
+                      );
+                    }
+                    const patched = placed === "patched";
+                    return (
+                      <g key={`s${i}`} transform={`rotate(${s.rot + (patched ? 9 : 0)} ${s.x} ${s.y})`}>
+                        <rect
+                          className="build-pop"
+                          x={s.x - 15}
+                          y={s.y - 4.5}
+                          width="30"
+                          height="9"
+                          rx="2"
+                          fill={patched ? "#7c5a1f" : "#b45309"}
+                          stroke={patched ? "#facc15" : "#78350f"}
+                          strokeWidth="1.5"
+                          strokeDasharray={patched ? "4 2" : undefined}
+                        />
+                      </g>
+                    );
+                  })}
+                </svg>
+                {/* 過橋短過場：隊伍標記從左岸滑到右岸（CSS 動畫，見 .bl-cross-token） */}
+                {crossingNow && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src="/images/journey/token-team-v1.png"
+                    width={40}
+                    height={40}
+                    alt="隊伍過橋"
+                    className="bl-cross-token absolute top-[34%] drop-shadow-lg"
+                  />
+                )}
+              </div>
+
+              {crossingNow ? (
+                <p className="relative z-[2] mt-4 text-center text-sm font-bold text-emerald-300">
+                  五塊板都釘穩了——隊伍踏著自己念出來的路過橋……
+                </p>
+              ) : (
+                <>
+                  <div className="relative z-[2] mt-3 flex items-center justify-between">
+                    <span className={`${notoSerifTC.className} text-base font-bold text-amber-50`}>
+                      第 {Math.min(bl.idx + 1, BRIDGE_PLANKS)}/{BRIDGE_PLANKS} 塊板
+                    </span>
+                    <span className="text-[10px] text-amber-300/70">聽發音，選出它的中文意思</span>
+                  </div>
+                  <div className="relative z-[2] mt-2 flex justify-center">
+                    <button
+                      onClick={() => playAudio(bl.ids[bl.idx])}
+                      className="repair-secondary-btn flex items-center gap-2 rounded-xl px-8 py-3 text-sm font-bold tracking-[0.06em]"
+                      title="重播這個詞的發音（原住民族語E樂園）"
+                    >
+                      <IconSpeaker className="w-6 h-6 shrink-0" /> 再聽一次
+                    </button>
+                  </div>
+                  {bl.phase === "listen" && bl.misses > 0 && (
+                    <p className="relative z-[2] mt-2 rounded-lg border border-rose-500/30 bg-rose-950/40 px-3 py-2 text-xs leading-relaxed text-rose-200">
+                      ✕ 還差一點——這個音寫作「<b className="text-amber-200">{entry.word}</b>」（壓力 +1）。再聽一次，在剩下的選項裡選出它的意思。
+                    </p>
+                  )}
+                  <div className="relative z-[2] mt-3 grid gap-2">
+                    {bl.options.map((opt, idx) => {
+                      let cls = "border-amber-500/25 bg-[#0b1722]/90 hover:border-amber-400/60 hover:bg-[#132435]";
+                      if (bl.phase !== "listen") {
+                        if (opt.correct) cls = "border-emerald-400/70 bg-emerald-800/80";
+                        else if (idx === bl.revealPick || bl.wrongPicks.includes(idx)) cls = "border-rose-400/70 bg-rose-800/80";
+                        else cls = "border-amber-500/15 bg-[#0b1722]/90 opacity-50";
+                      } else if (bl.wrongPicks.includes(idx)) {
+                        cls = "border-rose-400/60 bg-rose-900/60 opacity-60 cursor-not-allowed";
+                      }
+                      return (
+                        <button
+                          key={idx}
+                          disabled={bl.phase !== "listen" || bl.wrongPicks.includes(idx)}
+                          onClick={() => answerBridgeListen(idx)}
+                          className={`rounded-lg border px-4 py-2 text-left text-amber-50 transition ${cls}`}
+                        >
+                          {String.fromCharCode(65 + idx)}. {opt.chinese}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {bl.phase === "reveal" && (
+                    <p className="relative z-[2] mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-emerald-300">
+                      <IconCheck className="w-4 h-4 shrink-0" /> 釘穩了！「{entry.word}」＝「{entry.chinese}」。
+                    </p>
+                  )}
+                  {bl.phase === "teach" && (
+                    <div className="relative z-[2] mt-3 rounded-lg border border-amber-500/35 bg-amber-950/40 px-3 py-2.5">
+                      <p className="text-xs leading-relaxed text-amber-100/90">
+                        記下來：這個音是「<b className="text-amber-200">{entry.word}</b>」，意思是「
+                        <b className="text-emerald-300">{entry.chinese}</b>」。這塊板先補強釘上，路照樣走。
+                      </p>
+                      <div className="mt-2 text-right">
+                        <button
+                          onClick={nextBridgePlank}
+                          className="repair-primary-btn rounded-lg px-5 py-1.5 text-xs font-black"
+                        >
+                          {bl.idx + 1 >= BRIDGE_PLANKS ? "踏上橋 ▶" : "下一塊 ▶"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <footer className="relative z-[2] mt-4 flex items-center justify-between gap-2">
+                    <button
+                      onClick={abortBridgeListen}
+                      className="repair-secondary-btn rounded-xl px-5 py-2 text-xs font-bold"
+                    >
+                      ✦ 先不搭了
+                    </button>
+                    <span className="text-right text-[10px] leading-snug text-amber-100/45">
+                      中途離開：材料不退，搭板進度重來。
+                    </span>
+                  </footer>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* 族語答題彈窗（v3，ORDER-031）：硬清／謹慎探勘／補給共用，答對全額、答錯半額 */}
       {pendingAction && actionQuiz && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-[4px] flex items-center justify-center p-4 z-50">
@@ -3136,7 +3529,10 @@ export default function JourneyPage() {
                 <IconHammer className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
                 <span>落石路段是<b>動手建造</b>：點「修復路段」，用頁岩／橫樑／藤索疊出穩定度（至少要 1 藤索才能測試），或直接打「搬石」／「共同搬運」牌快速清除。純疊石不用木材完工有額外行動點獎勵。</span>
               </li>
-              <li>吊橋可以打行動／協作牌清除，也可以花<b>雙倍資源「硬清」</b>——都要先答族語題，答對全額答錯半額，硬清只是省行動點、不是省答題。</li>
+              <li className="flex gap-2">
+                <IconSpeaker className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                <span>吊橋主打<b>「聽音搭板」</b>：耗木材1・繩索1，聽五個族語真實發音、選出中文意思，聽準一個詞就釘穩一塊板。答錯先給族語書寫提示（壓力 +1）再選一次；再錯會直接教你正解，板子補強照釘、不卡關。也可打「搭橋」／「共同搬運」牌，或花<b>雙倍資源「硬清」</b>（一樣要答族語題）。</span>
+              </li>
               <li className="flex gap-2">
                 <IconQuestion className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
                 <span>林間捷徑是<b>真選擇</b>：「快速通過」不用答題但壓力 +4，且兩個路段後路況會回頭反噬（壓力再 +2）；「謹慎探勘」要答題換糧食。山腰營地要補哪一種資源也要先答題，答對 +3、答錯僅 +1。</span>

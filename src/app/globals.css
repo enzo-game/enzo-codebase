@@ -859,8 +859,25 @@ body {
     height 0.3s ease;
 }
 
+/* ───── 聽音搭板（/journey 吊橋語言小遊戲，ORDER-054）─────
+ * 五塊板釘穩後的過橋短過場：隊伍標記從左岸滑到右岸（純位移，不需新素材）。 */
+@keyframes blCrossSlide {
+  from {
+    left: 4%;
+  }
+  to {
+    left: 84%;
+  }
+}
+.bl-cross-token {
+  animation: blCrossSlide 1.5s ease-in-out forwards;
+}
+
 /* 尊重使用者的減少動態偏好 */
 @media (prefers-reduced-motion: reduce) {
+  .bl-cross-token {
+    animation-duration: 0.01s;
+  }
   .jny-spotlight,
   .jny-node-current {
     animation: none;
