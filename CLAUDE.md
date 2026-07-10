@@ -19,3 +19,5 @@
 - QA (`enzo-qa`) 與 Deployment (`enzo-deployment`) 負責上線前把關
 
 **分支規則**：main branch 保護，功能開發走 feature branch + PR。
+
+<!-- deploy note: 2026-07-10 Vercel missed the webhook for e6342a3 (PR #40); this commit retriggers the production build via the normal PR flow. -->
