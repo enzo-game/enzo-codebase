@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Noto_Serif_TC, Noto_Sans_TC } from "next/font/google";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { vocab, audioUrl, distractors, ATTRIBUTION, SOURCE, SOURCE_URL, VOCAB } from "@/data/truku";
 import AmbientAudio from "@/components/AmbientAudio";
 import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose, sfxStreak } from "@/lib/sfx";
@@ -22,7 +22,7 @@ const notoSansTC = Noto_Sans_TC({ weight: ["400", "500"], subsets: ["latin"], di
 // ───────────────────────── 型別 ─────────────────────────
 
 type Resource = "food" | "wood" | "stone" | "rope";
-type NodeType = "start" | "obstacle" | "bridge" | "event" | "supply" | "destination" | "hazard";
+type NodeType = "start" | "obstacle" | "bridge" | "event" | "supply" | "destination" | "hazard" | "branch" | "match";
 type CardType = "action" | "coop" | "supply" | "watch" | "weave";
 type EffectId =
   | "scout"
@@ -88,6 +88,7 @@ type JGame = {
   wrong: number;
   streak: number; // 連續答對題數（v2 核心循環重構）
   wordLog: { vocabId: string; correct: boolean }[]; // v4（ORDER-033）：逐題紀錄，供結局回顧「這次學了什麼」
+  journeyChoices: Record<string, "left" | "right">; // ORDER-057：分支節點的選擇（nodeId → 往左/往右），供後續節點跨節點呼應與勝利畫面「你走過的路」
   trialedNodes: string[]; // v7（ORDER-042）：已做過「族語試煉」的節點 id（每節點限一次）
   fastDebt: number | null; // ORDER-048（P1）：事件節點「快速通過」的延遲反噬——記下兩節點後的 idx，走到時壓力+2
   milletPlanted: number; // ORDER-055（小米接力）：本局紮營時沿路種下的小米數（僅第二關會種；入 localStorage 銀行）
@@ -308,6 +309,8 @@ const NODE_IMG: Record<NodeType, string> = {
   supply: "/images/journey/node-supply-v1.png",
   destination: "/images/journey/node-destination-v1.png",
   hazard: "/images/journey/node-event-v1.png", // ORDER-050：環境危害沿用事件節點圖（風雨警示氛圍，免新生圖）
+  branch: "/images/journey/node-event-v1.png", // ORDER-057：分支岔口沿用事件節點圖（岔路氛圍，免新生圖）
+  match: "/images/journey/node-supply-v1.png", // ORDER-057：詞彙辨識節點沿用補給節點圖
 };
 const MAP_BASE = "/images/journey/board-journey-map-base-v1.jpg";
 
@@ -320,6 +323,8 @@ const SCENE_IMG: Record<NodeType, string> = {
   supply: "/images/journey/scene/scene-camp-v1.png",
   destination: "/images/journey/scene/scene-village-v1.png",
   hazard: "/images/journey/scene/scene-forest-v1.png", // ORDER-050：風雨危害沿用林霧場景
+  branch: "/images/journey/scene/scene-forest-v1.png", // ORDER-057：分支岔口沿用林霧場景
+  match: "/images/journey/scene/scene-camp-v1.png", // ORDER-057：詞彙辨識沿用營地場景
 };
 
 // 行動籤卡面（ORDER-017）：以效果 id 對應（weaveMark 織圖無專屬卡面，維持純文字）
@@ -390,23 +395,23 @@ const CHAPTERS_L2: ChapterMeta[] = [
   {
     kicker: "壹 · 風起",
     title: "山上的風暴從不跟人商量。",
-    sub: "雲層壓得很低，稜線在霧裡忽隱忽現。趁風雨全面來襲之前，帶隊伍上稜線。",
+    sub: "雲層壓得很低，稜線在霧裡忽隱忽現。趁風雨全面來襲之前，帶隊伍上稜線——第一個岔口，就得自己選路。",
     nodeStart: 0,
     nodeEnd: 1,
   },
   {
     kicker: "貳 · 稜線",
     title: "稜線是雷雨最愛的獵場。",
-    sub: "崩坡、雷擊、亂流——環境危害不清除，就會在每個夜裡持續消耗你的隊伍。",
+    sub: "崩坡、雷擊、亂流——環境危害不清除，就會在每個夜裡持續消耗你的隊伍。當初選的那條路，也會在這裡回過頭來找你。",
     nodeStart: 2,
-    nodeEnd: 4,
+    nodeEnd: 5,
   },
   {
     kicker: "終 · 背風",
     title: "只要有一點火星，其他人的眼神就會亮起來。",
     sub: "翻過最後一段稜線，找到背風的凹地——把隊伍完整地帶下山。",
-    nodeStart: 5,
-    nodeEnd: 6,
+    nodeStart: 6,
+    nodeEnd: 7,
   },
 ];
 
@@ -450,7 +455,7 @@ const LEGEND_L2: LegendConfig = {
   ],
   closing: "長路靠接力走完——這次，換你們沿路把小米種下去。",
   intro: "老人家起頭講的，是射日的遠行：出發的人揹著孩子、沿路種下小米，把路留給後面的人——",
-  milestones: [0, 4, 6],
+  milestones: [0, 4, 7],
   img: "/images/journey/stories/scene-forest-v1.jpg",
 };
 
@@ -589,12 +594,6 @@ const HAZARD_POOL_L2: HazardProto[] = [
   },
 ];
 
-const EVENT_NODE_POOL_L2: { name: string; vocabId: string }[] = [
-  { name: "崩塌的碎石坡", vocabId: "34-16" }, // msunu 崩落
-  { name: "突至的雲霧牆", vocabId: "11-12" }, // rulung 雲
-  { name: "雷擊稜線", vocabId: "11-10" }, // bruwa 雷
-];
-
 // 第二關節點故事：文字取材自設計文件第一章的 flavorText／description（環境描述，非傳說），
 // 連接句為中性場景敘述，不新編傳說、不觸文化紅線詞。
 const NODE_STORY_L2: Record<string, string> = {
@@ -634,13 +633,17 @@ function buildNodesL1(): PathNode[] {
   ];
 }
 
-// 第二關地圖：7 節點，危害池 3 抽 2、事件池 3 抽 1（依設計文件 poolConfig 的隨機抽取精神），
-// 重玩時稜線上的危害組合不同。事件節點避開與已抽危害同 vocabId（故事卡以 vocabId 為鍵）。
+// 第二關地圖（ORDER-057 改版）：8 節點，危害池 3 抽 2（依設計文件 poolConfig 的隨機抽取精神）。
+// 新增兩個 ORDER-057 節點：
+//   m1 branch（岔口）＝分支敘事節點（往左沿溪／往右走稜線，當下不同）；
+//   m3 obstacle（崩落石堆）＝跨節點呼應節點（讀 m1 的選擇，當初走溪→漲水扣體力／走稜→強風加壓力）；
+//   m4 match（霧中辨路）＝第二關簽名題型「詞彙配對」。
+// BRANCH_NODE_ID／CALLBACK_NODE_ID 定義見下方常數。
+const BRANCH_NODE_ID = "m1";
+const CALLBACK_NODE_ID = "m3";
+
 function buildNodesL2(): PathNode[] {
   const hazards = shuffle(HAZARD_POOL_L2).slice(0, 2);
-  const usedVocab = new Set(hazards.map((h) => h.vocabId));
-  const evPool = EVENT_NODE_POOL_L2.filter((e) => !usedVocab.has(e.vocabId));
-  const ev = evPool[Math.floor(Math.random() * evPool.length)];
   const mkHazard = (i: number, h: HazardProto): PathNode => ({
     id: `m${i}`,
     name: h.name,
@@ -652,12 +655,13 @@ function buildNodesL2(): PathNode[] {
   });
   return [
     { id: "m0", name: "稜線登山口（起點）", vocabId: "10-22", type: "start", obstacle: 0, cleared: true },
-    mkHazard(1, hazards[0]),
-    { id: "m2", name: ev.name, vocabId: ev.vocabId, type: "event", obstacle: 0, cleared: false },
+    { id: "m1", name: "溪岔口", vocabId: "10-07", type: "branch", obstacle: 0, cleared: false },
+    mkHazard(2, hazards[0]),
     { id: "m3", name: "崩落的石堆", vocabId: "12-11", type: "obstacle", obstacle: 3, cleared: false },
-    mkHazard(4, hazards[1]),
-    { id: "m5", name: "背風凹地（營地）", vocabId: "11-17", type: "supply", obstacle: 0, cleared: false },
-    { id: "m6", name: "山腳背風處（目的地）", vocabId: "10-12", type: "destination", obstacle: 0, cleared: false },
+    { id: "m4", name: "霧中辨路", vocabId: "11-12", type: "match", obstacle: 0, cleared: false },
+    mkHazard(5, hazards[1]),
+    { id: "m6", name: "背風凹地（營地）", vocabId: "11-17", type: "supply", obstacle: 0, cleared: false },
+    { id: "m7", name: "山腳背風處（目的地）", vocabId: "10-12", type: "destination", obstacle: 0, cleared: false },
   ];
 }
 
@@ -741,10 +745,10 @@ const LEVELS: Record<LevelId, LevelConfig> = {
     id: "l2",
     name: "風雨的稜線",
     pickLabel: "第二關 · 風雨的稜線",
-    pickDesc: "暴風雨正面撲向稜線——環境危害不清除，每晚都會消耗隊伍。",
-    mission: "風暴壓上稜線——在第 7 日入夜前清除持續消耗隊伍的危害，帶大家下到背風處。",
-    // 7 節點、兩個多點數危害＋3 點石堆：比第一關多一天，但經濟更緊（ORDER-055：糧 3→2）
-    maxDay: 7,
+    pickDesc: "暴風雨正面撲向稜線——先在岔口選一條路，環境危害不清除，每晚都會消耗隊伍。",
+    mission: "風暴壓上稜線——在第 8 日入夜前，選好岔口的路、清除持續消耗隊伍的危害，帶大家下到背風處。",
+    // ORDER-057：8 節點（含岔口 branch＋詞彙配對 match），兩個多點數危害＋3 點石堆；比 7 節點版多一天喘息，經濟仍緊（糧 2）
+    maxDay: 8,
     startPressure: 3,
     startRes: { food: 2, wood: 2, stone: 2, rope: 2 },
     legend: LEGEND_L2,
@@ -797,6 +801,7 @@ function newGame(levelId: LevelId): JGame {
     wrong: 0,
     streak: 0,
     wordLog: [],
+    journeyChoices: {},
     trialedNodes: [],
     fastDebt: null,
     milletPlanted: 0,
@@ -905,6 +910,21 @@ function enterNode(g: JGame): JGame {
     ng.log = pushLog(ng.log, `抵達「${node.name}」：請選擇要補給的資源。`, "sys");
   } else if (node.type === "hazard") {
     ng.log = pushLog(ng.log, `環境危害「${node.name}」擋在前方（${node.obstacle} 點）：不清除，每次紮營都會付出代價。`, "bad");
+  } else if (node.type === "branch") {
+    ng.log = pushLog(ng.log, `抵達岔口「${node.name}」：往左還是往右，選一條路。`, "sys");
+  } else if (node.type === "match") {
+    ng.log = pushLog(ng.log, `抵達「${node.name}」：把眼前的族語詞和它的中文意思一一配對，全部認出來才能穿過。`, "sys");
+  }
+  // ORDER-057（跨節點呼應）：抵達指定的呼應節點時，讀回岔口的選擇，改變此處的情境與結算——
+  // 走溪邊→漲水扣體力；走稜線→強風加壓力。以醒目 log 讓「當初的選擇」被記得（story card 由 UI 層另補）。
+  if (ng.levelId === "l2" && node.id === CALLBACK_NODE_ID && ng.journeyChoices[BRANCH_NODE_ID]) {
+    if (ng.journeyChoices[BRANCH_NODE_ID] === "left") {
+      ng.teamHp = Math.max(0, ng.teamHp - 2);
+      ng.log = pushLog(ng.log, `當時你選了走溪邊，現在水漲上來了——這段路泡進溪裡，隊伍只能涉水而過，體力 -2。`, "bad");
+    } else {
+      ng.pressure = Math.min(ng.maxPressure, ng.pressure + 2);
+      ng.log = pushLog(ng.log, `當時你選了走稜線，繞來的這段最空曠——強風整夜不停，把隊伍吹得七零八落，壓力 +2。`, "bad");
+    }
   }
   return ng;
 }
@@ -1047,6 +1067,66 @@ function resolveSupplyChoice(g: JGame, resource: Resource, correct: boolean, voc
     ng.log = pushLog(ng.log, `✕ 答錯｜「${n2.name}」補給：${RES_NAME[resource]} +1。`, "info");
   }
   return settle(applyStreakBonus(ng));
+}
+
+// ───────────────────────── 分支敘事節點（ORDER-057）─────────────────────────
+// 岔口二選一，兩條路「當下不同」：
+//   往左（沿溪邊）＝路平但水在漲——經過族語題閘門（答對糧食 +2、答錯 +1），並埋下呼應（兩節點後漲水）；
+//   往右（走稜線）＝繞遠但乾——不答題的另一種節奏：多耗體力 -1、但地面乾爽壓力 -1。
+// 兩條都把選擇寫進 journeyChoices，供 CALLBACK_NODE_ID 節點跨節點呼應（見 enterNode）。
+function resolveBranchChoice(g: JGame, choice: "left" | "right", correct?: boolean, vocabId?: string): JGame {
+  const node = g.nodes[g.idx];
+  if (g.status !== "playing" || !node || node.type !== "branch" || node.cleared) return g;
+  let ng: JGame = {
+    ...g,
+    res: { ...g.res },
+    nodes: g.nodes.map((n) => ({ ...n })),
+    journeyChoices: { ...g.journeyChoices, [node.id]: choice },
+  };
+  const n2 = ng.nodes[ng.idx];
+  n2.cleared = true;
+  if (choice === "left") {
+    if (vocabId) ng.wordLog = [...ng.wordLog, { vocabId, correct: !!correct }];
+    if (correct) {
+      ng.correct += 1;
+      ng.streak += 1;
+      ng.res.food += 2;
+      ng.log = pushLog(ng.log, `✓ 答對｜往左·沿溪邊：水線還低，一路撿到漂流的枯枝與野菜，糧食 +2。`, "good");
+    } else {
+      ng.wrong += 1;
+      ng.streak = 0;
+      ng.res.food += 1;
+      ng.log = pushLog(ng.log, `✕ 答錯｜往左·沿溪邊：只勉強撿到一點，糧食 +1。`, "info");
+    }
+    ng.log = pushLog(ng.log, `你決定沿著溪邊走——路是平的，但水正在漲。（往後這條路可能會回頭找你。）`, "sys");
+    ng = applyStreakBonus(ng);
+  } else {
+    ng.teamHp = Math.max(0, ng.teamHp - 1);
+    ng.pressure = Math.max(0, ng.pressure - 1);
+    ng.log = pushLog(ng.log, `你決定改走稜線——繞遠了，隊伍多耗了些體力（-1），但地面乾爽、心也定了些（壓力 -1）。`, "sys");
+  }
+  return settle(ng);
+}
+
+// ───────────────────────── 詞彙配對（ORDER-057：第二關簽名題型）─────────────────────────
+// results 每詞一筆，correct＝該詞是否「一次配對正確」（配錯過就記 false，但仍可重試至全對）。
+// 全部配對成功即清除節點；全對再給壓力 -1 的小獎勵（比照聽音搭板不懲罰、答錯教學化）。
+function resolveWordMatch(g: JGame, results: { vocabId: string; correct: boolean }[]): JGame {
+  const node = g.nodes[g.idx];
+  if (g.status !== "playing" || !node || node.type !== "match" || node.cleared) return g;
+  const ng: JGame = { ...g, nodes: g.nodes.map((n) => ({ ...n })) };
+  ng.wordLog = [...ng.wordLog, ...results];
+  const correctCount = results.filter((r) => r.correct).length;
+  ng.correct += correctCount;
+  ng.wrong += results.length - correctCount;
+  const n2 = ng.nodes[ng.idx];
+  n2.cleared = true;
+  ng.log = pushLog(ng.log, `✓ 詞彙配對：${results.length} 個族語詞全部辨識出來了，隊伍認出路標，穿過了霧。`, "good");
+  if (correctCount === results.length) {
+    ng.pressure = Math.max(0, ng.pressure - 1);
+    ng.log = pushLog(ng.log, `一次就全部配對正確——霧裡也不慌，壓力 -1！`, "good");
+  }
+  return settle(ng);
 }
 
 // ───────────────────────── 聽音搭板（ORDER-054：吊橋語言優先小遊戲）─────────────────────────
@@ -1506,6 +1586,24 @@ function stepHint(g: JGame): { situation: string; todo: string } {
         ? { situation: `${n.name}・已通過`, todo: "按「前進」，繼續上路（行動點 -1）。" }
         : { situation: n.name, todo: "選一條路通過——按「快速通過」（壓力 +4，之後路況可能反噬）或「謹慎探勘」（耗木材/繩索各1，答對換糧食 +1）。" };
       break;
+    case "branch":
+      // ORDER-057：分支岔口——全螢幕故事卡呈現二選一，這一步只給提示（實際兩顆金鈕在卡上）
+      s = n.cleared
+        ? { situation: `${n.name}・已選定路線`, todo: "按「前進」，繼續上路（行動點 -1）。" }
+        : {
+            situation: `岔口：${n.name}`,
+            todo: "在岔口故事卡上選一條路——「往左·沿溪邊」（路平但水在漲，答族語題換糧食）或「往右·走稜線」（繞遠但乾，省心但多耗體力）。當初的選擇，後面會回頭呼應。",
+          };
+      break;
+    case "match":
+      // ORDER-057：詞彙配對——第二關簽名題型
+      s = n.cleared
+        ? { situation: `${n.name}・已辨識`, todo: "按「前進」，繼續上路（行動點 -1）。" }
+        : {
+            situation: `${n.name}・詞彙配對`,
+            todo: "把 4 個族語詞和它的中文意思一一配對起來——點「詞彙配對（族語辨識）」開始，可點喇叭聽發音；配錯會歸位重試，全部配對成功就能穿過。",
+          };
+      break;
     case "supply":
       s = n.cleared
         ? { situation: `${n.name}・已補給`, todo: "按「前進」，繼續上路（行動點 -1）。" }
@@ -1523,7 +1621,7 @@ function stepHint(g: JGame): { situation: string; todo: string } {
 // ORDER-051（引導點 1）：行動聚光燈——任何時刻只有一顆「當前該按的鈕」。
 // 判定優先序：終局→無；當前節點未清（落石/危害→花資源硬清；吊橋→聽音搭板；事件→兩選項；補給→資源選項）；
 // 已清且可前進（AP≥1）→前進；AP=0→紮營。
-type PrimaryAction = "repair" | "hazard" | "event" | "supply" | "advance" | "camp" | null;
+type PrimaryAction = "repair" | "hazard" | "event" | "supply" | "advance" | "camp" | "branch" | "match" | null;
 
 function primaryAction(g: JGame): PrimaryAction {
   if (g.status !== "playing") return null;
@@ -1531,6 +1629,8 @@ function primaryAction(g: JGame): PrimaryAction {
   if (!n) return null;
   if (!n.cleared && (n.type === "obstacle" || n.type === "bridge")) return "repair";
   if (!n.cleared && n.type === "hazard") return "hazard";
+  if (!n.cleared && n.type === "branch") return "branch";
+  if (!n.cleared && n.type === "match") return "match";
   if (!n.cleared && n.type === "event") return "event";
   if (!n.cleared && n.type === "supply") return "supply";
   if (n.cleared && g.idx < g.nodes.length - 1 && g.ap >= 1) return "advance";
@@ -1702,7 +1802,7 @@ export default function JourneyPage() {
 
   // v3（ORDER-031）：非卡牌動作的答題閘門（硬清／謹慎探勘／補給）——共用同一套隨機詞庫題型
   const [pendingAction, setPendingAction] = useState<{
-    kind: "hardClear" | "eventCareful" | "supply";
+    kind: "hardClear" | "eventCareful" | "supply" | "branchLeft";
     resource?: Resource;
   } | null>(null);
   const [actionRevealed, setActionRevealed] = useState<number | null>(null);
@@ -1742,6 +1842,38 @@ export default function JourneyPage() {
     revealPick: number | null;
   };
   const [bridgeListen, setBridgeListen] = useState<BridgeListen | null>(null);
+
+  // ORDER-057：詞彙配對小遊戲（第二關 match 節點）與跨節點呼應故事卡狀態
+  const [wordMatch, setWordMatch] = useState<{ ids: string[] } | null>(null);
+  const [callbackCard, setCallbackCard] = useState<"left" | "right" | null>(null);
+  const [callbackShown, setCallbackShown] = useState(false);
+
+  // ORDER-057（跨節點呼應）：抵達呼應節點且岔口有選擇時，補一張全螢幕故事卡把「當初的選擇」講出來
+  // （體力／壓力的實際結算已在 enterNode 完成，這張卡純敘事）。callbackShown 保證整局只彈一次；讓路給章節／故事／傳說卡。
+  const branchChoiceMade = game.journeyChoices[BRANCH_NODE_ID];
+  useEffect(() => {
+    if (!mounted || callbackShown) return;
+    if (game.nodes[game.idx]?.id !== CALLBACK_NODE_ID || !branchChoiceMade) return;
+    if (chapterCard !== null || storyCard !== null || legendCard !== null) return;
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setCallbackShown(true);
+    setCallbackCard(branchChoiceMade);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [mounted, callbackShown, game.idx, game.nodes, branchChoiceMade, chapterCard, storyCard, legendCard]);
+
+  // ORDER-057：分支岔口故事卡——抵達未選定的 branch 節點、且沒有其他前置全螢幕卡（章節／故事／傳說）
+  // 或答題彈窗蓋著時，就以全螢幕故事卡呈現二選一。純衍生狀態（不需 effect，SSR 安全）。
+  const curNode = game.nodes[game.idx];
+  const branchCardOpen =
+    game.status === "playing" &&
+    !!curNode &&
+    curNode.type === "branch" &&
+    !curNode.cleared &&
+    !pendingAction &&
+    chapterCard === null &&
+    storyCard === null &&
+    legendCard === null;
+
   const anyModalOpen =
     !!pending ||
     !!pendingAction ||
@@ -1751,6 +1883,9 @@ export default function JourneyPage() {
     confirmRestart ||
     !!challenge ||
     !!bridgeListen ||
+    !!wordMatch ||
+    branchCardOpen ||
+    callbackCard !== null ||
     legendCard !== null ||
     showJournal;
 
@@ -2043,6 +2178,33 @@ export default function JourneyPage() {
     setPendingAction({ kind: "supply", resource });
   }
 
+  // ORDER-057：分支岔口二選一。往左＝經族語題閘門（開答題彈窗）；往右＝不答題，直接結算另一種節奏。
+  function doBranchChoice(choice: "left" | "right") {
+    const node = game.nodes[game.idx];
+    if (game.status !== "playing" || !node || node.type !== "branch" || node.cleared) return;
+    if (choice === "left") {
+      setActionRevealed(null);
+      setPendingAction({ kind: "branchLeft" });
+    } else {
+      sfxPlayCard();
+      setGame((g) => resolveBranchChoice(g, "right"));
+    }
+  }
+
+  // ORDER-057：詞彙配對——從完整已驗證詞庫抽 4 個不重複的詞，開啟配對小遊戲
+  function startWordMatch() {
+    const node = game.nodes[game.idx];
+    if (game.status !== "playing" || anyModalOpen || !node || node.type !== "match" || node.cleared) return;
+    const ids = new Set<string>();
+    while (ids.size < Math.min(4, VOCAB.length)) ids.add(randomVocabId());
+    setWordMatch({ ids: [...ids] });
+  }
+
+  const finishWordMatch = useCallback((results: { vocabId: string; correct: boolean }[]) => {
+    setGame((g) => resolveWordMatch(g, results));
+    setWordMatch(null);
+  }, []);
+
   function answerAction(optIdx: number) {
     if (!pendingAction || !actionQuiz) return;
     const correct = optIdx === actionQuiz.answer;
@@ -2067,6 +2229,8 @@ export default function JourneyPage() {
     } else if (pendingAction.kind === "supply" && pendingAction.resource) {
       const resource = pendingAction.resource;
       setGame((g) => resolveSupplyChoice(g, resource, correct, vocabId));
+    } else if (pendingAction.kind === "branchLeft") {
+      setGame((g) => resolveBranchChoice(g, "left", correct, vocabId));
     }
     setPendingAction(null);
     setActionRevealed(null);
@@ -2099,6 +2263,10 @@ export default function JourneyPage() {
     setLegendCard(null);
     setSeenLegendCount(0);
     setShowJournal(false);
+    // ORDER-057：重置詞彙配對／跨節點呼應狀態（journeyChoices 由 newGame 歸零）
+    setWordMatch(null);
+    setCallbackCard(null);
+    setCallbackShown(false);
   }
 
   // mount 前：SSR 與 client 首渲染皆輸出此骨架，確保 HTML 一致（避免 hydration mismatch）
@@ -2363,6 +2531,20 @@ export default function JourneyPage() {
                       </button>
                     ))}
                   </div>
+                )}
+
+                {/* 詞彙配對（ORDER-057）：第二關簽名題型——4×4 族語↔中文配對，點喇叭聽發音，全對即穿過。 */}
+                {game.status === "playing" && !node.cleared && node.type === "match" && (
+                  <button
+                    onClick={startWordMatch}
+                    disabled={anyModalOpen}
+                    className={`repair-primary-btn relative mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                      primary === "match" ? "jny-spotlight" : primary !== null ? "jny-dim" : ""
+                    }`}
+                  >
+                    {primary === "match" && nowPill}
+                    <IconSearch className="w-4 h-4 shrink-0" /> 詞彙配對（族語辨識）
+                  </button>
                 )}
 
                 {/* 族語試煉（v7，ORDER-042）：綁節點的 TRPG 式語言檢定——每個路段一次，
@@ -2901,6 +3083,7 @@ export default function JourneyPage() {
                 {pendingAction.kind === "hardClear" && "花資源硬清 — 答對則全額生效"}
                 {pendingAction.kind === "eventCareful" && "謹慎探勘 — 答對則全額生效"}
                 {pendingAction.kind === "supply" && `補給（${RES_NAME[pendingAction.resource as Resource]}）— 答對則全額生效`}
+                {pendingAction.kind === "branchLeft" && "往左·沿溪邊 — 答對則糧食 +2"}
               </div>
               <h3 className={`${notoSerifTC.className} repair-title text-lg font-black mb-1`}>{actionQuiz.prompt}</h3>
               <p className="text-[10px] text-amber-300/70 mb-3">{actionQuiz.note}</p>
@@ -3025,6 +3208,101 @@ export default function JourneyPage() {
         </div>
       )}
 
+      {/* 分支岔口故事卡（ORDER-057）：全螢幕故事卡描述岔口，兩顆金框大鈕二選一（往左/往右）。
+          往左＝沿溪邊（答族語題換糧食，並埋下兩節點後的漲水呼應）；往右＝走稜線（不答題，多耗體力換壓力 -1）。
+          純衍生渲染（branchCardOpen）：選定後節點 cleared，卡自動消失。 */}
+      {branchCardOpen && curNode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-[4px] p-4">
+          <div className="repair-modal w-full max-w-md max-h-[85vh] overflow-y-auto overflow-x-hidden">
+            <div className="relative h-40 sm:h-48 w-full overflow-hidden rounded-t-3xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={SCENE_IMG.branch} alt="" className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050d14] via-[#050d14]/10 to-transparent" />
+            </div>
+            <div className="relative z-[2] p-8 pt-6 text-center">
+              <div
+                className={`${notoSansTC.className} mb-3 inline-block rounded-full border border-amber-500/40 bg-amber-950/30 px-3 py-1 text-xs tracking-[0.3em] text-amber-300/90`}
+              >
+                岔口 · 二選一
+              </div>
+              <div className={`${notoSerifTC.className} repair-title text-xl font-bold`}>{curNode.name}</div>
+              <p className={`${notoSansTC.className} mt-4 text-left text-sm leading-relaxed text-amber-100/90`}>
+                稜線下方的溪水正在漲。眼前的路分成兩條：一條沿著溪邊走，地面平坦，但水位一直在升；另一條翻上稜線繞遠路，多花力氣，但地面乾、風險低。往左，還是往右？
+              </p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <button
+                  onClick={() => doBranchChoice("left")}
+                  className="repair-primary-btn jny-spotlight relative flex flex-col items-start gap-1 rounded-xl px-4 py-3.5 text-left"
+                >
+                  <span className={`${notoSerifTC.className} text-base font-black`}>◀ 往左 · 沿溪邊</span>
+                  <span className="text-[11px] font-semibold leading-snug text-amber-100/85">
+                    路平但水在漲。答對族語題換糧食 +2（之後這條路可能回頭呼應）。
+                  </span>
+                </button>
+                <button
+                  onClick={() => doBranchChoice("right")}
+                  className="repair-primary-btn jny-spotlight relative flex flex-col items-start gap-1 rounded-xl px-4 py-3.5 text-left"
+                >
+                  <span className={`${notoSerifTC.className} text-base font-black`}>往右 · 走稜線 ▶</span>
+                  <span className="text-[11px] font-semibold leading-snug text-amber-100/85">
+                    繞遠但乾。不用答題，多耗體力 -1，但地面乾爽、壓力 -1。
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 詞彙配對小遊戲（ORDER-057）：第二關簽名題型——左欄 4 族語詞、右欄 4 中文意思，點左再點右配對；
+          配對正確鎖定（綠）、配錯抖動歸位；每個族語詞可點喇叭聽發音；全部配對成功即穿過。 */}
+      {wordMatch && curNode && (
+        <WordMatch
+          ids={wordMatch.ids}
+          nodeName={curNode.name}
+          onDone={finishWordMatch}
+          onAbort={() => setWordMatch(null)}
+        />
+      )}
+
+      {/* 跨節點呼應故事卡（ORDER-057）：把「當初的選擇」講出來（stat 結算已在 enterNode 完成）。 */}
+      {callbackCard !== null && (
+        <div className="fixed inset-0 z-[55] flex items-center justify-center bg-black/80 backdrop-blur-[4px] p-4">
+          <div className="repair-modal w-full max-w-md max-h-[85vh] overflow-y-auto overflow-x-hidden">
+            <div className="relative h-40 sm:h-48 w-full overflow-hidden rounded-t-3xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={callbackCard === "left" ? SCENE_IMG.hazard : SCENE_IMG.branch}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050d14] via-[#050d14]/10 to-transparent" />
+            </div>
+            <div className="relative z-[2] p-8 pt-6 text-center">
+              <div
+                className={`${notoSansTC.className} mb-3 inline-block rounded-full border border-amber-500/40 bg-amber-950/30 px-3 py-1 text-xs tracking-[0.3em] text-amber-300/90`}
+              >
+                當初的選擇
+              </div>
+              <div className={`${notoSerifTC.className} repair-title text-xl font-bold`}>
+                {callbackCard === "left" ? "水漲上來了" : "稜線的風"}
+              </div>
+              <p className={`${notoSansTC.className} mt-4 text-left text-sm leading-relaxed text-amber-100/90`}>
+                {callbackCard === "left"
+                  ? "當時你選了走溪邊——那時路是平的。現在水漲上來，這段路泡進了溪裡，隊伍只能一個接一個涉水而過。體力 -2。"
+                  : "當時你選了走稜線——繞了遠路。現在這段最空曠的稜線上，強風整夜不停，把隊伍吹得七零八落，誰都靜不下來。壓力 +2。"}
+              </p>
+              <button
+                onClick={() => setCallbackCard(null)}
+                className={`${notoSerifTC.className} repair-primary-btn mt-6 rounded-xl px-8 py-2.5 text-sm font-bold tracking-[0.15em] transition hover:-translate-y-0.5`}
+              >
+                繼續
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 規則面板 */}
       {showRules && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-[4px] flex items-center justify-center p-4 z-50">
@@ -3053,6 +3331,18 @@ export default function JourneyPage() {
                 <li className="flex gap-2">
                   <IconRain className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
                   <span>第二關限定・<b>環境危害</b>：暴風雨／雷擊／側風擋在路上，要用「頂風前行」「架設臨時遮蔽」「共同搬運」或花資源架遮蔽清除。<b>不清除的話，每次紮營都會持續付出代價</b>（扣體力或加壓力，依危害而異）。</span>
+                </li>
+              )}
+              {game.levelId === "l2" && (
+                <li className="flex gap-2">
+                  <IconSearch className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                  <span>第二關限定・<b>岔口二選一</b>：溪岔口會跳出故事卡讓你選路——「往左·沿溪邊」答族語題換糧食，但<b>兩個路段後水會漲上來（體力 -2）</b>；「往右·走稜線」不用答題、換壓力 -1，但<b>後面得頂著強風（壓力 +2）</b>。當初的選擇會被記得，勝利畫面也會回顧。</span>
+                </li>
+              )}
+              {game.levelId === "l2" && (
+                <li className="flex gap-2">
+                  <IconTarget className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                  <span>第二關限定・<b>詞彙配對</b>：在「霧中辨路」把 4 個族語詞和它的中文意思一一配對，點喇叭可聽發音；配錯會抖動歸位、可重試，<b>全部配對成功才能穿過</b>，一次全對還有壓力 -1。</span>
                 </li>
               )}
               {game.levelId === "l2" && (
@@ -3261,6 +3551,25 @@ export default function JourneyPage() {
               );
             })()}
 
+            {/* ORDER-057（旅途誌·你走過的路）：把本局的分支選擇條列成人話，個人化回顧這趟怎麼走的。 */}
+            {game.status === "won" && Object.keys(game.journeyChoices).length > 0 && (
+              <div className="mb-4 rounded-xl border border-amber-700/50 bg-amber-950/25 p-3 text-left">
+                <div className="text-xs uppercase tracking-wider text-amber-400 font-semibold mb-2">你走過的路</div>
+                <ul className="space-y-1.5 text-[13px] leading-relaxed text-amber-100/90">
+                  {Object.entries(game.journeyChoices).map(([nodeId, choice]) => (
+                    <li key={nodeId} className="flex gap-2">
+                      <span className="mt-0.5 shrink-0 text-amber-300/80">・</span>
+                      <span>
+                        {choice === "left"
+                          ? "在溪岔口，你選了沿溪邊走——路是平的，但後來水漲上來，隊伍涉水而過。"
+                          : "在溪岔口，你選了改走稜線——繞了遠路，後來在空曠的稜線上頂著強風走完。"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* ORDER-050（P2）：第一關通關 → 下一關預告鉤子＋直接前進第二關 */}
             {game.status === "won" && game.levelId === "l1" && level2Unlocked && (
               <div className="mb-4 rounded-xl border border-sky-700/50 bg-sky-950/30 p-3 text-left">
@@ -3468,6 +3777,161 @@ export default function JourneyPage() {
 
 function cardTypeLabel(t: CardType): string {
   return { action: "行動", coop: "協作", supply: "補給", watch: "守望", weave: "織圖" }[t];
+}
+
+// ───────────────────────── 詞彙配對元件（ORDER-057：第二關簽名題型）─────────────────────────
+// 左欄 4 個族語詞（各有喇叭聽發音）、右欄 4 個打散的中文意思；點左再點右配對。
+// 配對正確：兩側鎖定變綠、不可再點；配對錯誤：右側該顆抖動歸位、清除選取，可重試（教學不懲罰）。
+// 全部配對成功→ onDone(results)，results 記每詞是否「一次就配對正確」（配錯過即記 false）。
+function WordMatch({
+  ids,
+  nodeName,
+  onDone,
+  onAbort,
+}: {
+  ids: string[];
+  nodeName: string;
+  onDone: (results: { vocabId: string; correct: boolean }[]) => void;
+  onAbort: () => void;
+}) {
+  const pairs = useMemo(
+    () =>
+      ids.map((id) => {
+        const e = vocab(id);
+        return { id, word: e.word, chinese: e.chinese, hasAudio: e.hasAudio };
+      }),
+    [ids],
+  );
+  // 右欄意思打散（記憶 pairs，避免每次 render 重洗）
+  const rights = useMemo(() => shuffle(pairs.map((p) => ({ id: p.id, chinese: p.chinese }))), [pairs]);
+  const [sel, setSel] = useState<string | null>(null); // 目前選取的左側族語詞 id
+  const [matched, setMatched] = useState<string[]>([]); // 已配對的 id
+  const [missed, setMissed] = useState<string[]>([]); // 曾配錯過的 id（結算記 correct=false）
+  const [shakeRight, setShakeRight] = useState<string | null>(null); // 抖動中的右側顆
+  const doneRef = useRef(false);
+
+  function tapLeft(id: string) {
+    if (matched.includes(id) || shakeRight) return;
+    setSel(id);
+    playAudio(id);
+  }
+
+  function tapRight(rid: string) {
+    if (!sel || matched.includes(rid) || shakeRight) return;
+    if (rid === sel) {
+      sfxCorrect();
+      setMatched((m) => (m.includes(sel) ? m : [...m, sel]));
+      setSel(null);
+    } else {
+      sfxWrong();
+      setMissed((m) => (m.includes(sel) ? m : [...m, sel]));
+      setShakeRight(rid);
+      setTimeout(() => {
+        setShakeRight(null);
+        setSel(null);
+      }, 480);
+    }
+  }
+
+  useEffect(() => {
+    if (matched.length !== pairs.length || doneRef.current) return;
+    doneRef.current = true;
+    const results = pairs.map((p) => ({ vocabId: p.id, correct: !missed.includes(p.id) }));
+    const t = setTimeout(() => onDone(results), 700);
+    return () => clearTimeout(t);
+  }, [matched, pairs, missed, onDone]);
+
+  const allDone = matched.length === pairs.length;
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/75 p-3 backdrop-blur-[6px] sm:p-6">
+      <div className="repair-modal w-full max-w-md px-5 py-6 my-4 sm:px-7">
+        <header className="relative z-[2] mb-3 text-center">
+          <p className={`${notoSansTC.className} mb-1 text-sm font-bold tracking-[0.08em] text-amber-300`}>
+            詞彙配對 · 族語辨識
+          </p>
+          <h3 className={`${notoSerifTC.className} repair-title text-2xl font-black sm:text-3xl`}>{nodeName}</h3>
+          <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-amber-100/70">
+            點左邊的族語詞（會唸給你聽），再點右邊它的中文意思。配對成功會鎖定；配錯會歸位，可以再試。
+          </p>
+        </header>
+
+        <div className="relative z-[2] mb-3 flex items-center justify-between">
+          <span className={`${notoSerifTC.className} text-base font-bold text-amber-50`}>
+            已配對 {matched.length}/{pairs.length}
+          </span>
+          <span className="text-[10px] text-amber-300/70">族語詞來自真實太魯閣語資料</span>
+        </div>
+
+        <div className="relative z-[2] grid grid-cols-2 gap-3">
+          {/* 左欄：族語詞（含喇叭） */}
+          <div className="grid gap-2">
+            {pairs.map((p) => {
+              const isMatched = matched.includes(p.id);
+              const isSel = sel === p.id;
+              return (
+                <button
+                  key={p.id}
+                  disabled={isMatched}
+                  onClick={() => tapLeft(p.id)}
+                  className={`flex items-center justify-between gap-1 rounded-lg border px-2.5 py-2.5 text-left transition ${
+                    isMatched
+                      ? "border-emerald-400/70 bg-emerald-900/50 text-emerald-100 opacity-80"
+                      : isSel
+                        ? "border-amber-300/90 bg-[#1a2c3f] text-amber-50 ring-1 ring-amber-300/60"
+                        : "border-amber-500/25 bg-[#0b1722]/90 text-amber-50 hover:border-amber-400/60 hover:bg-[#132435]"
+                  }`}
+                >
+                  <span className="font-bold">{p.word}</span>
+                  {isMatched ? (
+                    <IconCheck className="w-4 h-4 shrink-0 text-emerald-400" />
+                  ) : (
+                    <IconSpeaker className="w-4 h-4 shrink-0 text-sky-300/90" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {/* 右欄：中文意思（打散） */}
+          <div className="grid gap-2">
+            {rights.map((r) => {
+              const isMatched = matched.includes(r.id);
+              const isShaking = shakeRight === r.id;
+              return (
+                <button
+                  key={r.id}
+                  disabled={isMatched}
+                  onClick={() => tapRight(r.id)}
+                  className={`rounded-lg border px-2.5 py-2.5 text-left transition ${
+                    isMatched
+                      ? "border-emerald-400/70 bg-emerald-900/50 text-emerald-100 opacity-80"
+                      : isShaking
+                        ? "wm-shake border-rose-400/80 bg-rose-800/70 text-amber-50"
+                        : "border-amber-500/25 bg-[#0b1722]/90 text-amber-50 hover:border-amber-400/60 hover:bg-[#132435]"
+                  }`}
+                >
+                  {r.chinese}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {allDone ? (
+          <p className="relative z-[2] mt-4 inline-flex w-full items-center justify-center gap-1.5 text-sm font-bold text-emerald-300">
+            <IconCheck className="w-4 h-4 shrink-0" /> 全部配對成功——隊伍認出路標，穿過了霧。
+          </p>
+        ) : (
+          <footer className="relative z-[2] mt-4 flex items-center justify-between gap-2">
+            <button onClick={onAbort} className="repair-secondary-btn rounded-xl px-5 py-2 text-xs font-bold">
+              ✦ 先不配了
+            </button>
+            <span className="text-right text-[10px] leading-snug text-amber-100/45">配錯不扣分，歸位再試就好。</span>
+          </footer>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ORDER-051（spec 7）：行動籤費用寶石——沿用 /play 的 .hs-gem 定位與字級 class，
