@@ -8,7 +8,7 @@ import { CARD_LEARNING, Card, RARITY_COLOR, Rarity, Theme } from "@/data/cards";
 import { audioUrl } from "@/data/truku";
 import AmbientAudio from "@/components/AmbientAudio";
 import BattleMusic from "@/components/BattleMusic";
-import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose, sfxAttack, sfxHit, sfxSummon } from "@/lib/sfx";
+import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose, sfxAttack } from "@/lib/sfx";
 import {
   Game,
   Minion,
@@ -19,19 +19,19 @@ import {
   HERO_HP,
   BOARD_MAX,
   attackTargets,
-  checkWinner,
-  endOfTurnEffects,
   hasValidTarget,
   makeQuiz,
   mulligan,
   newGame,
-  playCardResolved,
   pushLog,
-  resolveAttack,
-  runEnemyTurn,
   spellTargetKind,
-  startPlayerTurn,
+  playCardFlow,
+  attackFlow,
+  startTurnFlow,
+  endTurnFlow,
+  enemyTurnFlow,
 } from "@/engine";
+import { useCombat } from "./useCombat";
 
 // 卡名用襯線字（比照 /journey 的標題字），像收藏卡的名條
 const notoSerifTC = Noto_Serif_TC({ weight: ["700"], subsets: ["latin"], display: "swap" });
@@ -396,7 +396,28 @@ function playVocabAudio(id: string) {
 
 export default function PlayPage() {
   const [mounted, setMounted] = useState(false);
-  const [game, setGame] = useState<Game>(() => newGame());
+  // 戰鬥事件播放器：擁有顯示盤面(game)、輸入鎖(locked)與所有動畫狀態
+  const combat = useCombat();
+  const {
+    game,
+    setGame,
+    locked,
+    play,
+    resetFx,
+    floatsFor,
+    heroShake,
+    windupKeys,
+    lungeStyle,
+    impactAnchors,
+    shakeMinions,
+    spellFx,
+    ghosts,
+    banner,
+    castCard,
+    manaPulse,
+    drawPulse,
+    registerEl,
+  } = combat;
   const [quiz, setQuiz] = useState<QuizState | null>(null);
   const [revealed, setRevealed] = useState<number | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -483,68 +504,6 @@ export default function PlayPage() {
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [winner]);
 
-  // ── 打擊感（ORDER-065）：以「前後盤面差異」推導浮動傷害數字、受擊震動、登場音 ──
-  // 集中在一個 effect 比較 prevGame vs game：英雄/隨從掉血 → 冒 -N、抖動、播受擊音；敵方新隨從 → 登場音。
-  const [heroShake, setHeroShake] = useState({ player: false, enemy: false });
-  const [floats, setFloats] = useState<{ id: number; anchor: string; dmg: number }[]>([]);
-  const prevGameRef = useRef<Game | null>(null);
-  const fxId = useRef(0);
-
-  useEffect(() => {
-    const prev = prevGameRef.current;
-    prevGameRef.current = game;
-    if (!prev) return;
-
-    /* eslint-disable react-hooks/set-state-in-effect */
-    const spawned: { id: number; anchor: string; dmg: number }[] = [];
-    let hit = false;
-
-    if (game.enemyHp < prev.enemyHp) {
-      spawned.push({ id: ++fxId.current, anchor: "heroEnemy", dmg: prev.enemyHp - game.enemyHp });
-      setHeroShake((s) => ({ ...s, enemy: true }));
-      hit = true;
-    }
-    if (game.playerHp < prev.playerHp) {
-      spawned.push({ id: ++fxId.current, anchor: "heroPlayer", dmg: prev.playerHp - game.playerHp });
-      setHeroShake((s) => ({ ...s, player: true }));
-      hit = true;
-    }
-
-    const prevE = new Map(prev.eBoard.map((m) => [m.key, m.health]));
-    for (const m of game.eBoard) {
-      const ph = prevE.get(m.key);
-      if (ph !== undefined && m.health < ph) {
-        spawned.push({ id: ++fxId.current, anchor: m.key, dmg: ph - m.health });
-        hit = true;
-      }
-    }
-    const prevP = new Map(prev.pBoard.map((m) => [m.key, m.health]));
-    for (const m of game.pBoard) {
-      const ph = prevP.get(m.key);
-      if (ph !== undefined && m.health < ph) {
-        spawned.push({ id: ++fxId.current, anchor: m.key, dmg: ph - m.health });
-        hit = true;
-      }
-    }
-
-    const prevEKeys = new Set(prev.eBoard.map((m) => m.key));
-    if (game.eBoard.some((m) => !prevEKeys.has(m.key))) sfxSummon();
-
-    if (spawned.length > 0) {
-      setFloats((f) => [...f, ...spawned]);
-      const ids = new Set(spawned.map((s) => s.id));
-      setTimeout(() => setFloats((f) => f.filter((x) => !ids.has(x.id))), 850);
-    }
-    if (hit) sfxHit();
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, [game]);
-
-  useEffect(() => {
-    if (!heroShake.player && !heroShake.enemy) return;
-    const t = setTimeout(() => setHeroShake({ player: false, enemy: false }), 420);
-    return () => clearTimeout(t);
-  }, [heroShake]);
-
   // 認輸確認：3 秒未再點就取消「確定認輸？」狀態，避免卡在待確認
   useEffect(() => {
     if (!confirmConcede) return;
@@ -552,12 +511,8 @@ export default function PlayPage() {
     return () => clearTimeout(t);
   }, [confirmConcede]);
 
-  const hitKeys = new Set(
-    floats.filter((f) => f.anchor !== "heroEnemy" && f.anchor !== "heroPlayer").map((f) => f.anchor),
-  );
-  const floatsFor = (anchor: string) => floats.filter((f) => f.anchor === anchor);
-
   function reset() {
+    resetFx();
     setQuiz(null);
     setRevealed(null);
     setSelected(null);
@@ -584,6 +539,7 @@ export default function PlayPage() {
     setPending(null);
     setConfirmConcede(false);
     setMulliganSel(new Set());
+    resetFx();
     setGame(newGame(opp.theme));
     setMulliganPhase(true);
   }
@@ -628,7 +584,7 @@ export default function PlayPage() {
   }
 
   function tryPlay(card: Card) {
-    if (game.phase !== "player" || game.winner || pending || quiz || mulliganPhase) return;
+    if (locked || game.phase !== "player" || game.winner || pending || quiz || mulliganPhase) return;
     if (card.cost > game.pMana) return;
     if (card.type === "minion" && game.pBoard.length >= BOARD_MAX) {
       setGame((g) => ({ ...g, log: pushLog(g.log, "戰場已滿（上限 7 個隨從）。", "info") }));
@@ -667,7 +623,7 @@ export default function PlayPage() {
     if (card.type === "spell" && kind !== "none") {
       setPending({ card, isCorrect });
     } else {
-      setGame((g) => playCardResolved(g, card, isCorrect));
+      void play(playCardFlow(game, card, isCorrect));
     }
   }
 
@@ -675,14 +631,14 @@ export default function PlayPage() {
     if (!pending) return;
     const { card, isCorrect } = pending;
     setPending(null);
-    setGame((g) => playCardResolved(g, card, isCorrect, target));
+    void play(playCardFlow(game, card, isCorrect, target));
   }
 
   const pendingKind: TargetKind = pending ? spellTargetKind(pending.card) : "none";
   const atkLegal = attackTargets(game.eBoard);
 
   function onPlayerMinion(key: string) {
-    if (game.phase !== "player" || game.winner) return;
+    if (locked || game.phase !== "player" || game.winner) return;
     if (pending) {
       if (pendingKind === "friendMinion" || pendingKind === "anyMinion") {
         castPendingAt({ kind: "minion", side: "player", key });
@@ -695,7 +651,7 @@ export default function PlayPage() {
   }
 
   function onEnemyMinion(key: string) {
-    if (game.phase !== "player" || game.winner) return;
+    if (locked || game.phase !== "player" || game.winner) return;
     const m = game.eBoard.find((x) => x.key === key);
     if (!m) return;
     if (pending) {
@@ -706,41 +662,51 @@ export default function PlayPage() {
     }
     if (!selected || !atkLegal.keys.has(key)) return;
     sfxAttack();
-    setGame((g) => resolveAttack(g, "player", selected, { kind: "minion", side: "enemy", key }));
+    const steps = attackFlow(game, "player", selected, { kind: "minion", side: "enemy", key });
     setSelected(null);
+    void play(steps);
   }
 
   function onEnemyHero() {
-    if (game.phase !== "player" || game.winner) return;
+    if (locked || game.phase !== "player" || game.winner) return;
     if (pending) {
       if (pendingKind === "any") castPendingAt({ kind: "hero" });
       return;
     }
     if (!selected || !atkLegal.heroAllowed) return;
     sfxAttack();
-    setGame((g) => resolveAttack(g, "player", selected, { kind: "hero" }));
+    const steps = attackFlow(game, "player", selected, { kind: "hero" });
     setSelected(null);
+    void play(steps);
   }
 
   function endTurn() {
-    if (game.phase !== "player" || game.winner || pending || quiz || mulliganPhase) return;
+    if (locked || game.phase !== "player" || game.winner || pending || quiz || mulliganPhase) return;
     setSelected(null);
-    setGame((g) => {
-      const afterEot = checkWinner(endOfTurnEffects(g, "player"));
-      return { ...afterEot, phase: afterEot.winner ? "over" : "enemy" };
-    });
-    setTimeout(() => {
-      setGame((g) => {
-        if (g.winner) return g;
-        const afterEnemy = runEnemyTurn(g, difficulty);
-        if (afterEnemy.winner) return afterEnemy;
-        return startPlayerTurn(afterEnemy);
-      });
-    }, 700);
+    // 一次算好整條事件序列（結束回合 → 敵方回合 → 我方新回合），交給播放器依序播放。
+    const endSteps = endTurnFlow(game);
+    let all = endSteps;
+    const afterEnd = endSteps.length ? endSteps[endSteps.length - 1].state : game;
+    if (!afterEnd.winner) {
+      const enemySteps = enemyTurnFlow(afterEnd, difficulty);
+      all = all.concat(enemySteps);
+      const afterEnemy = enemySteps.length ? enemySteps[enemySteps.length - 1].state : afterEnd;
+      if (!afterEnemy.winner) all = all.concat(startTurnFlow(afterEnemy));
+    }
+    void play(all);
   }
 
   const total = game.correct + game.wrong;
   const rate = total === 0 ? 0 : Math.round((game.correct / total) * 100);
+
+  // 浮動傷害/治療數字（事件驅動）
+  const renderFloats = (anchor: string) =>
+    floatsFor(anchor).map((f) => (
+      <span key={f.id} className={`dmg-float ${f.kind === "heal" ? "dmg-float-heal" : ""}`} aria-hidden>
+        {f.kind === "heal" ? "+" : "-"}
+        {f.amount}
+      </span>
+    ));
 
   if (!mounted) return <main className="min-h-screen bg-slate-950" />;
 
@@ -766,6 +732,40 @@ export default function PlayPage() {
       <AmbientAudio />
       <BattleMusic />
       <GemDefs />
+
+      {/* ── 戰鬥動畫覆蓋層（事件驅動）── */}
+      {banner && (
+        <div
+          className={`combat-banner ${banner.side === "player" ? "combat-banner-player" : "combat-banner-enemy"}`}
+          aria-hidden
+        >
+          {banner.text}
+        </div>
+      )}
+      {castCard && CARD_ART[castCard.cardId] && (
+        <div className="combat-cast" aria-hidden>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={CARD_ART[castCard.cardId]}
+            alt=""
+            className={castCard.isCorrect ? "ring-2 ring-amber-300 rounded-xl" : "rounded-xl"}
+          />
+        </div>
+      )}
+      {spellFx && <div className={`spell-veil spell-${spellFx.vfx}`} aria-hidden />}
+      {ghosts.map((g) => (
+        <div
+          key={g.id}
+          className="death-ghost"
+          style={{ left: g.left, top: g.top, width: g.width, height: g.height }}
+          aria-hidden
+        >
+          {CARD_ART[g.cardId] && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={CARD_ART[g.cardId]} alt="" />
+          )}
+        </div>
+      ))}
       <div className="play-shell mx-auto">
         {/* 標題列 */}
         <header className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -867,7 +867,10 @@ export default function PlayPage() {
             ))}
           </div>
 
-          <div className="hs-resource-strip hs-resource-enemy" aria-label={`敵方法力 ${game.eMaxMana}/10`}>
+          <div
+            className={`hs-resource-strip hs-resource-enemy ${manaPulse === "enemy" ? "mana-pulse" : ""}`}
+            aria-label={`敵方法力 ${game.eMaxMana}/10`}
+          >
             <span className="hs-mana-label">敵方法力</span>
             <span className="hs-mana-text">{game.eMaxMana}/10</span>
             <span className="hs-crystals" aria-hidden>
@@ -879,15 +882,12 @@ export default function PlayPage() {
 
           {/* 系統（敵方）英雄 */}
           <button
+            ref={registerEl("heroEnemy")}
             onClick={onEnemyHero}
             disabled={!enemyHeroTargetable}
-            className={`hs-portrait hs-portrait-enemy relative transition ${enemyHeroTargetable ? "hs-hero-targetable cursor-pointer" : ""} ${heroShake.enemy ? "hs-hero-shake" : ""}`}
+            className={`hs-portrait hs-portrait-enemy relative transition ${enemyHeroTargetable ? "hs-hero-targetable cursor-pointer" : ""} ${heroShake.enemy ? "hs-hero-shake" : ""} ${impactAnchors.has("heroEnemy") ? "hs-impact" : ""}`}
           >
-            {floatsFor("heroEnemy").map((f) => (
-              <span key={f.id} className="dmg-float" aria-hidden>
-                -{f.dmg}
-              </span>
-            ))}
+            {renderFloats("heroEnemy")}
             <span className="hs-portrait-art">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={HERO_ART.enemy} alt="山林試煉頭像" />
@@ -929,20 +929,20 @@ export default function PlayPage() {
               return (
                 <button
                   key={e.key}
+                  ref={registerEl(e.key)}
+                  style={lungeStyle(e.key)}
                   onClick={() => onEnemyMinion(e.key)}
                   disabled={!targetable}
                   title={`${e.card.nameZh}${kw ? `（${kw}）` : ""}`}
                   className={`hs-token hs-token-enter w-[86px] md:w-[102px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
                     ${e.taunt ? "hs-token-taunt" : ""}
-                    ${hitKeys.has(e.key) ? "hs-token-hit" : ""}
+                    ${shakeMinions.has(e.key) ? "hs-token-hit" : ""}
+                    ${windupKeys.has(e.key) ? "hs-windup" : ""}
+                    ${impactAnchors.has(e.key) ? "hs-impact" : ""}
                     ${e.stealth ? "opacity-60 blur-[0.5px] ring-1 ring-slate-400" : ""}
                     ${targetable ? "hover:ring-2 hover:ring-rose-400 cursor-pointer" : ""}`}
                 >
-                  {floatsFor(e.key).map((f) => (
-                    <span key={f.id} className="dmg-float" aria-hidden>
-                      -{f.dmg}
-                    </span>
-                  ))}
+                  {renderFloats(e.key)}
                   <span className="absolute inset-0 rounded-[8px] overflow-hidden">
                     {art ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -987,22 +987,22 @@ export default function PlayPage() {
               return (
                 <button
                   key={e.key}
+                  ref={registerEl(e.key)}
+                  style={lungeStyle(e.key)}
                   onClick={() => onPlayerMinion(e.key)}
                   title={`${e.card.nameZh}${kw ? `（${kw}）` : ""}`}
                   className={`hs-token hs-token-enter w-[86px] md:w-[102px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
                     ${e.taunt ? "hs-token-taunt" : ""}
-                    ${hitKeys.has(e.key) ? "hs-token-hit" : ""}
+                    ${shakeMinions.has(e.key) ? "hs-token-hit" : ""}
+                    ${windupKeys.has(e.key) ? "hs-windup" : ""}
+                    ${impactAnchors.has(e.key) ? "hs-impact" : ""}
                     ${e.stealth ? "opacity-60 blur-[0.5px] ring-1 ring-slate-400" : ""}
                     ${ready && selected !== e.key && !spellTarget ? "hs-ready-pulse" : ""}
                     ${selected === e.key ? "ring-2 ring-amber-400 -translate-y-1" : ""}
                     ${spellTarget ? "ring-2 ring-emerald-400 cursor-pointer" : ""}
                     ${ready || spellTarget ? "cursor-pointer hover:-translate-y-0.5" : e.stealth ? "" : "opacity-70"}`}
                 >
-                  {floatsFor(e.key).map((f) => (
-                    <span key={f.id} className="dmg-float" aria-hidden>
-                      -{f.dmg}
-                    </span>
-                  ))}
+                  {renderFloats(e.key)}
                   <span className="absolute inset-0 rounded-[8px] overflow-hidden">
                     {art ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -1037,10 +1037,10 @@ export default function PlayPage() {
 
           <button
             onClick={endTurn}
-            disabled={game.phase !== "player" || !!game.winner || !!pending || !!quiz}
+            disabled={locked || game.phase !== "player" || !!game.winner || !!pending || !!quiz || mulliganPhase}
             className="hs-end-turn hs-end-turn-big disabled:opacity-40"
           >
-            {game.phase === "enemy" ? "系統行動中" : "結束回合 ▶"}
+            {locked ? "對戰進行中…" : game.phase === "enemy" ? "系統行動中" : "結束回合 ▶"}
           </button>
 
           <button
@@ -1051,12 +1051,11 @@ export default function PlayPage() {
           </button>
 
           {/* 我方英雄 + 資源 */}
-          <section className={`hs-portrait hs-portrait-player relative ${heroShake.player ? "hs-hero-shake" : ""}`}>
-            {floatsFor("heroPlayer").map((f) => (
-              <span key={f.id} className="dmg-float" aria-hidden>
-                -{f.dmg}
-              </span>
-            ))}
+          <section
+            ref={registerEl("heroPlayer")}
+            className={`hs-portrait hs-portrait-player relative ${heroShake.player ? "hs-hero-shake" : ""} ${impactAnchors.has("heroPlayer") ? "hs-impact" : ""}`}
+          >
+            {renderFloats("heroPlayer")}
             <span className="hs-portrait-art">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={HERO_ART.player} alt="織者頭像" />
@@ -1069,7 +1068,10 @@ export default function PlayPage() {
             </span>
           </section>
 
-          <div className="hs-resource-strip hs-resource-player" aria-label={`我方法力 ${game.pMana}/${game.pMaxMana}`}>
+          <div
+            className={`hs-resource-strip hs-resource-player ${manaPulse === "player" ? "mana-pulse" : ""} ${drawPulse === "player" ? "draw-pulse" : ""}`}
+            aria-label={`我方法力 ${game.pMana}/${game.pMaxMana}`}
+          >
             <span className="hs-mana-label">我方法力</span>
             <span className="hs-mana-text">{game.pMana}/{game.pMaxMana}</span>
             <span className="hs-crystals" aria-hidden>
@@ -1489,8 +1491,8 @@ export default function PlayPage() {
         </div>
       )}
 
-      {/* 勝敗彈窗 */}
-      {game.winner && (
+      {/* 勝敗彈窗（等動畫播完再彈） */}
+      {game.winner && !locked && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50">
           <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-700 p-6 text-center">
             <div className="flex justify-center mb-3">

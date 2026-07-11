@@ -1824,3 +1824,232 @@ body {
     animation: none;
   }
 }
+
+/* ─────────── 事件驅動戰鬥動畫時間軸（ORDER-070）─────────── */
+.hs-token {
+  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes windupPulse {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.12) translateY(-4px);
+  }
+}
+.hs-windup {
+  animation: windupPulse 0.15s ease-out forwards;
+  z-index: 30;
+  filter: brightness(1.15);
+}
+
+@keyframes impactFlash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 240, 190, 0);
+    filter: brightness(1);
+  }
+  40% {
+    box-shadow: 0 0 18px 6px rgba(255, 240, 190, 0.9);
+    filter: brightness(1.7);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 240, 190, 0);
+    filter: brightness(1);
+  }
+}
+.hs-impact {
+  animation: impactFlash 0.24s ease-out;
+}
+
+.dmg-float-heal {
+  color: #bbf7d0;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.9),
+    0 0 7px rgba(34, 197, 94, 0.65);
+}
+
+@keyframes bannerSweep {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  22% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+.combat-banner {
+  position: fixed;
+  left: 50%;
+  top: 42%;
+  z-index: 80;
+  pointer-events: none;
+  font-size: clamp(28px, 6vw, 52px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  padding: 0.28em 0.9em;
+  border-radius: 14px;
+  animation: bannerSweep 0.56s ease-in-out forwards;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
+}
+.combat-banner-player {
+  color: #fde68a;
+  background: linear-gradient(90deg, rgba(180, 120, 20, 0.28), rgba(20, 20, 30, 0.5), rgba(180, 120, 20, 0.28));
+}
+.combat-banner-enemy {
+  color: #fecaca;
+  background: linear-gradient(90deg, rgba(140, 30, 40, 0.32), rgba(20, 20, 30, 0.5), rgba(140, 30, 40, 0.32));
+}
+
+@keyframes castRise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -40%) scale(0.7) rotate(-4deg);
+  }
+  28% {
+    opacity: 1;
+    transform: translate(-50%, -52%) scale(1) rotate(0);
+  }
+  75% {
+    opacity: 1;
+    transform: translate(-50%, -54%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -62%) scale(0.94);
+  }
+}
+.combat-cast {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 70;
+  pointer-events: none;
+  animation: castRise 0.32s ease-out forwards;
+}
+.combat-cast img {
+  width: clamp(120px, 18vw, 190px);
+  aspect-ratio: 5 / 7;
+  object-fit: cover;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes veilFade {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.spell-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  animation: veilFade 0.44s ease-out forwards;
+  mix-blend-mode: screen;
+}
+.spell-damage {
+  background: radial-gradient(ellipse at center, rgba(244, 63, 94, 0.35), transparent 60%);
+}
+.spell-aoe {
+  background: linear-gradient(180deg, rgba(244, 63, 94, 0.28), rgba(120, 20, 30, 0.18));
+}
+.spell-heal {
+  background: radial-gradient(ellipse at center, rgba(34, 197, 94, 0.32), transparent 60%);
+}
+.spell-summon {
+  background: radial-gradient(ellipse at center, rgba(56, 189, 248, 0.3), transparent 60%);
+}
+.spell-draw {
+  background: radial-gradient(ellipse at center, rgba(168, 85, 247, 0.3), transparent 62%);
+}
+.spell-buff {
+  background: radial-gradient(ellipse at center, rgba(250, 204, 21, 0.3), transparent 62%);
+}
+
+@keyframes deathFade {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1.02);
+    filter: brightness(1.4);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.6) translateY(8px);
+    filter: brightness(2) blur(2px);
+  }
+}
+.death-ghost {
+  position: fixed;
+  z-index: 55;
+  pointer-events: none;
+  border-radius: 8px;
+  overflow: hidden;
+  animation: deathFade 0.5s ease-in forwards;
+}
+.death-ghost img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@keyframes resPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0);
+  }
+  50% {
+    box-shadow: 0 0 14px 3px rgba(56, 189, 248, 0.6);
+  }
+}
+.mana-pulse {
+  animation: resPulse 0.42s ease-out;
+}
+@keyframes drawPulse2 {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(168, 85, 247, 0);
+  }
+  50% {
+    box-shadow: 0 0 14px 3px rgba(168, 85, 247, 0.55);
+  }
+}
+.draw-pulse {
+  animation: drawPulse2 0.42s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hs-token {
+    transition: none;
+  }
+  .hs-windup,
+  .hs-impact,
+  .combat-cast,
+  .spell-veil,
+  .death-ghost,
+  .mana-pulse,
+  .draw-pulse {
+    animation: none;
+  }
+  .combat-banner {
+    animation-duration: 0.01s;
+  }
+}
