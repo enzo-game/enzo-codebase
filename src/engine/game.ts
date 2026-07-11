@@ -3,12 +3,16 @@
 import { CARDS, Card, TOKEN_SAPLING, Theme } from "@/data/cards";
 import { vocab, distractors } from "@/data/truku";
 import {
+  Anchor,
+  CombatEvent,
   Difficulty,
+  EventStep,
   Game,
   LogEntry,
   Minion,
   QuizState,
   Side,
+  SpellVfx,
   Target,
   TargetKind,
   HERO_HP,
@@ -522,86 +526,9 @@ export function aiSpellTarget(ng: Game, c: Card): Target | undefined {
 /** 各難度「答對觸發加成」的機率：簡單從不加成、困難幾乎必加成 */
 const AI_BONUS_CHANCE: Record<Difficulty, number> = { easy: 0, normal: 0.3, hard: 0.85 };
 
+/** 系統回合的最終盤面（供無頭模擬／非動畫路徑使用）。動畫路徑改用 enemyTurnFlow。 */
 export function runEnemyTurn(g: Game, difficulty: Difficulty = "normal"): Game {
-  let ng = cloneGame(g);
-  ng.eMaxMana = Math.min(ng.eMaxMana + 1, 10);
-  let mana = ng.eMaxMana;
-
-  drawCards(ng, "enemy", 1);
-  ng.eBoard = ng.eBoard.map((m) => ({ ...m, canAttack: true }));
-
-  const bonusChance = AI_BONUS_CHANCE[difficulty];
-
-  // 出牌：出得起就出。難度差異——
-  //  easy：偶爾提前收手、故意留法力（打得比較鬆）、從不答題加成
-  //  normal：高費優先，基礎效果為主
-  //  hard：場上隨從少時優先鋪隨從，且高機率答對觸發加成
-  let guard = 24;
-  while (guard-- > 0 && !ng.winner) {
-    if (difficulty === "easy" && Math.random() < 0.25) break;
-
-    const playable = ng.eHand
-      .map((c, i) => ({ c, i }))
-      .filter((x) => aiCanPlay(ng, x.c, mana));
-    if (playable.length === 0) break;
-
-    playable.sort((a, b) => b.c.cost - a.c.cost);
-    let pick = playable[0];
-    if (difficulty === "hard" && ng.eBoard.length < 3) {
-      const minionPick = playable.find((x) => x.c.type === "minion");
-      if (minionPick) pick = minionPick;
-    }
-
-    const { c, i } = pick;
-    ng.eHand = ng.eHand.filter((_, j) => j !== i);
-    mana -= c.cost;
-    const isCorrect = Math.random() < bonusChance;
-    if (c.type === "minion") {
-      ng = playMinionFor(ng, "enemy", c, isCorrect);
-    } else {
-      const target = aiSpellTarget(ng, c);
-      ng = castSpell(ng, "enemy", c, isCorrect, target);
-    }
-  }
-  if (ng.winner) return ng;
-
-  ng = runEnemyAttacks(ng, difficulty);
-  if (ng.winner) return ng;
-
-  ng = endOfTurnEffects(ng, "enemy");
-  return checkWinner(ng);
-}
-
-/** 系統回合的攻擊階段（遵守嘲諷／潛行）。困難會先偵測斬殺、做價值換血。 */
-function runEnemyAttacks(g: Game, difficulty: Difficulty): Game {
-  let ng = g;
-
-  // 困難：斬殺偵測——沒有嘲諷擋路且總攻擊足以打死玩家英雄，就全員打臉
-  if (difficulty === "hard") {
-    const taunts = ng.pBoard.filter((m) => m.taunt && !m.stealth);
-    const ready = ng.eBoard.filter((m) => m.canAttack && m.attack > 0);
-    const totalAtk = ready.reduce((s, m) => s + m.attack, 0);
-    if (taunts.length === 0 && totalAtk >= ng.playerHp) {
-      for (const m of ready) {
-        if (ng.winner) break;
-        ng = resolveAttack(ng, "enemy", m.key, { kind: "hero" });
-      }
-      return checkWinner(ng);
-    }
-  }
-
-  let guard = 24;
-  while (!ng.winner && guard-- > 0) {
-    const cur = ng.eBoard.find((m) => m.canAttack && m.attack > 0);
-    if (!cur) break;
-    const legal = attackTargets(ng.pBoard);
-    const target = chooseEnemyAttackTarget(ng, cur, legal, difficulty);
-    if (!target) break;
-    const after = resolveAttack(ng, "enemy", cur.key, target);
-    if (after === ng) break; // 防呆：攻擊沒有生效就跳出
-    ng = after;
-  }
-  return ng;
+  return applyLast(enemyTurnFlow(g, difficulty), g);
 }
 
 /** 依難度替單一攻擊者挑目標；回 null 代表這隻沒有可打的目標。 */
@@ -725,4 +652,224 @@ export function makeQuiz(card: Card): QuizState {
     word: v.word,
     chinese: v.chinese,
   };
+}
+
+// ───────────────────────── 戰鬥事件流（引擎產生有序事件＋快照；畫面逐一播放）─────────────────────────
+
+function applyLast(steps: EventStep[], fallback: Game): Game {
+  return steps.length ? steps[steps.length - 1].state : fallback;
+}
+
+function heroAnchor(side: Side): Anchor {
+  return side === "player" ? "heroPlayer" : "heroEnemy";
+}
+
+/** 攻擊/法術目標 → 錨點字串（hero 目標＝施放者的對方英雄）。 */
+function targetAnchor(side: Side, target: Target): Anchor {
+  if (target.kind === "hero") return heroAnchor(side === "player" ? "enemy" : "player");
+  return target.key;
+}
+
+const SPELL_VFX: Record<string, SpellVfx> = {
+  dmgAny2: "damage",
+  dmgAny5: "damage",
+  dmgAny8: "damage",
+  dmgMinion4: "damage",
+  dmgEnemyMinion3: "damage",
+  dmgEnemyHero3: "damage",
+  aoeEnemy3: "aoe",
+  twoSuns: "aoe",
+  floodAll4: "aoe",
+  healHero5: "heal",
+  healHero8: "heal",
+  draw1: "draw",
+  draw2: "draw",
+  allFriendStealth: "buff",
+  friendTaunt03: "buff",
+  buffFriend11: "buff",
+  shuffleBackEnemy: "damage",
+};
+function spellVfxFor(card: Card): SpellVfx {
+  return (card.effect && SPELL_VFX[card.effect]) || "damage";
+}
+
+/** 比較前後盤面，推導 SUMMON / DAMAGE / HEAL / DEATH（英雄與雙方隨從）。 */
+function deriveHits(before: Game, after: Game): CombatEvent[] {
+  const evs: CombatEvent[] = [];
+  const heroDelta = (bHp: number, aHp: number, anchor: Anchor) => {
+    if (aHp < bHp) evs.push({ t: "DAMAGE", anchor, amount: bHp - aHp });
+    else if (aHp > bHp) evs.push({ t: "HEAL", anchor, amount: aHp - bHp });
+  };
+  heroDelta(before.playerHp, after.playerHp, "heroPlayer");
+  heroDelta(before.enemyHp, after.enemyHp, "heroEnemy");
+  (["player", "enemy"] as Side[]).forEach((side) => {
+    const b = side === "player" ? before.pBoard : before.eBoard;
+    const a = side === "player" ? after.pBoard : after.eBoard;
+    const bMap = new Map(b.map((m) => [m.key, m]));
+    const aMap = new Map(a.map((m) => [m.key, m]));
+    for (const m of a) {
+      const pm = bMap.get(m.key);
+      if (!pm) evs.push({ t: "SUMMON", side, key: m.key });
+      else if (m.health < pm.health) evs.push({ t: "DAMAGE", anchor: m.key, amount: pm.health - m.health });
+      else if (m.health > pm.health) evs.push({ t: "HEAL", anchor: m.key, amount: m.health - pm.health });
+    }
+    for (const m of b) if (!aMap.has(m.key)) evs.push({ t: "DEATH", side, key: m.key });
+  });
+  return evs;
+}
+
+/** 玩家出牌（已答題）→ 事件流。回空陣列代表不合法。 */
+export function playCardFlow(g: Game, card: Card, isCorrect: boolean, target?: Target): EventStep[] {
+  const committed = commitCard(g, card, isCorrect);
+  if (!committed) return [];
+  const steps: EventStep[] = [
+    { event: { t: "CARD_PLAY", side: "player", cardId: card.id, isCorrect }, state: committed },
+  ];
+  if (card.type === "minion") {
+    const after = playMinionFor(committed, "player", card, isCorrect);
+    for (const e of deriveHits(committed, after)) steps.push({ event: e, state: after });
+  } else {
+    const after = castSpell(committed, "player", card, isCorrect, target);
+    const anchors = target ? [targetAnchor("player", target)] : [];
+    steps.push({
+      event: { t: "SPELL", side: "player", cardId: card.id, vfx: spellVfxFor(card), anchors },
+      state: after,
+    });
+    for (const e of deriveHits(committed, after)) steps.push({ event: e, state: after });
+  }
+  return steps;
+}
+
+/** 攻擊 → 事件流（蓄力→突進→命中→傷害/死亡）。回空陣列代表不合法。 */
+export function attackFlow(g: Game, side: Side, attackerKey: string, target: Target): EventStep[] {
+  const after = resolveAttack(g, side, attackerKey, target);
+  if (after === g) return [];
+  const anchor = targetAnchor(side, target);
+  const steps: EventStep[] = [
+    { event: { t: "ATTACK_WINDUP", side, key: attackerKey }, state: g },
+    { event: { t: "ATTACK_LUNGE", side, key: attackerKey, target: anchor }, state: g },
+    { event: { t: "IMPACT", anchor }, state: after },
+  ];
+  for (const e of deriveHits(g, after)) steps.push({ event: e, state: after });
+  return steps;
+}
+
+/** 玩家回合開始：回合旗標 → 法力刷新 → 抽牌。 */
+export function startTurnFlow(g: Game): EventStep[] {
+  const after = startPlayerTurn(g);
+  const steps: EventStep[] = [
+    { event: { t: "TURN_START", side: "player", turn: after.turn }, state: after },
+    { event: { t: "MANA_REFRESH", side: "player" }, state: after },
+  ];
+  const drew = after.pHand.length - g.pHand.length;
+  if (drew > 0) steps.push({ event: { t: "DRAW", side: "player", count: drew }, state: after });
+  return steps;
+}
+
+/** 玩家結束回合：回合結束效果 → TURN_END（切到敵方 phase）。 */
+export function endTurnFlow(g: Game): EventStep[] {
+  const eot = checkWinner(endOfTurnEffects(g, "player"));
+  const steps: EventStep[] = [];
+  for (const e of deriveHits(g, eot)) steps.push({ event: e, state: eot });
+  const handoff: Game = { ...eot, phase: eot.winner ? "over" : "enemy" };
+  steps.push({ event: { t: "TURN_END", side: "player" }, state: handoff });
+  return steps;
+}
+
+/** 系統（AI）整個回合 → 有序事件流。行為對齊原 runEnemyTurn（同樣的隨機序）。 */
+export function enemyTurnFlow(g: Game, difficulty: Difficulty = "normal"): EventStep[] {
+  const steps: EventStep[] = [];
+  let ng = cloneGame(g);
+  ng.eMaxMana = Math.min(ng.eMaxMana + 1, 10);
+  let mana = ng.eMaxMana;
+  steps.push({ event: { t: "TURN_START", side: "enemy", turn: ng.turn }, state: ng });
+  steps.push({ event: { t: "MANA_REFRESH", side: "enemy" }, state: ng });
+
+  const preDraw = ng;
+  ng = cloneGame(ng);
+  drawCards(ng, "enemy", 1);
+  const drew = ng.eHand.length - preDraw.eHand.length;
+  if (drew > 0) steps.push({ event: { t: "DRAW", side: "enemy", count: drew }, state: ng });
+  ng = { ...ng, eBoard: ng.eBoard.map((m) => ({ ...m, canAttack: true })) };
+
+  const bonusChance = AI_BONUS_CHANCE[difficulty];
+
+  let guard = 24;
+  while (guard-- > 0 && !ng.winner) {
+    if (difficulty === "easy" && Math.random() < 0.25) break;
+    const playable = ng.eHand.map((c, i) => ({ c, i })).filter((x) => aiCanPlay(ng, x.c, mana));
+    if (playable.length === 0) break;
+    playable.sort((a, b) => b.c.cost - a.c.cost);
+    let pick = playable[0];
+    if (difficulty === "hard" && ng.eBoard.length < 3) {
+      const minionPick = playable.find((x) => x.c.type === "minion");
+      if (minionPick) pick = minionPick;
+    }
+    const { c, i } = pick;
+    const before: Game = { ...ng, eHand: ng.eHand.filter((_, j) => j !== i) };
+    mana -= c.cost;
+    const isCorrect = Math.random() < bonusChance;
+    let after: Game;
+    steps.push({ event: { t: "CARD_PLAY", side: "enemy", cardId: c.id, isCorrect }, state: before });
+    if (c.type === "minion") {
+      after = playMinionFor(before, "enemy", c, isCorrect);
+    } else {
+      const tgt = aiSpellTarget(before, c);
+      after = castSpell(before, "enemy", c, isCorrect, tgt);
+      const anchors = tgt ? [targetAnchor("enemy", tgt)] : [];
+      steps.push({ event: { t: "SPELL", side: "enemy", cardId: c.id, vfx: spellVfxFor(c), anchors }, state: after });
+    }
+    for (const e of deriveHits(before, after)) steps.push({ event: e, state: after });
+    ng = after;
+  }
+
+  if (!ng.winner) ng = enemyAttackFlow(ng, difficulty, steps);
+  if (!ng.winner) {
+    const after = endOfTurnEffects(ng, "enemy");
+    for (const e of deriveHits(ng, after)) steps.push({ event: e, state: after });
+    ng = checkWinner(after);
+  }
+  steps.push({ event: { t: "TURN_END", side: "enemy" }, state: ng });
+  return steps;
+}
+
+/** 系統攻擊階段（emit 事件版）；回傳最終盤面。行為對齊原 runEnemyAttacks。 */
+function enemyAttackFlow(g: Game, difficulty: Difficulty, steps: EventStep[]): Game {
+  let ng = g;
+  const pushAttack = (before: Game, attackerKey: string, target: Target): Game => {
+    const after = resolveAttack(before, "enemy", attackerKey, target);
+    if (after === before) return before;
+    const anchor = targetAnchor("enemy", target);
+    steps.push({ event: { t: "ATTACK_WINDUP", side: "enemy", key: attackerKey }, state: before });
+    steps.push({ event: { t: "ATTACK_LUNGE", side: "enemy", key: attackerKey, target: anchor }, state: before });
+    steps.push({ event: { t: "IMPACT", anchor }, state: after });
+    for (const e of deriveHits(before, after)) steps.push({ event: e, state: after });
+    return after;
+  };
+
+  if (difficulty === "hard") {
+    const taunts = ng.pBoard.filter((m) => m.taunt && !m.stealth);
+    const ready = ng.eBoard.filter((m) => m.canAttack && m.attack > 0);
+    const totalAtk = ready.reduce((s, m) => s + m.attack, 0);
+    if (taunts.length === 0 && totalAtk >= ng.playerHp) {
+      for (const m of ready) {
+        if (ng.winner) break;
+        ng = pushAttack(ng, m.key, { kind: "hero" });
+      }
+      return ng;
+    }
+  }
+
+  let guard = 24;
+  while (!ng.winner && guard-- > 0) {
+    const cur = ng.eBoard.find((m) => m.canAttack && m.attack > 0);
+    if (!cur) break;
+    const legal = attackTargets(ng.pBoard);
+    const target = chooseEnemyAttackTarget(ng, cur, legal, difficulty);
+    if (!target) break;
+    const after = pushAttack(ng, cur.key, target);
+    if (after === ng) break;
+    ng = after;
+  }
+  return ng;
 }

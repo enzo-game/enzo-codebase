@@ -60,3 +60,29 @@ export type QuizState = {
 export const HERO_HP = 30;
 export const BOARD_MAX = 7;
 export const HAND_MAX = 10;
+
+// ───────────────────────── 戰鬥事件時間軸（引擎產生，畫面逐一播放）─────────────────────────
+// 錨點：隨從 key，或英雄 "heroPlayer" / "heroEnemy"
+export type Anchor = string;
+
+/** 法術視覺類別（決定顏色與動態） */
+export type SpellVfx = "damage" | "heal" | "summon" | "draw" | "buff" | "aoe";
+
+/** 引擎輸出的有序戰鬥事件。畫面依序播放對應動畫。 */
+export type CombatEvent =
+  | { t: "TURN_START"; side: Side; turn: number }
+  | { t: "MANA_REFRESH"; side: Side }
+  | { t: "DRAW"; side: Side; count: number }
+  | { t: "CARD_PLAY"; side: Side; cardId: string; isCorrect: boolean }
+  | { t: "SUMMON"; side: Side; key: string }
+  | { t: "SPELL"; side: Side; cardId: string; vfx: SpellVfx; anchors: Anchor[] }
+  | { t: "ATTACK_WINDUP"; side: Side; key: string }
+  | { t: "ATTACK_LUNGE"; side: Side; key: string; target: Anchor }
+  | { t: "IMPACT"; anchor: Anchor }
+  | { t: "DAMAGE"; anchor: Anchor; amount: number }
+  | { t: "HEAL"; anchor: Anchor; amount: number }
+  | { t: "DEATH"; side: Side; key: string }
+  | { t: "TURN_END"; side: Side };
+
+/** 一個事件 ＋ 其發生後的權威盤面快照（畫面播放到此事件時即渲染此 state）。 */
+export type EventStep = { event: CombatEvent; state: Game };
