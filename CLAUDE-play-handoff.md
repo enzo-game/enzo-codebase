@@ -120,6 +120,16 @@ Validation:
 
 Follow-up for the animation pass: keep these zones as the stable layout anchors, then layer card flight, attack lunge, impact, damage, death, and turn-transition events above them.
 
+## 2026-07-11 Codex Hand Hover Correction
+
+The previous hand-hover rule used `scale(1.95)` and `translateY(-102px)`, which expanded one card into a large panel over the battlefield. This was rejected in screenshot review.
+
+Current rule:
+
+- Hand cards only lift about 10px and scale to 1.05 on hover.
+- The native `title` tooltip was removed from hand cards to avoid a gray browser tooltip appearing over the board.
+- Learning notes remain visible in the card content and in the quiz panel.
+
 - Desktop 1280x720: after the 2026-07-11 size pass, the hand is larger and horizontally scrollable. If it crowds the board too much, reduce only the hand width first (`w-[132px] md:w-[164px] xl:w-[178px]`) before shrinking the whole table.
 - Mobile 390x844: the core vertical flow is visible, but further tuning may be needed after Claude's concurrent UI work stabilizes.
 - The battle log is now a small floating panel. If it competes with board readability, collapse it behind a small button.

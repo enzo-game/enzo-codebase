@@ -714,13 +714,13 @@ body {
 .hs-hand-card:last-child {
   margin-right: 0;
 }
-/* hover：小張手牌浮起放大成完整牌面（含不能出的牌也能看清楚） */
+/* hover：手牌只做輕微上浮，不能放大成遮住戰場的預覽面板。 */
 .hs-hand-rail .hs-hand-card:hover {
-  transform: translateY(-102px) scale(1.95);
-  z-index: 60;
+  transform: translateY(-10px) scale(1.05);
+  z-index: 45;
   box-shadow:
-    0 26px 54px rgba(0, 0, 0, 0.75),
-    0 0 30px rgba(255, 205, 112, 0.28);
+    0 16px 30px rgba(0, 0, 0, 0.62),
+    0 0 18px rgba(255, 205, 112, 0.2);
 }
 /* 不能出的牌：稍微壓暗但仍清楚；hover 時恢復全亮方便閱讀 */
 .hs-card-blocked {
