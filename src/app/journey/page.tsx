@@ -269,6 +269,10 @@ const LS_COACH_DONE = "cw_journey_coach_done";
 // 下一次「新開局」（任一關）開局糧食 +N 並清空——世代接力的機制化呈現（呼應射日傳說）。
 const LS_MILLET_BANK = "cw_millet_bank";
 const MILLET_BANK_CAP = 3;
+// ORDER-079：每關最佳難度評分（localStorage key 前綴＋levelId）——給「再打一次刷新紀錄」的重玩目標
+const LS_BEST_PREFIX = "cw_best_score_";
+// ORDER-079：聽音搬石（障礙節點的語言優先小遊戲）——石頭顆數
+const ROCK_STONES = 5;
 // ORDER-051：電影感全頁背景——沿用已過文化複核的既有場景圖（stories/scene-start-v1），暗化 80%＋vignette
 const PAGE_BG = "/images/journey/stories/scene-start-v1.jpg";
 // ORDER-051（引導點 3）：首次教學 4 站（任務面板→行動聚光燈→手牌→紮營），各一句話
@@ -818,13 +822,17 @@ function wrongAmt(full: number): number {
   return Math.max(1, Math.floor(full * 0.4));
 }
 
-// ORDER-055（勝利畫面）：本局難度評分＝天數餘裕（每日 15、上限 30）＋正確率（上限 50）＋
-// 傳說收集完整度（上限 20），總分 0-100，給重玩追分目標。
+// ORDER-055（勝利畫面）：本局難度評分，總分 0-100，給重玩追分目標。
+// ORDER-079 重配權重並把支線目標接進來（原本支線零獎勵，是「存在但收不到」的系統）：
+// 天數餘裕（每日 15、上限 30）＋正確率（上限 40）＋傳說收集（上限 15）＋支線目標（每項 5、上限 15）。
 function difficultyScore(g: JGame): {
   total: number;
   daysPts: number;
   accPts: number;
   legendPts: number;
+  questPts: number;
+  questsDone: number;
+  questsTotal: number;
   daysSpare: number;
   ratePct: number;
   collected: number;
@@ -835,11 +843,26 @@ function difficultyScore(g: JGame): {
   const daysPts = Math.min(30, daysSpare * 15);
   const answered = g.correct + g.wrong;
   const ratePct = answered === 0 ? 0 : Math.round((g.correct / answered) * 100);
-  const accPts = Math.round(ratePct * 0.5);
+  const accPts = Math.round(ratePct * 0.4);
   const collected = unlockedLegendCount(g);
   const totalPassages = cfg.legend.passages.length;
-  const legendPts = totalPassages === 0 ? 0 : Math.round((collected / totalPassages) * 20);
-  return { total: daysPts + accPts + legendPts, daysPts, accPts, legendPts, daysSpare, ratePct, collected, totalPassages };
+  const legendPts = totalPassages === 0 ? 0 : Math.round((collected / totalPassages) * 15);
+  const quests = sideQuests(g);
+  const questsDone = quests.filter((q) => q.state === "ok").length;
+  const questPts = questsDone * 5;
+  return {
+    total: daysPts + accPts + legendPts + questPts,
+    daysPts,
+    accPts,
+    legendPts,
+    questPts,
+    questsDone,
+    questsTotal: quests.length,
+    daysSpare,
+    ratePct,
+    collected,
+    totalPassages,
+  };
 }
 
 // ───────────────────────── 壓力分級（v2：情緒曲線）─────────────────────────
@@ -873,14 +896,33 @@ function quizForVocab(vocabId: string): Quiz {
   };
 }
 
-function quizFor(card: JCard): Quiz {
-  return quizForVocab(card.vocabId);
+// ORDER-079：同一詞一局只考一次——卡牌首打考卡面的錨定詞（情境記憶），之後改抽本局未考過的詞。
+function quizFor(g: JGame, card: JCard): Quiz {
+  const vid = askedSet(g).has(card.vocabId) ? pickVocabIds(g, 1)[0] : card.vocabId;
+  return quizForVocab(vid);
 }
 
 // v3（ORDER-031）：非卡牌動作（硬清／事件謹慎/補給）補答題閘門，避免完全繞過族語題
 // （放行紅線：模式 A 必須內建族語答題迴圈——這幾個動作原本零門檻，等於繞過去了）
-function randomVocabId(): string {
-  return VOCAB[Math.floor(Math.random() * VOCAB.length)].id;
+// ORDER-079（出題不重複窗口）：一局內考過的詞（wordLog 有紀錄）不再抽，直到未考池不夠才放寬——
+// 司令實測回報同一個詞一局連考三次（「石頭」三連），重複出題讓答題淪為橡皮圖章。
+function askedSet(g: JGame): Set<string> {
+  return new Set(g.wordLog.map((w) => w.vocabId));
+}
+
+// 抽 n 個不重複詞：優先從「本局沒考過」的池子抽；audioOnly 供聽力型小遊戲（聽音搭板／聽音搬石）
+// 過濾沒有音檔的詞；anchor 指定必含的情境錨定詞（計入 n）。
+function pickVocabIds(g: JGame, n: number, opts?: { audioOnly?: boolean; anchor?: string }): string[] {
+  const asked = askedSet(g);
+  const pool = opts?.audioOnly ? VOCAB.filter((v) => v.hasAudio) : VOCAB;
+  const ids = new Set<string>();
+  if (opts?.anchor && (!opts.audioOnly || vocab(opts.anchor).hasAudio)) ids.add(opts.anchor);
+  const fresh = pool.filter((v) => !asked.has(v.id) && !ids.has(v.id));
+  const source = fresh.length >= n - ids.size ? fresh : pool;
+  while (ids.size < Math.min(n, pool.length)) {
+    ids.add(source[Math.floor(Math.random() * source.length)].id);
+  }
+  return [...ids];
 }
 
 // ───────────────────────── 判定 ─────────────────────────
@@ -965,6 +1007,7 @@ function hardClearCost(n: PathNode): Partial<Record<Resource, number>> | null {
 
 function canHardClear(g: JGame): boolean {
   if (g.status !== "playing") return false;
+  if (g.ap < 1) return false; // ORDER-079（經濟統一）：硬清不再是 0 行動點的免費通路
   const node = g.nodes[g.idx];
   const cost = node && hardClearCost(node);
   if (!cost) return false;
@@ -977,6 +1020,7 @@ function hardClear(g: JGame, correct: boolean, vocabId: string): JGame {
   if (!canHardClear(g)) return g;
   const cost = hardClearCost(g.nodes[g.idx]) as Partial<Record<Resource, number>>;
   const ng: JGame = { ...g, res: { ...g.res }, nodes: g.nodes.map((n) => ({ ...n })) };
+  ng.ap = Math.max(0, ng.ap - 1); // ORDER-079：硬清耗 1 行動點（經濟統一，讓每天的行動點真的要取捨）
   for (const [r, v] of Object.entries(cost)) ng.res[r as Resource] -= v ?? 0;
   ng.wordLog = [...ng.wordLog, { vocabId, correct }];
   if (correct) {
@@ -1119,6 +1163,8 @@ function resolveWordMatch(g: JGame, results: { vocabId: string; correct: boolean
   const correctCount = results.filter((r) => r.correct).length;
   ng.correct += correctCount;
   ng.wrong += results.length - correctCount;
+  // ORDER-079（連擊一致化）：小遊戲的每一詞也進連擊（依序結算，答錯歸零）
+  for (const r of results) ng.streak = r.correct ? ng.streak + 1 : 0;
   const n2 = ng.nodes[ng.idx];
   n2.cleared = true;
   ng.log = pushLog(ng.log, `✓ 詞彙配對：${results.length} 個族語詞全部辨識出來了，隊伍認出路標，穿過了霧。`, "good");
@@ -1126,7 +1172,7 @@ function resolveWordMatch(g: JGame, results: { vocabId: string; correct: boolean
     ng.pressure = Math.max(0, ng.pressure - 1);
     ng.log = pushLog(ng.log, `一次就全部配對正確——霧裡也不慌，壓力 -1！`, "good");
   }
-  return settle(ng);
+  return settle(applyStreakBonus(ng));
 }
 
 // ───────────────────────── 聽音搭板（ORDER-054：吊橋語言優先小遊戲）─────────────────────────
@@ -1156,6 +1202,8 @@ function resolveBridgeListen(g: JGame, results: { vocabId: string; correct: bool
   const correctCount = results.filter((r) => r.correct).length;
   ng.correct += correctCount;
   ng.wrong += results.length - correctCount;
+  // ORDER-079（連擊一致化）：小遊戲的每一詞也進連擊（依序結算，答錯歸零）
+  for (const r of results) ng.streak = r.correct ? ng.streak + 1 : 0;
   const n2 = ng.nodes[ng.idx];
   n2.obstacle = 0;
   n2.cleared = true;
@@ -1164,7 +1212,7 @@ function resolveBridgeListen(g: JGame, results: { vocabId: string; correct: bool
     ng.pressure = Math.max(0, ng.pressure - 1);
     ng.log = pushLog(ng.log, `一次就聽懂 ${correctCount}/${results.length} 個詞——腳步跟發音一樣穩，壓力 -1！`, "good");
   }
-  return settle(ng);
+  return settle(applyStreakBonus(ng));
 }
 
 // ───────────────────────── 出牌結算 ─────────────────────────
@@ -1208,10 +1256,13 @@ function applyStreakBonus(ng: JGame): JGame {
 // 之類裝置——太魯閣族傳統上沒有文字系統，發明碑文等於捏造文化，屬紅線。
 function applyNodeTrial(g: JGame, nodeId: string, results: { vocabId: string; correct: boolean }[]): JGame {
   const ng: JGame = { ...g, wordLog: [...g.wordLog, ...results], nodes: g.nodes.map((n) => ({ ...n })), trialedNodes: [...g.trialedNodes, nodeId] };
+  ng.ap = Math.max(0, ng.ap - 1); // ORDER-079（經濟統一）：試煉耗 1 行動點，不再是免費的壓力/阻礙減免
   const total = results.length;
   const correctCount = results.filter((r) => r.correct).length;
   ng.correct += correctCount;
   ng.wrong += total - correctCount;
+  // ORDER-079（連擊一致化）：試煉的每一題也進連擊（依序結算，答錯歸零）
+  for (const r of results) ng.streak = r.correct ? ng.streak + 1 : 0;
   const passed = total > 0 && correctCount / total >= 2 / 3;
   const node = ng.nodes[ng.idx];
   if (passed) {
@@ -1244,7 +1295,33 @@ function applyNodeTrial(g: JGame, nodeId: string, results: { vocabId: string; co
     ng.pressure = Math.min(ng.maxPressure, ng.pressure + 1);
     ng.log = pushLog(ng.log, `族語試煉 ${correctCount}/${total}：這幾個詞還不熟，隊伍腳步亂了一拍——壓力 +1，路上再多念幾次。`, "bad");
   }
-  return settle(ng);
+  return settle(applyStreakBonus(ng));
+}
+
+// ───────────────────────── 聽音搬石（ORDER-079：障礙節點的語言優先小遊戲）─────────────────────────
+// 司令反饋「玩法陽春不好玩」——障礙節點原本是純磨血（出牌扣點數），改成跟吊橋搭板同一家族的
+// 動手互動：五顆石頭各標一個族語詞，聽發音、點出聽到的那顆，點對石頭就搬走。聲音→文字的辨識，
+// 與搭板（聲音→意思）、配對（文字→意思）湊成三種不同的語感技能，一關一種考法。
+// 教學化不懲罰：第一次點錯抖動＋重播（該詞記 correct=false），第二次點錯亮出正解照樣搬走。
+// results 每顆石頭一筆；全部第一次就點對 → 壓力 -1 加成。中性操作文本，不涉任何文化敘事。
+function resolveRockClear(g: JGame, results: { vocabId: string; correct: boolean }[]): JGame {
+  const node = g.nodes[g.idx];
+  if (g.status !== "playing" || !node || node.type !== "obstacle" || node.cleared) return g;
+  const ng: JGame = { ...g, nodes: g.nodes.map((n) => ({ ...n })) };
+  ng.wordLog = [...ng.wordLog, ...results];
+  const correctCount = results.filter((r) => r.correct).length;
+  ng.correct += correctCount;
+  ng.wrong += results.length - correctCount;
+  for (const r of results) ng.streak = r.correct ? ng.streak + 1 : 0;
+  const n2 = ng.nodes[ng.idx];
+  n2.obstacle = 0;
+  n2.cleared = true;
+  ng.log = pushLog(ng.log, `✓ 聽音搬石：${results.length} 顆石頭都認出來搬走了，「${n2.name}」已可通行。`, "good");
+  if (correctCount === results.length) {
+    ng.pressure = Math.max(0, ng.pressure - 1);
+    ng.log = pushLog(ng.log, `每顆都一次聽對——手快心穩，壓力 -1！`, "good");
+  }
+  return settle(applyStreakBonus(ng));
 }
 
 function playCard(g: JGame, card: JCard, correct: boolean): JGame {
@@ -1271,9 +1348,9 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
       ng.wrong += 1;
       ng.streak = 0;
     }
-  } else {
-    ng.streak = 0; // 不需答題的卡也會重置連擊（v2 設計：連擊只獎勵持續答對）
   }
+  // ORDER-079（連擊一致化）：不需答題的卡（整理物資）不再無聲重置連擊——
+  // 連擊只跟「答錯」歸零，玩家才建立得起穩定的心智模型。
 
   const node = ng.nodes[ng.idx];
   const tag = card.quiz ? (correct ? "✓ 答對" : "✕ 答錯") : "▶";
@@ -1537,14 +1614,13 @@ function stepHint(g: JGame): { situation: string; todo: string } {
       if (n.cleared) {
         s = { situation: "落石已清除", todo: "按「前進」，繼續上路（行動點 -1）。" };
       } else {
-        const hasCard = g.hand.some((c) => neededEffects(n).includes(c.effect));
-        const canHard = canHardClear(g);
+        // ORDER-079：障礙主打「聽音搬石」語言小遊戲，出牌／硬清仍是替代路線
         s = {
           situation: `落石擋道（剩 ${n.obstacle} 點）`,
           todo:
-            !hasCard && !canHard
-              ? "先按「紮營」換日重抽手牌、囤資源——手上沒有可用行動牌，石材也不夠硬清（花資源硬清需石材×2）。"
-              : "把落石清掉——出「搬石」／「共同搬運」牌，或花資源硬清（石材×2，需答族語題）。",
+            g.ap < 1
+              ? "行動點用完了——先按「紮營」收束今日，明天再來搬石。"
+              : "聽音搬石，把石頭一顆一顆認出來搬走——點「聽音搬石（族語清石）」（行動點 -1），聽發音、點出聽到的那顆；也可出「搬石」／「共同搬運」牌，或花資源硬清（行動點 -1・石材×2）。",
         };
       }
       break;
@@ -1555,13 +1631,13 @@ function stepHint(g: JGame): { situation: string; todo: string } {
         s = { situation: "吊橋已完成", todo: "按「前進」，繼續上路（行動點 -1）。" };
       } else {
         const hasCard = g.hand.some((c) => neededEffects(n).includes(c.effect));
-        const canListen = g.res.wood >= 1 && g.res.rope >= 1;
+        const canListen = g.res.wood >= 1 && g.res.rope >= 1 && g.ap >= 1;
         s = {
           situation: "峽谷吊橋斷裂",
           todo:
             !hasCard && !canListen && !canHardClear(g)
-              ? "先按「紮營」換日重抽手牌、囤資源——手上沒有可用行動牌，木材／繩索也不夠搭板（聽音搭板要木材1・繩索1）。"
-              : "聽音搭板，一塊一塊把橋接回來——點「聽音搭板（族語過橋）」（耗木材1・繩索1），聽發音選出意思，釘穩六塊板；也可出「搭橋」／「共同搬運」牌，或花資源硬清（木材×2・繩索×2）。",
+              ? "先按「紮營」換日補行動點、重抽手牌、囤資源——聽音搭板要行動點 1＋木材1・繩索1。"
+              : "聽音搭板，一塊一塊把橋接回來——點「聽音搭板（族語過橋）」（行動點 -1・木材1・繩索1），聽發音選出意思，釘穩六塊板；也可出「搭橋」／「共同搬運」牌，或花資源硬清（行動點 -1・木材×2・繩索×2）。",
         };
       }
       break;
@@ -1670,6 +1746,9 @@ export default function JourneyPage() {
   const [confirmRestart, setConfirmRestart] = useState(false);
   // ORDER-050（P2）：第二關解鎖狀態（localStorage，僅 client mount 後讀寫——SSR 無 window）
   const [level2Unlocked, setLevel2Unlocked] = useState(false);
+  // ORDER-079：各關最佳難度評分（localStorage）＋本局是否刷新紀錄
+  const [bestScores, setBestScores] = useState<Partial<Record<LevelId, number>>>({});
+  const [newRecord, setNewRecord] = useState(false);
   // newGame() 內含 Math.random()（洗牌／隨機事件／uid），須在 client mount 後才渲染，
   // 否則 SSR 與 client 首次渲染的牌序不一致 → hydration mismatch。
   const [mounted, setMounted] = useState(false);
@@ -1689,6 +1768,18 @@ export default function JourneyPage() {
       /* localStorage 不可用（隱私模式等）：維持預設第一關 */
     }
     if (unlocked) setLevel2Unlocked(true);
+    // ORDER-079：讀取各關最佳難度評分（重玩追分目標——之前算了分卻沒地方追）
+    try {
+      const next: Partial<Record<LevelId, number>> = {};
+      (Object.keys(LEVELS) as LevelId[]).forEach((id) => {
+        const v = parseInt(localStorage.getItem(LS_BEST_PREFIX + id) ?? "", 10);
+        if (Number.isFinite(v)) next[id] = v;
+      });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setBestScores(next);
+    } catch {
+      /* localStorage 不可用：不顯示歷史最佳 */
+    }
     // 開局套用小米銀行（ORDER-055 小米接力：上一局沿路種下的小米，這一局開局糧 +N）
     setGame(consumeMilletBank(newGame(lvl)));
     setMounted(true);
@@ -1712,6 +1803,25 @@ export default function JourneyPage() {
       }
     }
   }, [game.status, game.levelId]);
+
+  // ORDER-079：勝利時結算最佳紀錄——高於歷史最佳就存檔並亮「新紀錄」徽章
+  useEffect(() => {
+    if (game.status !== "won") return;
+    const score = difficultyScore(game).total;
+    const prev = bestScores[game.levelId];
+    if (prev === undefined || score > prev) {
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setBestScores((b) => ({ ...b, [game.levelId]: score }));
+      setNewRecord(true);
+      /* eslint-enable react-hooks/set-state-in-effect */
+      try {
+        localStorage.setItem(LS_BEST_PREFIX + game.levelId, String(score));
+      } catch {
+        /* 忽略寫入失敗 */
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.status]);
 
   // 章節標題卡（v2）：idx 進入新章節的第一個節點時顯示，銜接 /prologue 的章節架構
   const [chapterCard, setChapterCard] = useState<number | null>(null);
@@ -1800,7 +1910,9 @@ export default function JourneyPage() {
     }
   }, [game.milletPlanted]);
 
-  const quiz = useMemo(() => (pending && pending.quiz ? quizFor(pending) : null), [pending]);
+  // ORDER-079：出題經 quizFor 的不重複窗口（彈窗開著時 game 不會變——結算都在 confirm 收窗時才進 setGame，
+  // 所以 deps 掛 game 不會讓題目在作答中途重抽）
+  const quiz = useMemo(() => (pending && pending.quiz ? quizFor(game, pending) : null), [pending, game]);
 
   // v3（ORDER-031）：非卡牌動作的答題閘門（硬清／謹慎探勘／補給）——共用同一套隨機詞庫題型
   const [pendingAction, setPendingAction] = useState<{
@@ -1812,10 +1924,14 @@ export default function JourneyPage() {
   // 隨機題跟眼前情境（節點故事剛講的東西）毫無關聯，答完就忘。改成問「這個節點」對應的詞，
   // 讓題目與剛看到的故事／情境同一個詞，形成情境記憶錨點。
   const currentNodeVocabId = game.nodes[game.idx]?.vocabId;
-  const actionQuiz = useMemo(
-    () => (pendingAction ? quizForVocab(currentNodeVocabId ?? randomVocabId()) : null),
-    [pendingAction, currentNodeVocabId],
-  );
+  // ORDER-079：節點錨定詞本局考過之後，改抽未考過的詞（不再一個節點反覆考同一個詞）。
+  // 彈窗開著時 game 不會變（結算都在 confirm 收窗時才進 setGame），deps 掛 game 不會中途重抽題。
+  const actionQuiz = useMemo(() => {
+    if (!pendingAction) return null;
+    const anchor = currentNodeVocabId ?? null;
+    const vid = anchor && !askedSet(game).has(anchor) ? anchor : pickVocabIds(game, 1)[0];
+    return quizForVocab(vid);
+  }, [pendingAction, currentNodeVocabId, game]);
 
   const total = game.correct + game.wrong;
   const rate = total === 0 ? 0 : Math.round((game.correct / total) * 100);
@@ -1847,6 +1963,8 @@ export default function JourneyPage() {
 
   // ORDER-057：詞彙配對小遊戲（第二關 match 節點）與跨節點呼應故事卡狀態
   const [wordMatch, setWordMatch] = useState<{ ids: string[] } | null>(null);
+  // ORDER-079：聽音搬石小遊戲（障礙節點）——須在 anyModalOpen 之前宣告
+  const [rockClear, setRockClear] = useState<{ ids: string[] } | null>(null);
   const [callbackCard, setCallbackCard] = useState<"left" | "right" | null>(null);
   const [callbackShown, setCallbackShown] = useState(false);
 
@@ -1886,6 +2004,7 @@ export default function JourneyPage() {
     !!challenge ||
     !!bridgeListen ||
     !!wordMatch ||
+    !!rockClear ||
     branchCardOpen ||
     callbackCard !== null ||
     legendCard !== null ||
@@ -1967,22 +2086,22 @@ export default function JourneyPage() {
 
   // ─────────── 聽音搭板（ORDER-054）：開始／作答／續行／中止 ───────────
 
-  const canStartBridgeListen = game.res.wood >= 1 && game.res.rope >= 1;
+  // ORDER-079（經濟統一）：開工也要 1 行動點——小遊戲不再是 0 AP 的免費通路
+  const canStartBridgeListen = game.res.wood >= 1 && game.res.rope >= 1 && game.ap >= 1;
 
   function startBridgeListen() {
     const node = game.nodes[game.idx];
     if (game.status !== "playing" || anyModalOpen || !node || node.type !== "bridge" || node.cleared) return;
     if (!canStartBridgeListen) return; // 按鈕已 disabled，面板另有資源不足提示
-    // 開始即扣料（木材1・繩索1）——與遊戲其他機制一致：花下去就是花下去了，中途離開不退
+    // 開始即扣料（木材1・繩索1）＋行動點 1——與遊戲其他機制一致：花下去就是花下去了，中途離開不退
     setGame((g) => ({
       ...g,
+      ap: Math.max(0, g.ap - 1),
       res: { ...g.res, wood: g.res.wood - 1, rope: g.res.rope - 1 },
-      log: pushLog(g.log, `聽音搭板開始：耗木材 1・繩索 1。聽準每個詞，把 ${BRIDGE_PLANKS} 塊板釘回去。`, "sys"),
+      log: pushLog(g.log, `聽音搭板開始：行動點 -1、耗木材 1・繩索 1。聽準每個詞，把 ${BRIDGE_PLANKS} 塊板釘回去。`, "sys"),
     }));
-    // 從完整已驗證詞庫抽 5 個不重複的詞
-    const ids = new Set<string>();
-    while (ids.size < Math.min(BRIDGE_PLANKS, VOCAB.length)) ids.add(randomVocabId());
-    const list = [...ids];
+    // ORDER-079：改走不重複窗口抽詞（限有音檔的詞——這是聽力遊戲）
+    const list = pickVocabIds(game, BRIDGE_PLANKS, { audioOnly: true });
     setBridgeListen({
       ids: list,
       idx: 0,
@@ -2087,12 +2206,10 @@ export default function JourneyPage() {
   function startNodeTrial() {
     const node = game.nodes[game.idx];
     if (game.status !== "playing" || anyModalOpen || !node || game.trialedNodes.includes(node.id)) return;
-    // 第 1 題固定考該節點自己的詞（情境錨點），其餘從全詞庫抽、不與已選重複
-    const ids = new Set<string>([node.vocabId]);
-    while (ids.size < Math.min(TRIAL_SIZE, VOCAB.length)) {
-      ids.add(randomVocabId());
-    }
-    setChallenge({ quizzes: [...ids].map((id) => quizForVocab(id)), idx: 0, results: [], nodeId: node.id });
+    if (game.ap < 1) return; // ORDER-079（經濟統一）：試煉耗 1 行動點（結算時扣）
+    // 第 1 題固定考該節點自己的詞（情境錨點），其餘走不重複窗口抽（ORDER-079）
+    const ids = pickVocabIds(game, TRIAL_SIZE, { anchor: node.vocabId });
+    setChallenge({ quizzes: ids.map((id) => quizForVocab(id)), idx: 0, results: [], nodeId: node.id });
     setChallengeRevealed(null);
   }
 
@@ -2199,13 +2316,41 @@ export default function JourneyPage() {
     }
   }
 
-  // ORDER-057：詞彙配對——從完整已驗證詞庫抽 4 個不重複的詞，開啟配對小遊戲
+  // ORDER-057：詞彙配對——抽 4 個不重複的詞開啟配對小遊戲（ORDER-079：改走不重複窗口＋開工耗 1 行動點）
   function startWordMatch() {
     const node = game.nodes[game.idx];
     if (game.status !== "playing" || anyModalOpen || !node || node.type !== "match" || node.cleared) return;
-    const ids = new Set<string>();
-    while (ids.size < Math.min(4, VOCAB.length)) ids.add(randomVocabId());
-    setWordMatch({ ids: [...ids] });
+    if (game.ap < 1) return;
+    setGame((g) => ({
+      ...g,
+      ap: Math.max(0, g.ap - 1),
+      log: pushLog(g.log, "詞彙配對開始：行動點 -1。認出每一個詞，隊伍才敢在霧裡踏出下一步。", "sys"),
+    }));
+    setWordMatch({ ids: pickVocabIds(game, 4) });
+  }
+
+  // ORDER-079：聽音搬石——障礙節點的語言優先小遊戲。開工耗 1 行動點；石頭上的詞
+  // 走不重複窗口抽（限有音檔——這是聽力遊戲），並把節點自己的詞當情境錨點放進去。
+  function startRockClear() {
+    const node = game.nodes[game.idx];
+    if (game.status !== "playing" || anyModalOpen || !node || node.type !== "obstacle" || node.cleared) return;
+    if (game.ap < 1) return;
+    setGame((g) => ({
+      ...g,
+      ap: Math.max(0, g.ap - 1),
+      log: pushLog(g.log, `聽音搬石開始：行動點 -1。聽準每個詞，把 ${ROCK_STONES} 顆石頭一顆一顆認出來搬走。`, "sys"),
+    }));
+    setRockClear({ ids: pickVocabIds(game, ROCK_STONES, { audioOnly: true, anchor: node.vocabId }) });
+  }
+
+  const finishRockClear = useCallback((results: { vocabId: string; correct: boolean }[]) => {
+    setGame((g) => resolveRockClear(g, results));
+    setRockClear(null);
+  }, []);
+
+  function abortRockClear() {
+    setRockClear(null);
+    setGame((g) => settle({ ...g, log: pushLog(g.log, "先不搬了：這一輪的力氣已經花下去，石堆還在原地。", "info") }));
   }
 
   const finishWordMatch = useCallback((results: { vocabId: string; correct: boolean }[]) => {
@@ -2275,6 +2420,9 @@ export default function JourneyPage() {
     setWordMatch(null);
     setCallbackCard(null);
     setCallbackShown(false);
+    // ORDER-079：重置聽音搬石與新紀錄徽章
+    setRockClear(null);
+    setNewRecord(false);
   }
 
   // mount 前：SSR 與 client 首渲染皆輸出此骨架，確保 HTML 一致（避免 hydration mismatch）
@@ -2378,11 +2526,19 @@ export default function JourneyPage() {
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className={`${notoSerifTC.className} text-sm font-bold text-amber-50`}>{cfg.pickLabel}</span>
-                  {active ? (
-                    <span className="jny-badge-gold rounded px-1.5 py-0.5 text-[10px] font-bold">進行中</span>
-                  ) : locked ? (
-                    <span className="rounded border border-slate-700 bg-slate-900/80 px-1.5 py-0.5 text-[10px] text-slate-400">未解鎖</span>
-                  ) : null}
+                  <span className="flex items-center gap-1.5">
+                    {/* ORDER-079：各關歷史最佳難度評分（重玩追分目標） */}
+                    {!locked && bestScores[lid] !== undefined && (
+                      <span className="rounded border border-sky-700/60 bg-sky-950/50 px-1.5 py-0.5 text-[10px] font-bold text-sky-300">
+                        最佳 {bestScores[lid]}
+                      </span>
+                    )}
+                    {active ? (
+                      <span className="jny-badge-gold rounded px-1.5 py-0.5 text-[10px] font-bold">進行中</span>
+                    ) : locked ? (
+                      <span className="rounded border border-slate-700 bg-slate-900/80 px-1.5 py-0.5 text-[10px] text-slate-400">未解鎖</span>
+                    ) : null}
+                  </span>
                 </div>
                 <p className="mt-1 text-[11px] leading-snug text-amber-100/55">
                   {locked ? "未解鎖 · 通關第一關解鎖" : cfg.pickDesc}
@@ -2449,13 +2605,35 @@ export default function JourneyPage() {
                   </button>
                 )}
 
-                {/* 花資源硬清（ORDER-056：落石也走這條）：落石／吊橋／危害未清時的資源解——一樣要答族語題，答對全額答錯半額。
-                    落石＝石材×2、吊橋／危害＝木材×2・繩索×2。落石節點的聚光燈落在這顆鈕（primary==="repair" 且落石）。 */}
+                {/* 聽音搬石（ORDER-079）：障礙節點的語言優先小遊戲——聽發音、點出聽到的那顆石頭，
+                    五顆全認出來就清障。聚光燈落在這顆鈕；出牌與硬清仍是替代路線。 */}
+                {game.status === "playing" && !node.cleared && node.type === "obstacle" && (
+                  <>
+                    <button
+                      onClick={startRockClear}
+                      disabled={anyModalOpen || game.ap < 1}
+                      className={`repair-primary-btn relative mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                        primary === "repair" ? "jny-spotlight" : primary !== null ? "jny-dim" : ""
+                      }`}
+                    >
+                      {primary === "repair" && nowPill}
+                      <IconSpeaker className="w-4 h-4 shrink-0" /> 聽音搬石（族語清石・行動點 -1）
+                    </button>
+                    {game.ap < 1 && (
+                      <p className="mt-1.5 text-[11px] leading-snug text-rose-300">
+                        行動點用完了——先紮營，明天再來搬；或出「搬石」／「共同搬運」牌（若還有行動點折扣）。
+                      </p>
+                    )}
+                  </>
+                )}
+
+                {/* 花資源硬清（ORDER-056：落石也走這條；ORDER-079：改耗 1 行動點）：落石／吊橋／危害未清時的
+                    資源解——一樣要答族語題，答對全額答錯半額。落石＝石材×2、吊橋／危害＝木材×2・繩索×2。 */}
                 {game.status === "playing" &&
                   !node.cleared &&
                   (node.type === "bridge" || node.type === "hazard" || node.type === "obstacle") &&
                   (() => {
-                    const hardClearSpot = primary === "hazard" || (primary === "repair" && node.type === "obstacle");
+                    const hardClearSpot = primary === "hazard";
                     return (
                       <button
                         onClick={doHardClear}
@@ -2467,10 +2645,10 @@ export default function JourneyPage() {
                         {hardClearSpot && nowPill}
                         <IconPickaxe className="w-4 h-4 shrink-0" />{" "}
                         {node.type === "hazard"
-                          ? "花資源架遮蔽硬撐（木材×2・繩索×2）"
+                          ? "花資源架遮蔽硬撐（行動點 -1・木材×2・繩索×2）"
                           : node.type === "obstacle"
-                            ? "花資源硬清（石材×2）"
-                            : "花資源硬清（木材×2・繩索×2）"}
+                            ? "花資源硬清（行動點 -1・石材×2）"
+                            : "花資源硬清（行動點 -1・木材×2・繩索×2）"}
                       </button>
                     );
                   })()}
@@ -2487,11 +2665,11 @@ export default function JourneyPage() {
                       }`}
                     >
                       {primary === "repair" && nowPill}
-                      <IconSpeaker className="w-4 h-4 shrink-0" /> 聽音搭板（族語過橋・耗木材1・繩索1）
+                      <IconSpeaker className="w-4 h-4 shrink-0" /> 聽音搭板（族語過橋・行動點 -1・木材1・繩索1）
                     </button>
                     {!canStartBridgeListen && (
                       <p className="mt-1.5 text-[11px] leading-snug text-rose-300">
-                        木材或繩索不足（各需 1）——先紮營囤料，或出「搭橋」／「共同搬運」牌、花資源硬清過橋。
+                        行動點或材料不足（行動點 1、木材／繩索各 1）——先紮營補行動點、囤料，或出「搭橋」／「共同搬運」牌過橋。
                       </p>
                     )}
                   </>
@@ -2545,13 +2723,13 @@ export default function JourneyPage() {
                 {game.status === "playing" && !node.cleared && node.type === "match" && (
                   <button
                     onClick={startWordMatch}
-                    disabled={anyModalOpen}
+                    disabled={anyModalOpen || game.ap < 1}
                     className={`repair-primary-btn relative mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-40 ${
                       primary === "match" ? "jny-spotlight" : primary !== null ? "jny-dim" : ""
                     }`}
                   >
                     {primary === "match" && nowPill}
-                    <IconSearch className="w-4 h-4 shrink-0" /> 詞彙配對（族語辨識）
+                    <IconSearch className="w-4 h-4 shrink-0" /> 詞彙配對（族語辨識・行動點 -1）
                   </button>
                 )}
 
@@ -2560,12 +2738,12 @@ export default function JourneyPage() {
                 {game.status === "playing" && !game.trialedNodes.includes(node.id) && (
                   <button
                     onClick={startNodeTrial}
-                    disabled={anyModalOpen}
+                    disabled={anyModalOpen || game.ap < 1}
                     className={`repair-secondary-btn mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold text-sky-200 transition disabled:opacity-30 ${
                       primary !== null ? "jny-dim" : ""
                     }`}
                   >
-                    <IconBook className="w-4 h-4 shrink-0" /> 族語試煉（本路段一次：{node.cleared || node.obstacle === 0 ? "通過則壓力 -1" : "通過則阻礙 -1"}）
+                    <IconBook className="w-4 h-4 shrink-0" /> 族語試煉（行動點 -1・本路段一次：{node.cleared || node.obstacle === 0 ? "通過則壓力 -1" : "通過則阻礙 -1"}）
                   </button>
                 )}
               </div>
@@ -2802,9 +2980,14 @@ export default function JourneyPage() {
                     <span className={`${notoSerifTC.className} text-sm font-bold`}>{c.name}</span>
                     <span className="text-[9px] tracking-[0.15em] text-amber-200/70">{cardTypeLabel(c.type)}</span>
                   </div>
-                  <div className="mt-1">
-                    <WordChip vocabId={c.vocabId} />
-                  </div>
+                  {/* ORDER-079（殺橡皮圖章）：需答題的卡不再把族語詞印在牌面上——原本牌面寫著
+                      btunux、打出後題目問「石頭」，答案就印在牌上，答題淪為橡皮圖章。
+                      改為答對後在題目彈窗揭示＋發音（既有流程）；不需答題的卡照樣展示詞彙（純學習）。 */}
+                  {!c.quiz && (
+                    <div className="mt-1">
+                      <WordChip vocabId={c.vocabId} />
+                    </div>
+                  )}
                   <div className="text-[10px] text-amber-100/60 mt-1 leading-snug">{c.desc}</div>
                   {c.costRes && (
                     <div className="flex items-center gap-2 text-[10px] text-amber-300/80 mt-1">
@@ -3273,6 +3456,17 @@ export default function JourneyPage() {
         />
       )}
 
+      {/* 聽音搬石小遊戲（ORDER-079）：障礙節點的語言優先互動——五顆石頭各標一個族語詞，
+          聽發音、點出聽到的那顆搬走；點錯抖動＋重播（教學化），第二次錯亮出正解照樣搬。 */}
+      {rockClear && curNode && (
+        <RockClear
+          ids={rockClear.ids}
+          nodeName={curNode.name}
+          onDone={finishRockClear}
+          onAbort={abortRockClear}
+        />
+      )}
+
       {/* 跨節點呼應故事卡（ORDER-057）：把「當初的選擇」講出來（stat 結算已在 enterNode 完成）。 */}
       {callbackCard !== null && (
         <div className="fixed inset-0 z-[55] flex items-center justify-center bg-black/80 backdrop-blur-[4px] p-4">
@@ -3325,11 +3519,11 @@ export default function JourneyPage() {
               <li>▶ 路段清除後，隨時可點常駐的<b>「前進」</b>（花 1 行動點）走到下一段，不需要特定卡牌。</li>
               <li className="flex gap-2">
                 <IconHammer className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
-                <span>落石路段：打<b>「搬石」／「共同搬運」</b>牌快速清除，或花<b>資源硬清</b>（石材×2，一樣要答族語題，答對全額、答錯半額）。</span>
+                <span>落石路段主打<b>「聽音搬石」</b>（行動點 -1）：五顆石頭各標一個族語詞，聽發音、點出聽到的那顆搬走；點錯會抖動＋重播、再錯直接亮出正解教你，不卡關。也可打<b>「搬石」／「共同搬運」</b>牌，或花<b>資源硬清</b>（行動點 -1・石材×2，一樣要答族語題，答對全額、答錯只清 40%）。</span>
               </li>
               <li className="flex gap-2">
                 <IconSpeaker className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
-                <span>吊橋主打<b>「聽音搭板」</b>：耗木材1・繩索1，聽六個族語真實發音、選出中文意思，聽準一個詞就釘穩一塊板。答錯先給族語書寫提示（壓力 +1）再選一次；再錯會直接教你正解，板子補強照釘、不卡關。也可打「搭橋」／「共同搬運」牌，或花<b>雙倍資源「硬清」</b>（一樣要答族語題）。</span>
+                <span>吊橋主打<b>「聽音搭板」</b>：行動點 -1・耗木材1・繩索1，聽六個族語真實發音、選出中文意思，聽準一個詞就釘穩一塊板。答錯先給族語書寫提示（壓力 +1）再選一次；再錯會直接教你正解，板子補強照釘、不卡關。也可打「搭橋」／「共同搬運」牌，或花<b>雙倍資源「硬清」</b>（一樣要答族語題）。</span>
               </li>
               <li className="flex gap-2">
                 <IconQuestion className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
@@ -3365,11 +3559,11 @@ export default function JourneyPage() {
               </li>
               <li className="flex gap-2">
                 <IconBook className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
-                <span>每個路段都有一次<b>「族語試煉」</b>：3 題（含這個路段自己的詞），通過（答對 2 題以上）依情境給獎勵——路段有阻礙時阻礙 -1，否則壓力 -1；<b>未通過則壓力 +1</b>。不佔行動點。</span>
+                <span>每個路段都有一次<b>「族語試煉」</b>：3 題（含這個路段自己的詞），通過（答對 2 題以上）依情境給獎勵——路段有阻礙時阻礙 -1，否則壓力 -1；<b>未通過則壓力 +1</b>。花 1 行動點。</span>
               </li>
               <li className="flex gap-2">
                 <IconFlame className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
-                <span>連續答對 3 題族語題會觸發<b>「順風」</b>，補 1 行動點。</span>
+                <span>連續答對 3 題族語題會觸發<b>「順風」</b>，補 1 行動點——搬石、搭板、配對、試煉的每一題都算連擊，答錯才歸零。<b>支線目標</b>每達成一項，勝利結算 +5 分；各關的<b>歷史最佳評分</b>會記下來，等你刷新。</span>
               </li>
               <li className="flex gap-2">
                 <IconGauge className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
@@ -3548,13 +3742,25 @@ export default function JourneyPage() {
                   <p className={`${notoSansTC.className} text-sm leading-relaxed text-amber-100/90`}>{legend.closing}</p>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-xs uppercase tracking-wider text-sky-400 font-semibold">本局難度評分</span>
-                    <span className={`${notoSerifTC.className} text-lg font-black text-amber-200`}>{ds.total}/100</span>
+                    <span className="flex items-center gap-2">
+                      {/* ORDER-079：刷新歷史最佳時亮「新紀錄」——分數終於有地方可以追了 */}
+                      {newRecord && (
+                        <span className="jny-badge-gold rounded px-1.5 py-0.5 text-[10px] font-black">新紀錄！</span>
+                      )}
+                      <span className={`${notoSerifTC.className} text-lg font-black text-amber-200`}>{ds.total}/100</span>
+                    </span>
                   </div>
                   <ul className="mt-1 space-y-0.5 text-[11px] text-slate-300">
                     <li>・天數餘裕 +{ds.daysPts}（提前 {ds.daysSpare} 日抵達，每日 15 分、上限 30）</li>
-                    <li>・答題正確率 +{ds.accPts}（{ds.ratePct}%，上限 50）</li>
-                    <li>・傳說收集 +{ds.legendPts}（{ds.collected}/{ds.totalPassages} 段，上限 20）</li>
+                    <li>・答題正確率 +{ds.accPts}（{ds.ratePct}%，上限 40）</li>
+                    <li>・傳說收集 +{ds.legendPts}（{ds.collected}/{ds.totalPassages} 段，上限 15）</li>
+                    <li>・支線目標 +{ds.questPts}（達成 {ds.questsDone}/{ds.questsTotal} 項，每項 5 分）</li>
                   </ul>
+                  {bestScores[game.levelId] !== undefined && (
+                    <div className="mt-1.5 text-[11px] text-amber-300/80">
+                      本關歷史最佳：{bestScores[game.levelId]}/100{newRecord ? "（就是這一局！）" : "——再打一次刷新它？"}
+                    </div>
+                  )}
                 </div>
               );
             })()}
@@ -3935,6 +4141,156 @@ function WordMatch({
               ✦ 先不配了
             </button>
             <span className="text-right text-[10px] leading-snug text-amber-100/45">配錯不扣分，歸位再試就好。</span>
+          </footer>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ───────────────────────── 聽音搬石元件（ORDER-079）─────────────────────────
+// 障礙節點的語言優先小遊戲：介面比照 WordMatch（ids/onDone/onAbort，內部自理進行狀態）。
+// 玩法：目標詞自動播發音（可重聽），玩家在標著族語詞的石頭裡點出聽到的那顆——
+// 點對石頭搬走、自動出下一題；第一次點錯抖動＋重播（該詞記 correct=false）；
+// 第二次點錯亮出正解（教學），點它照樣搬走。全部搬完 onDone。聲音→文字辨識，
+// 與聽音搭板（聲音→意思）、詞彙配對（文字→意思）構成三種不同語感技能。
+function RockClear({
+  ids,
+  nodeName,
+  onDone,
+  onAbort,
+}: {
+  ids: string[];
+  nodeName: string;
+  onDone: (results: { vocabId: string; correct: boolean }[]) => void;
+  onAbort: () => void;
+}) {
+  const stones = useMemo(
+    () =>
+      ids.map((id) => {
+        const e = vocab(id);
+        return { id, word: e.word, chinese: e.chinese };
+      }),
+    [ids],
+  );
+  // 出題順序與石頭排列各自打散（記憶化，避免每次 render 重洗）
+  const order = useMemo(() => shuffle(ids.map((id) => id)), [ids]);
+  const layout = useMemo(() => shuffle(stones.map((s) => s)), [stones]);
+  const [idx, setIdx] = useState(0); // 目前目標＝order[idx]
+  const [clearedIds, setClearedIds] = useState<string[]>([]);
+  const [missedIds, setMissedIds] = useState<string[]>([]); // 曾點錯的目標（結算 correct=false）
+  const [missesOnCurrent, setMissesOnCurrent] = useState(0);
+  const [shakeId, setShakeId] = useState<string | null>(null);
+  const doneRef = useRef(false);
+  const targetId = order[idx] ?? null;
+  const teach = missesOnCurrent >= 2; // 第二次錯：亮出正解引導點擊
+
+  // 每個目標開始時自動播一次發音（延遲避開開窗動畫）
+  useEffect(() => {
+    if (!targetId) return;
+    const t = setTimeout(() => playAudio(targetId), 350);
+    return () => clearTimeout(t);
+  }, [targetId]);
+
+  function tapStone(id: string) {
+    if (!targetId || clearedIds.includes(id) || shakeId) return;
+    if (id === targetId) {
+      sfxCorrect();
+      setClearedIds((c) => [...c, id]);
+      setMissesOnCurrent(0);
+      setIdx((i) => i + 1);
+    } else {
+      sfxWrong();
+      setMissedIds((m) => (m.includes(targetId) ? m : [...m, targetId]));
+      setMissesOnCurrent((n) => n + 1);
+      setShakeId(id);
+      setTimeout(() => setShakeId(null), 480);
+      // 點錯就再播一次目標發音（教學化：先聽清楚再選）
+      setTimeout(() => playAudio(targetId), 500);
+    }
+  }
+
+  useEffect(() => {
+    if (clearedIds.length !== ids.length || doneRef.current) return;
+    doneRef.current = true;
+    const results = order.map((id) => ({ vocabId: id, correct: !missedIds.includes(id) }));
+    const t = setTimeout(() => onDone(results), 700);
+    return () => clearTimeout(t);
+  }, [clearedIds, ids, order, missedIds, onDone]);
+
+  const allDone = clearedIds.length === ids.length;
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/75 p-3 backdrop-blur-[6px] sm:p-6">
+      <div className="repair-modal w-full max-w-md px-5 py-6 my-4 sm:px-7">
+        <header className="relative z-[2] mb-3 text-center">
+          <p className={`${notoSansTC.className} mb-1 text-sm font-bold tracking-[0.08em] text-amber-300`}>
+            聽音搬石 · 族語清石
+          </p>
+          <h3 className={`${notoSerifTC.className} repair-title text-2xl font-black sm:text-3xl`}>{nodeName}</h3>
+          <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-amber-100/70">
+            聽發音，在石頭上點出你聽到的那個詞——點對就把那顆石頭搬走。點錯會再播一次，聽清楚再選。
+          </p>
+        </header>
+
+        <div className="relative z-[2] mb-3 flex items-center justify-between">
+          <span className={`${notoSerifTC.className} text-base font-bold text-amber-50`}>
+            已搬走 {clearedIds.length}/{ids.length}
+          </span>
+          {targetId && !allDone && (
+            <button
+              onClick={() => playAudio(targetId)}
+              className="repair-secondary-btn inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold text-sky-200"
+            >
+              <IconSpeaker className="w-3.5 h-3.5 shrink-0" /> 再聽一次
+            </button>
+          )}
+        </div>
+
+        <div className="relative z-[2] grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          {layout.map((s) => {
+            const isCleared = clearedIds.includes(s.id);
+            const isShaking = shakeId === s.id;
+            const isTeachTarget = teach && s.id === targetId;
+            return (
+              <button
+                key={s.id}
+                disabled={isCleared || allDone}
+                onClick={() => tapStone(s.id)}
+                className={`flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 text-center transition ${
+                  isCleared
+                    ? "border-emerald-400/40 bg-emerald-950/30 text-emerald-200/40 opacity-40"
+                    : isShaking
+                      ? "wm-shake border-rose-400/80 bg-rose-800/70 text-amber-50"
+                      : isTeachTarget
+                        ? "border-amber-300/90 bg-[#2a2210] text-amber-50 ring-2 ring-amber-300/70"
+                        : "border-amber-500/25 bg-[#12100b]/90 text-amber-50 hover:border-amber-400/60 hover:bg-[#1d1a12]"
+                }`}
+              >
+                <IconMountain className={`h-4 w-4 shrink-0 ${isCleared ? "text-emerald-400/50" : "text-stone-400/80"}`} />
+                <span className={`${notoSerifTC.className} text-sm font-bold leading-tight`}>{s.word}</span>
+                {(isCleared || isTeachTarget) && <span className="text-[10px] text-amber-200/70">{s.chinese}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {teach && !allDone && (
+          <p className="relative z-[2] mt-3 text-center text-xs leading-relaxed text-amber-300/90">
+            沒關係——亮起來的那顆就是「{targetId ? vocab(targetId).chinese : ""}」，點它，把它記下來。
+          </p>
+        )}
+
+        {allDone ? (
+          <p className="relative z-[2] mt-4 inline-flex w-full items-center justify-center gap-1.5 text-sm font-bold text-emerald-300">
+            <IconCheck className="w-4 h-4 shrink-0" /> 石頭全搬走了——路清出來了。
+          </p>
+        ) : (
+          <footer className="relative z-[2] mt-4 flex items-center justify-between gap-2">
+            <button onClick={onAbort} className="repair-secondary-btn rounded-xl px-5 py-2 text-xs font-bold">
+              ✦ 先不搬了
+            </button>
+            <span className="text-right text-[10px] leading-snug text-amber-100/45">點錯不扣分，聽清楚再選就好。</span>
           </footer>
         )}
       </div>
