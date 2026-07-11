@@ -1278,6 +1278,60 @@ body {
   background: radial-gradient(ellipse at center, transparent 25%, rgba(3, 10, 16, 0.92) 100%);
 }
 
+.jny-shell {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 18px;
+}
+
+.jny-shell > * {
+  order: 20;
+}
+
+.jny-topbar {
+  order: 1;
+}
+
+.jny-level-strip {
+  order: 2;
+}
+
+.jny-level-strip button {
+  padding: 8px 12px;
+}
+
+.jny-level-strip p {
+  display: none;
+}
+
+.jny-route-board {
+  order: 3;
+}
+
+.jny-quest-board {
+  order: 4;
+}
+
+.jny-hand-board {
+  order: 5;
+}
+
+.jny-hud-board {
+  order: 6;
+}
+
+.jny-event-strip {
+  order: 7;
+}
+
+.jny-log-board {
+  order: 8;
+}
+
+.jny-footer {
+  order: 30;
+}
+
 /* 通用金框霧面玻璃面板（.repair-modal 的輕量版：雙層金邊＋霧面玻璃＋微光） */
 .jny-panel {
   position: relative;
@@ -1307,6 +1361,103 @@ body {
     0 0 44px rgba(226, 164, 58, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     inset 0 0 36px rgba(255, 177, 64, 0.05);
+}
+
+.jny-quest-board {
+  margin-bottom: 8px;
+  padding: 12px !important;
+}
+
+.jny-quest-board .jny-mission {
+  display: none;
+}
+
+.jny-quest-board > .relative + .relative {
+  margin-top: 8px;
+}
+
+.jny-sidequests {
+  display: none;
+}
+
+.jny-step-card {
+  padding: 10px !important;
+}
+
+.jny-step-card .repair-primary-btn {
+  margin-top: 8px !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+
+.jny-step-card .repair-secondary-btn {
+  padding-top: 7px !important;
+  padding-bottom: 7px !important;
+}
+
+.jny-map-table {
+  min-height: 146px;
+}
+
+.jny-map-table > .relative {
+  padding: 10px;
+}
+
+.jny-route-board .jny-node {
+  min-height: 92px;
+}
+
+.jny-route-board .jny-node img {
+  width: 38px;
+  height: 38px;
+}
+
+.jny-route-board .jny-node-current img[alt="隊伍位置"] {
+  width: 38px;
+  height: 38px;
+}
+
+.jny-hand-board {
+  position: relative;
+  z-index: 35;
+  margin-top: 0;
+  margin-bottom: 12px;
+  padding: 10px 10px 12px;
+  border: 1px solid rgba(240, 194, 108, 0.4);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(8, 17, 25, 0.7), rgba(3, 10, 16, 0.96)),
+    rgba(3, 10, 16, 0.86);
+  box-shadow:
+    0 18px 36px rgba(0, 0, 0, 0.42),
+    0 0 30px rgba(226, 164, 58, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.jny-hand-scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 6px;
+  scrollbar-color: rgba(226, 164, 58, 0.5) rgba(15, 23, 42, 0.55);
+}
+
+.jny-hand-board .hs-card {
+  width: 156px;
+  min-width: 156px;
+}
+
+.jny-hud-board {
+  margin-top: 4px;
+}
+
+.jny-resource-hud {
+  min-height: 84px;
+}
+
+.jny-event-strip {
+  margin-top: 0;
 }
 /* ORDER-052：常駐使命句，讓敘事目標與數值任務同時可見 */
 .jny-mission {
