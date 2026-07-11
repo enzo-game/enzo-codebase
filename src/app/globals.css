@@ -482,11 +482,11 @@ body {
 
 .hs-opponent-hand {
   position: absolute;
-  top: 12px;
+  top: 10px;
   left: 50%;
   z-index: 22;
-  width: 300px;
-  height: 92px;
+  width: 400px;
+  height: 120px;
   translate: -50% 0;
   pointer-events: none;
 }
@@ -496,11 +496,11 @@ body {
   left: 50%;
   top: 0;
   display: block;
-  width: 58px;
-  height: 82px;
-  margin-left: -29px;
+  width: 78px;
+  height: 108px;
+  margin-left: -39px;
   transform-origin: 50% 112%;
-  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 9px 14px rgba(0, 0, 0, 0.55));
 }
 
 .hs-cardback-mini img {
@@ -543,7 +543,7 @@ body {
 }
 
 .hs-portrait-player {
-  bottom: 292px;
+  bottom: 176px;
   border-color: rgba(56, 189, 248, 0.56);
 }
 
@@ -651,9 +651,9 @@ body {
 
 .hs-combat-lane {
   z-index: 10;
-  min-height: clamp(286px, 35vh, 430px);
-  margin-top: 96px;
-  padding: 48px 44px;
+  min-height: clamp(300px, 44vh, 480px);
+  margin-top: 36px;
+  padding: 36px 44px 84px;
   border: 1px solid rgba(226, 164, 58, 0.22);
   border-radius: 24px;
   background:
@@ -686,25 +686,128 @@ body {
   color: rgba(245, 230, 197, 0.42);
 }
 
+/* 扇形疊牌（ORDER-071）：手牌互相重疊、不會被切到；hover 任一張浮起放大看完整牌面 */
 .hs-hand-rail {
-  min-height: 266px;
-  overflow-x: auto;
-  overflow-y: visible;
-  border: 1px solid rgba(226, 164, 58, 0.26);
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, rgba(14, 22, 34, 0.7), rgba(4, 10, 16, 0.9)),
-    rgba(3, 10, 16, 0.72);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  min-height: 0;
+  padding-top: 12px;
+  overflow: visible;
+}
+.hs-hand-card {
+  margin-inline: -24px; /* 疊起來，佔位小、把中間戰場讓出來 */
+  transform-origin: 50% 100%;
+  transition:
+    transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.16s ease;
+  will-change: transform;
+}
+.hs-hand-card:first-child {
+  margin-left: 0;
+}
+.hs-hand-card:last-child {
+  margin-right: 0;
+}
+/* hover：小張手牌浮起放大成完整牌面（含不能出的牌也能看清楚） */
+.hs-hand-rail .hs-hand-card:hover {
+  transform: translateY(-102px) scale(1.95);
+  z-index: 60;
   box-shadow:
-    inset 0 18px 28px rgba(0, 0, 0, 0.22),
-    0 14px 32px rgba(0, 0, 0, 0.36);
-  scrollbar-color: rgba(226, 164, 58, 0.5) rgba(15, 23, 42, 0.55);
+    0 26px 54px rgba(0, 0, 0, 0.75),
+    0 0 30px rgba(255, 205, 112, 0.28);
+}
+/* 不能出的牌：稍微壓暗但仍清楚；hover 時恢復全亮方便閱讀 */
+.hs-card-blocked {
+  opacity: 0.62;
+  filter: saturate(0.72);
+}
+.hs-card-blocked:hover {
+  opacity: 1;
+  filter: none;
+}
+/* 「為什麼不能出」標示（法力不足／戰場已滿／無可指定目標） */
+.hs-card-reason {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #fecaca;
+  background: rgba(120, 20, 30, 0.92);
+  border: 1px solid rgba(251, 113, 133, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+/* 可攻擊/可施法目標的瞄準提示（不只 hover，選定攻擊者後就持續閃） */
+@keyframes targetPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(251, 113, 133, 0.85),
+      0 0 12px rgba(251, 113, 133, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(251, 113, 133, 1),
+      0 0 22px rgba(251, 113, 133, 0.85);
+  }
+}
+.hs-attack-target {
+  cursor: crosshair;
+  animation: targetPulse 0.9s ease-in-out infinite;
+}
+@keyframes spellTargetPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(52, 211, 153, 0.85),
+      0 0 12px rgba(52, 211, 153, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(52, 211, 153, 1),
+      0 0 22px rgba(52, 211, 153, 0.85);
+  }
+}
+.hs-spell-target {
+  cursor: crosshair;
+  animation: spellTargetPulse 0.9s ease-in-out infinite;
+}
+.hs-can-attack {
+  cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hs-hand-card {
+    transition: none;
+  }
+  .hs-attack-target {
+    animation: none;
+    box-shadow: 0 0 0 2px rgba(251, 113, 133, 0.95);
+  }
+  .hs-spell-target {
+    animation: none;
+    box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.95);
+  }
 }
 
 .hs-hand-zone {
-  position: relative;
-  z-index: 12;
-  margin-top: 40px;
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  transform: translateX(-50%);
+  z-index: 40;
+  width: min(96%, 1200px);
+  pointer-events: none; /* 只有卡片本身可點，讓下方空隙不擋 */
+}
+.hs-hand-zone > * {
+  pointer-events: auto;
 }
 
 .hs-hand-label {
@@ -800,7 +903,7 @@ body {
 }
 
 .hs-resource-player {
-  bottom: 296px;
+  bottom: 180px;
 }
 
 .hs-mana-text {

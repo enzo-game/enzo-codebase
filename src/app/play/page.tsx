@@ -857,7 +857,7 @@ export default function PlayPage() {
                 key={i}
                 className="hs-cardback-mini"
                 style={{
-                  transform: `translateX(${(i - (arr.length - 1) / 2) * 16}px) rotate(${(i - (arr.length - 1) / 2) * 5}deg)`,
+                  transform: `translateX(${(i - (arr.length - 1) / 2) * 24}px) rotate(${(i - (arr.length - 1) / 2) * 5}deg)`,
                   zIndex: i,
                 }}
               >
@@ -885,7 +885,7 @@ export default function PlayPage() {
             ref={registerEl("heroEnemy")}
             onClick={onEnemyHero}
             disabled={!enemyHeroTargetable}
-            className={`hs-portrait hs-portrait-enemy relative transition ${enemyHeroTargetable ? "hs-hero-targetable cursor-pointer" : ""} ${heroShake.enemy ? "hs-hero-shake" : ""} ${impactAnchors.has("heroEnemy") ? "hs-impact" : ""}`}
+            className={`hs-portrait hs-portrait-enemy relative transition ${enemyHeroTargetable ? "hs-hero-targetable hs-attack-target" : ""} ${heroShake.enemy ? "hs-hero-shake" : ""} ${impactAnchors.has("heroEnemy") ? "hs-impact" : ""}`}
           >
             {renderFloats("heroEnemy")}
             <span className="hs-portrait-art">
@@ -940,7 +940,7 @@ export default function PlayPage() {
                     ${windupKeys.has(e.key) ? "hs-windup" : ""}
                     ${impactAnchors.has(e.key) ? "hs-impact" : ""}
                     ${e.stealth ? "opacity-60 blur-[0.5px] ring-1 ring-slate-400" : ""}
-                    ${targetable ? "hover:ring-2 hover:ring-rose-400 cursor-pointer" : ""}`}
+                    ${targetable ? "hs-attack-target" : ""}`}
                 >
                   {renderFloats(e.key)}
                   <span className="absolute inset-0 rounded-[8px] overflow-hidden">
@@ -999,7 +999,8 @@ export default function PlayPage() {
                     ${e.stealth ? "opacity-60 blur-[0.5px] ring-1 ring-slate-400" : ""}
                     ${ready && selected !== e.key && !spellTarget ? "hs-ready-pulse" : ""}
                     ${selected === e.key ? "ring-2 ring-amber-400 -translate-y-1" : ""}
-                    ${spellTarget ? "ring-2 ring-emerald-400 cursor-pointer" : ""}
+                    ${spellTarget ? "hs-spell-target" : ""}
+                    ${ready && selected !== e.key ? "hs-can-attack" : ""}
                     ${ready || spellTarget ? "cursor-pointer hover:-translate-y-0.5" : e.stealth ? "" : "opacity-70"}`}
                 >
                   {renderFloats(e.key)}
@@ -1089,13 +1090,24 @@ export default function PlayPage() {
               <span className="text-amber-300 ml-2">▶ 已選攻擊者，點敵方目標</span>
             )}
           </h2>
-          <div className="hs-hand-rail flex gap-x-3 gap-y-4 pt-3 pb-3">
+          <div className="hs-hand-rail">
             {game.pHand.length === 0 && (
               <span className="text-slate-600 text-xs">手牌已空，結束回合抽牌。</span>
             )}
             {game.pHand.map((c, i) => {
-              const playable =
-                c.cost <= game.pMana && game.phase === "player" && !game.winner && !pending && !quiz;
+              const canAct =
+                game.phase === "player" && !game.winner && !pending && !quiz && !locked && !mulliganPhase;
+              const affordable = c.cost <= game.pMana;
+              const roomOrTarget =
+                c.type === "minion" ? game.pBoard.length < BOARD_MAX : hasValidTarget(game, spellTargetKind(c));
+              const playable = canAct && affordable && roomOrTarget;
+              // 為什麼不能出：只在「輪到你、閒置」時標示，敵方回合不干擾
+              let reason = "";
+              if (canAct && !playable) {
+                if (!affordable) reason = "法力不足";
+                else if (c.type === "minion") reason = "戰場已滿";
+                else reason = "無可指定目標";
+              }
               const art = CARD_ART[c.id];
               const learningText = CARD_LEARNING[c.id];
               return (
@@ -1104,9 +1116,14 @@ export default function PlayPage() {
                   onClick={() => tryPlay(c)}
                   disabled={!playable}
                   title={`${c.nameZh}\n學習小註：${learningText}`}
-                  className={`hs-card ${RARITY_GLOW[c.rarity]} w-[132px] md:w-[164px] xl:w-[178px] aspect-[5/7] shrink-0 text-left border-2 ${RARITY_COLOR[c.rarity]}
-                    ${playable ? "hs-card-playable cursor-pointer" : "opacity-40 cursor-not-allowed"}`}
+                  className={`hs-card hs-hand-card ${RARITY_GLOW[c.rarity]} w-[96px] md:w-[108px] aspect-[5/7] shrink-0 text-left border-2 ${RARITY_COLOR[c.rarity]}
+                    ${playable ? "hs-card-playable cursor-pointer" : reason ? "hs-card-blocked cursor-not-allowed" : "opacity-45"}`}
                 >
+                  {reason && (
+                    <span className="hs-card-reason" aria-hidden>
+                      {reason}
+                    </span>
+                  )}
                   {/* 內容層：切圓角、蓋在稀有度外框內 */}
                   <span className="absolute inset-0 rounded-[12px] overflow-hidden flex flex-col">
                     {/* 畫窗（上 55%）：金內框裱起來的肖像；缺圖用大號題材線稿 */}
