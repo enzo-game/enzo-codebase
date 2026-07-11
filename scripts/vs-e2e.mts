@@ -143,7 +143,6 @@ async function main() {
   pass("反作弊：越權動作 400、無 token 401");
 
   // 完整對局：讀 view 判斷輪到誰，該座位走完一回合，直到分勝負
-  let turnsPlayed = 0;
   let last: SeatView = seed;
   for (let round = 0; round < 60 && last.phase !== "over"; round++) {
     const vA = await view(tokenA, matchId);
@@ -155,7 +154,6 @@ async function main() {
       must(vB.yourTurn, "應該輪到某一方");
       last = await takeTurn(tokenB, matchId, vB);
     }
-    turnsPlayed++;
   }
 
   must(last.phase === "over", `對局應在 60 輪內結束（實際回合 ${last.turn}）`);

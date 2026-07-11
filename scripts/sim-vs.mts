@@ -47,7 +47,7 @@ function botSpellTarget(s: MatchState, seat: Seat, cardKind: string): ClientTarg
 /** 檢查脱敏契約：對手手牌/牌庫不外流、題目答案不外流。 */
 function assertNoLeak(s: MatchState): void {
   for (const seat of ["a", "b"] as Seat[]) {
-    const v = viewFor(s, seat) as unknown as Record<string, any>;
+    const v = viewFor(s, seat);
     must(!("hand" in v.opp), "opp 視角不得含 hand 陣列");
     must(typeof v.opp.handCount === "number", "opp 應只給 handCount");
     must(!("deck" in v.opp), "opp 視角不得含 deck 陣列");
@@ -154,7 +154,7 @@ for (let i = 0; i < GAMES; i++) {
   // 抽驗一局的認輸路徑
   if (!concedeChecked && !finished) {
     const r = applyMatchAction(s, s.current, { type: "concede" });
-    must(r.ok && (r as any).state.winner === (s.current === "a" ? "b" : "a"), "認輸應判對手勝");
+    must(r.ok && r.state.winner === (s.current === "a" ? "b" : "a"), "認輸應判對手勝");
     concedeChecked = true;
   }
 }
