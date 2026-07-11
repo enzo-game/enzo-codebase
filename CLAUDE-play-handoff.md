@@ -130,6 +130,16 @@ Current rule:
 - The native `title` tooltip was removed from hand cards to avoid a gray browser tooltip appearing over the board.
 - Learning notes remain visible in the card content and in the quiz panel.
 
+## 2026-07-11 Codex Hand / Hero Separation
+
+Screenshot review confirmed the hand was sitting too high and overlapping the player hero, mana, and lower battlefield. The presentation pass now:
+
+- reduces desktop hand cards to a responsive maximum of `154px`;
+- reduces the hand rail height so the row sits lower in the table;
+- moves the player hero and mana strip upward into their own zone;
+- keeps the end-turn action on the right side and leaves the board art unchanged;
+- uses `110px` hand cards on narrow mobile screens.
+
 - Desktop 1280x720: after the 2026-07-11 size pass, the hand is larger and horizontally scrollable. If it crowds the board too much, reduce only the hand width first (`w-[132px] md:w-[164px] xl:w-[178px]`) before shrinking the whole table.
 - Mobile 390x844: the core vertical flow is visible, but further tuning may be needed after Claude's concurrent UI work stabilizes.
 - The battle log is now a small floating panel. If it competes with board readability, collapse it behind a small button.
