@@ -1741,7 +1741,7 @@ export default function JourneyPage() {
   const [showJournal, setShowJournal] = useState(false);
   const unlockedLegend = unlockedLegendCount(game);
   // 開場傳說第一段「待播且尚未播出」：起點（idx 0）、還沒彈過任何篇章、且已解鎖至少一段（里程碑[0]=0）。
-  const openingLegendPending = game.idx === 0 && seenLegendCount === 0 && unlockedLegend > 0;
+  const openingLegendPending = game.idx > 0 && seenLegendCount === 0 && unlockedLegend > 0;
 
   // 節點故事過場卡：抵達有 NODE_STORY 的節點時，彈出跟章節卡同樣的全螢幕過場。
   // 依賴 chapterCard／legendCard 才觸發，讓三種全螢幕卡不會同時疊加；ORDER-056：開場時起點故事卡
@@ -1750,6 +1750,7 @@ export default function JourneyPage() {
     if (!mounted || chapterCard !== null || legendCard !== null || openingLegendPending) return;
     const node = game.nodes[game.idx];
     if (!node) return;
+    if (game.day === 1 && game.idx === 0) return;
     const story = levelCfg(game).nodeStory[node.vocabId];
     if (story && !seenStories.has(node.vocabId)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -1774,6 +1775,7 @@ export default function JourneyPage() {
       (chapterCard !== null || chapterDue || (!openingLegend && (storyCard !== null || storyDue)))
     )
       return;
+    if (game.day === 1 && game.idx === 0 && seenLegendCount === 0) return;
     if (unlockedLegend > seenLegendCount) {
       /* eslint-disable react-hooks/set-state-in-effect */
       setLegendCard(seenLegendCount);
@@ -1916,7 +1918,13 @@ export default function JourneyPage() {
     }
     /* eslint-disable react-hooks/set-state-in-effect */
     setCoachTried(true);
-    if (!done) setCoach(0);
+    if (!done) {
+      try {
+        localStorage.setItem(LS_COACH_DONE, "1");
+      } catch {
+        /* 忽略寫入失敗 */
+      }
+    }
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [mounted, coachTried, coach, game.levelId, game.day, game.idx, anyModalOpen, seenChapters, seenStories]);
 
@@ -2287,10 +2295,10 @@ export default function JourneyPage() {
       <div className="jny-bg" style={{ backgroundImage: `url(${PAGE_BG})` }} aria-hidden />
       <AmbientAudio />
       <SideRail active="journey" />
-      <div className="relative z-10 flex-1 min-w-0 px-4 sm:px-6 py-6">
-        <div className="max-w-5xl mx-auto">
+      <div className="relative z-10 flex-1 min-w-0 px-4 sm:px-6 py-5">
+        <div className="jny-shell max-w-6xl mx-auto">
         {/* 標題列（ORDER-051）：遊戲門面——kicker 小字＋關卡名 serif 大字金光暈＋金色分隔飾 */}
-        <header className="jny-rise mb-4 flex items-end justify-between flex-wrap gap-3">
+        <header className="jny-topbar jny-rise mb-3 flex items-end justify-between flex-wrap gap-3">
           <div>
             <div className="flex items-center gap-2">
               <Link href="/" className="text-xs text-amber-200/60 hover:text-amber-100">
@@ -2298,8 +2306,8 @@ export default function JourneyPage() {
               </Link>
               <span className="jny-badge-gold rounded-full px-2 py-0.5 text-[10px] font-bold">模式 A</span>
             </div>
-            <p className={`${notoSansTC.className} mt-2 text-[11px] tracking-[0.35em] text-amber-300/85`}>峽谷行者・山徑</p>
-            <h1 className={`${notoSerifTC.className} repair-title text-3xl font-black sm:text-4xl`}>{levelCfg(game).name}</h1>
+            <p className={`${notoSansTC.className} mt-1.5 text-[11px] tracking-[0.35em] text-amber-300/85`}>峽谷行者・山徑</p>
+            <h1 className={`${notoSerifTC.className} repair-title text-2xl font-black sm:text-4xl`}>{levelCfg(game).name}</h1>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={FRAME_DIVIDER} alt="" className="mt-2 h-2 w-44 object-contain object-left opacity-90" />
             <p className="mt-1.5 text-[11px] text-amber-100/50">
@@ -2346,7 +2354,7 @@ export default function JourneyPage() {
 
         {/* 關卡選擇（ORDER-050，P2）：兩張精簡卡——第一關通關後解鎖第二關（localStorage 記錄），
             切換＝直接開新局（進度不保留，與「重新開始」同語意）。 */}
-        <section className="jny-rise mb-3 grid grid-cols-2 gap-2">
+        <section className="jny-level-strip jny-rise mb-3 grid grid-cols-2 gap-2">
           {(Object.keys(LEVELS) as LevelId[]).map((lid) => {
             const cfg = LEVELS[lid];
             const active = game.levelId === lid;
@@ -2386,7 +2394,7 @@ export default function JourneyPage() {
 
         {/* 任務面板（v3，ORDER-030）：主線目標＋節點進度＋節點故事＋這一步＋可直接操作的行動按鈕＋支線＋連擊
             視覺層級修正：搬到統計數字前面，第一眼就是「該做什麼」；面板整體放大字級（司令實測回報還是太小看不清） */}
-        <section ref={questRef} className="jny-panel jny-panel-quest jny-rise mb-4 rounded-2xl p-4 sm:p-5">
+        <section ref={questRef} className="jny-quest-board jny-panel jny-panel-quest jny-rise mb-4 rounded-2xl p-4 sm:p-5">
           <div className="relative z-[2] flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="jny-badge-gold rounded px-2.5 py-1 text-xs font-black">主線</span>
@@ -2422,7 +2430,7 @@ export default function JourneyPage() {
             // 其餘動作降階為暗色（jny-dim）。
             const nowPill = <span className="jny-now-pill">▶ 現在</span>;
             return (
-              <div ref={spotRef} className="relative z-[2] mt-3 rounded-xl border border-amber-500/20 bg-[#040c13]/75 p-3.5">
+              <div ref={spotRef} className="jny-step-card relative z-[2] mt-3 rounded-xl border border-amber-500/20 bg-[#040c13]/75 p-3.5">
                 <div className="text-xs uppercase tracking-[0.2em] text-amber-400/90 font-semibold">這一步</div>
                 <div className={`${notoSerifTC.className} mt-1 text-lg font-bold text-amber-50`}>{hint.situation}</div>
                 <div className="mt-1.5 text-sm leading-relaxed text-amber-100/85">{hint.todo}</div>
@@ -2563,7 +2571,7 @@ export default function JourneyPage() {
               </div>
             );
           })()}
-          <div className="relative z-[2] mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <div className="jny-sidequests relative z-[2] mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="text-[11px] text-amber-200/50">支線</span>
             {sideQuests(game).map((q) => (
               <span
@@ -2592,7 +2600,7 @@ export default function JourneyPage() {
         </section>
 
         {/* 頂部數值列（v2：壓力分級變色，危急時脈動警示） */}
-        <section className="jny-rise grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+        <section className="jny-hud-board jny-rise grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
           <StatBar
             label="壓力"
             value={game.pressure}
@@ -2606,7 +2614,7 @@ export default function JourneyPage() {
             tag={pressureTier(game) === "critical" ? "危急" : pressureTier(game) === "tense" ? "緊張" : undefined}
           />
           <StatBar label="隊伍體力" value={game.teamHp} max={game.maxTeamHp} color="repair-progress-fill" icon={METER_STAMINA} />
-          <div className="jny-panel relative rounded-xl p-2 pt-3 flex items-start justify-around gap-2 text-sm col-span-2">
+          <div className="jny-panel jny-resource-hud relative rounded-xl p-2 pt-3 flex items-start justify-around gap-2 text-sm col-span-2">
             {/* 族語落字（決策#22）：klokah 真實詞＋發音，整區標「示範·待核」待語言部終核 */}
             <span className="absolute -top-2 right-2 z-[2] rounded border border-amber-500/40 bg-[#0b1722] px-1.5 text-[9px] text-amber-300/90">
               族語：示範·待核
@@ -2632,7 +2640,7 @@ export default function JourneyPage() {
 
         {/* 今日事件 */}
         {game.event && (
-          <section className="jny-panel jny-rise mb-3 rounded-xl p-3 text-sm">
+          <section className="jny-event-strip jny-panel jny-rise mb-3 rounded-xl p-3 text-sm">
             <span className="relative z-[2] text-amber-300 font-semibold">今日事件 · {game.event.name}</span>
             <span className="text-amber-100/50 text-xs">（{game.event.kind}）</span>
             <WordChip vocabId={game.event.vocabId} />
@@ -2641,14 +2649,14 @@ export default function JourneyPage() {
         )}
 
         {/* 山徑節點 */}
-        <section className="mb-3">
+        <section className="jny-route-board mb-3">
           <div className="mb-1 flex items-center gap-2">
             <span className={`${notoSansTC.className} rounded-full border border-amber-500/30 bg-amber-950/30 px-2 py-0.5 text-[10px] tracking-[0.2em] text-amber-300/90`}>
               {chapterForIdx(game.levelId, game.idx).chapter.kicker}
             </span>
           </div>
           <SectionHeading>山徑路線</SectionHeading>
-          <div className="relative rounded-xl border border-amber-500/35 overflow-hidden shadow-[0_18px_40px_rgba(0,0,0,0.5)]">
+          <div className="jny-map-table relative rounded-xl border border-amber-500/35 overflow-hidden shadow-[0_18px_40px_rgba(0,0,0,0.5)]">
             {/* 山徑地圖底（ORDER-015 美術，已過文化複核）＋深色 overlay 保節點可讀 */}
             <div
               className="absolute inset-0 bg-cover bg-center"
@@ -2716,7 +2724,7 @@ export default function JourneyPage() {
         </section>
 
         {/* 紀錄 */}
-        <section className="mb-3">
+        <section className="jny-log-board mb-3">
           <SectionHeading>行動紀錄</SectionHeading>
           <div className="jny-panel rounded-xl p-3 min-h-16 max-h-32 overflow-auto space-y-1 text-xs">
             {game.log.map((l) => (
@@ -2739,7 +2747,7 @@ export default function JourneyPage() {
         </section>
 
         {/* 手牌（ORDER-051 spec 7）：行動籤改用模式 B 新卡框語彙（.hs-card 金框畫窗＋名條＋費用寶石）迷你版 */}
-        <section ref={handRef}>
+        <section ref={handRef} className="jny-hand-board">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xs uppercase tracking-wider text-amber-300/70">
               行動籤（牌庫 {game.deck.length} · 棄 {game.discard.length}）
@@ -2758,7 +2766,7 @@ export default function JourneyPage() {
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={FRAME_DIVIDER} alt="" className="mb-3 h-2 w-40 object-contain object-left opacity-80" />
-          <div className="flex flex-wrap gap-3 pt-2">
+          <div className="jny-hand-scroll flex flex-wrap gap-3 pt-2">
             {game.hand.map((c) => {
               const playable = canAfford(game, c);
               const eff = apCost(game, c);
@@ -2818,7 +2826,7 @@ export default function JourneyPage() {
         </section>
 
         {/* 來源標示（授權洽談中）＋ 文化複核狀態 */}
-        <footer className="mt-4 text-[10px] leading-relaxed text-slate-500 border-t border-slate-800 pt-2">
+        <footer className="jny-footer mt-4 text-[10px] leading-relaxed text-slate-500 border-t border-slate-800 pt-2">
           {ATTRIBUTION}
           （
           <a href={SOURCE_URL} target="_blank" rel="noreferrer" className="underline hover:text-slate-300">
