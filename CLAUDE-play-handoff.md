@@ -208,3 +208,27 @@ Screenshot review confirmed the hand was sitting too high and overlapping the pl
 - 出牌「飛入」目前用中央施放示意，尚未做「從手牌該張精準飛到戰場落點」；要更精準需量手牌卡 rect → 戰場落點做 FLIP。
 - 頭目專屬立繪（走 Artemis→Codex→enzo-culture 管線）。
 - 攻擊突進在極端排版下 transform 由 rect 計算，若日後改版面需重測。
+
+---
+
+## 2026-07-12 · 依使用者示意圖對齊版面（ORDER-075）
+
+使用者提供一張版面示意圖（僅作「比例／資訊層級」參考，非遊戲背景，不複製 Hearthstone 素材）。純 CSS（`.play-page .*` override 層）調整，保留背景、英雄圖像、卡框、卡牌美術與所有規則/答題/音效邏輯。
+
+**版面（皆在 `src/app/globals.css` 的 `.play-page` override 區）：**
+- 開放式戰場：`.play-page .hs-board-row` 拿掉巨大圓角框（border/background/box-shadow 全清），改敵方列下緣＋我方列上緣各一條淡線；`.hs-combat-lane::after` 加中央淡分界線。
+- 對手英雄：精簡成「頭像＋血量」小圓牌，置中上方（`.hs-portrait-enemy` 隱藏 name/sub、`top: 14px`）。
+- 我方英雄：同樣精簡，置中下方、位於手牌上方（`.hs-portrait-player` `left:50% translate -50%`、`bottom: 244px`、隱藏 name/sub）。
+- 法力條：我方英雄左側（`.hs-resource-player right: calc(50% + 96px)`）。
+- 結束回合：固定右下角（`.hs-end-turn-big right:24 bottom:24`）、重新開始在其上方。
+- 手牌：底部、中等卡（`width: clamp(118px,7vw,136px)`）、`hs-hand-zone bottom:30`、`hand-rail min-height:186` → **完整露出、不被切**（1280×720 與 2048×1024 皆量到底部留白 29px）。
+- hover 只輕微上浮放大（scale 1.06，ORDER-072），**不做巨大預覽、不遮戰場**。
+- 戰鬥紀錄：左側可展開標籤（`.play-log-panel` 收合＝直書標籤，hover 展開）。
+- 手機（≤640px）：手牌 `overflow-x:auto`、`margin-inline:4px`（不疊牌）→ 可水平捲動查看。
+
+**驗收（瀏覽器實測，非空盤面量座標）：**
+- 1280×720：手牌底部留白 29px、英雄↔手牌 28px、英雄↔我方列 24px、法力↔英雄 13px、結束回合↔手牌 10px — 全無重疊。
+- 2048×1024：手牌留白 29px、無重疊（戰場更開闊）。
+- 手機 375px：手牌 scrollWidth>clientWidth，可水平捲動。
+- `npm run build` 通過。
+- 已知小瑕疵（後續）：對手英雄小圓牌與對手手牌卡背、及敵方隨從列頂端在 720 高度下略有重疊（~22px，Hearthstone 慣例的「英雄壓在自方列邊緣」）；桌面 header 仍保留難度/對手/認輸等功能控制（示意圖是極簡 icon，未改以免動到功能）。
