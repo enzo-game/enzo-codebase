@@ -3,6 +3,7 @@
 // ORDER-060 P1 —— 好友房大廳：建房 / 輸房號加入 / Realtime 等待對手接上。
 // P2 會在「已連上」之後接續：伺服器權威對戰狀態同步（Edge Function + matches.state）。
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabaseConfigured } from "@/lib/supabase";
@@ -11,6 +12,7 @@ import { createRoom, joinRoom, ensureAnonSession, subscribeMatch, type Match } f
 type View = "idle" | "creating" | "waiting" | "joining" | "connected" | "error";
 
 export default function VsPage() {
+  const router = useRouter();
   const [view, setView] = useState<View>("idle");
   const [match, setMatch] = useState<Match | null>(null);
   const [code, setCode] = useState("");
@@ -24,11 +26,20 @@ export default function VsPage() {
     };
   }, []);
 
+  function enterBattle(m: Match) {
+    channelRef.current?.unsubscribe();
+    channelRef.current = null;
+    router.push(`/vs/${m.id}`);
+  }
+
   function watch(m: Match) {
     channelRef.current?.unsubscribe();
     channelRef.current = subscribeMatch(m.id, (next) => {
       setMatch(next);
-      if (next.status === "active") setView("connected");
+      if (next.status === "active") {
+        setView("connected");
+        enterBattle(next); // 對手接上 → 直接進盤面
+      }
     });
   }
 
@@ -59,7 +70,7 @@ export default function VsPage() {
       const m = await joinRoom(code);
       setMatch(m);
       setView("connected"); // join 成功即為 active
-      watch(m);
+      enterBattle(m); // 直接進盤面（我方為後手 B）
     } catch (e) {
       setErr(joinErr(e));
       setView("error");
