@@ -1251,13 +1251,11 @@ body {
   align-items: flex-end;
   justify-content: center;
   gap: 8px;
-  overflow-x: auto;
-  overflow-y: visible;
+  overflow: visible; /* 不要捲軸：hover 浮起本來就需要 visible，卡片橫向也放得下 */
   border: 0;
   border-radius: 0;
   background: linear-gradient(180deg, transparent, rgba(4, 9, 14, 0.5));
   box-shadow: none;
-  scrollbar-width: thin;
 }
 
 .play-page .hs-hand-card {
