@@ -1124,7 +1124,7 @@ body {
     box-shadow 160ms ease;
 }
 .hs-card-playable:hover {
-  transform: translateY(-16px) scale(1.16);
+  transform: translateY(-12px) scale(1.06);
   z-index: 25;
   box-shadow:
     0 22px 46px rgba(0, 0, 0, 0.66),
@@ -1134,6 +1134,213 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .hs-card-playable:hover {
     transform: none;
+  }
+}
+
+/* 手牌放大時仍要保留卡面資訊層級，題材佔位字只作為淡淡的視覺提示。 */
+.play-page .hs-art-placeholder-card {
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  color: rgba(255, 237, 194, 0.42);
+}
+
+.play-page .hs-hand-card:hover .hs-art-placeholder-card {
+  font-size: 13px;
+}
+
+/* ─────────── /play 戰場重排（2026-07-11）───────────
+ * 參考成熟卡牌對戰的閱讀順序：中央戰場 > 英雄 > 手牌。
+ * 這裡只改桌面層級與比例，不改 engine、答題或戰鬥規則。 */
+.play-page .hs-table {
+  height: calc(100vh - 90px);
+  min-height: 0;
+  padding: 104px 154px 238px;
+  background-color: rgba(31, 38, 32, 0.55);
+}
+
+.play-page .hs-table-shade {
+  background:
+    linear-gradient(180deg, rgba(5, 10, 12, 0.16), rgba(5, 10, 12, 0.04) 42%, rgba(3, 7, 9, 0.22)),
+    radial-gradient(ellipse 62% 62% at 50% 48%, rgba(255, 224, 156, 0.16), transparent 74%);
+}
+
+.play-page .hs-combat-lane {
+  min-height: 414px;
+  margin-top: 78px;
+  padding: 34px 36px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.play-page .hs-board-row {
+  min-height: 154px;
+  border-width: 1px;
+  border-radius: 28px;
+  background:
+    radial-gradient(ellipse at center, rgba(15, 23, 42, 0.18), transparent 70%),
+    linear-gradient(180deg, rgba(10, 18, 20, 0.1), rgba(3, 8, 12, 0.2));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 235, 170, 0.1),
+    inset 0 -18px 30px rgba(0, 0, 0, 0.14);
+}
+
+.play-page .hs-board-row-enemy {
+  border-color: rgba(244, 63, 94, 0.34);
+}
+
+.play-page .hs-board-row-player {
+  border-color: rgba(56, 189, 248, 0.34);
+}
+
+.play-page .hs-board-empty {
+  color: rgba(245, 230, 197, 0.62);
+  font-size: 12px;
+}
+
+.play-page .hs-portrait {
+  width: min(348px, calc(100% - 200px));
+  min-height: 78px;
+  padding: 8px 12px 8px 8px;
+  background:
+    linear-gradient(180deg, rgba(27, 38, 49, 0.92), rgba(7, 13, 19, 0.92)),
+    rgba(4, 12, 19, 0.84);
+  box-shadow:
+    0 12px 26px rgba(0, 0, 0, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.play-page .hs-portrait-enemy {
+  top: 62px;
+}
+
+.play-page .hs-portrait-player {
+  bottom: 250px;
+}
+
+.play-page .hs-resource-enemy {
+  top: 20px;
+  right: 28px;
+}
+
+.play-page .hs-resource-player {
+  bottom: 254px;
+  right: 28px;
+}
+
+.play-page .hs-hand-zone {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  z-index: 35;
+  width: min(980px, calc(100% - 360px));
+  margin-top: 0;
+  transform: translateX(-50%);
+  translate: none;
+}
+
+.play-page .hs-hand-label {
+  padding-left: 10px;
+  color: rgba(255, 230, 166, 0.82);
+}
+
+.play-page .hs-hand-rail {
+  min-height: 270px;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: visible;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(180deg, transparent, rgba(4, 9, 14, 0.5));
+  box-shadow: none;
+  scrollbar-width: thin;
+}
+
+.play-page .hs-hand-card {
+  flex: 0 0 auto;
+}
+
+.play-page .hs-end-turn-big {
+  right: 28px;
+  top: 51%;
+  min-width: 142px;
+  min-height: 64px;
+  font-size: 16px;
+  box-shadow:
+    0 0 0 1px rgba(186, 230, 253, 0.32),
+    0 12px 26px rgba(14, 165, 233, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.play-page .hs-reset-small {
+  right: 45px;
+  top: calc(51% + 54px);
+}
+
+.play-page .play-log-panel {
+  left: 28px;
+  top: 172px;
+  width: 230px;
+  background: rgba(4, 12, 19, 0.72);
+}
+
+@media (max-width: 980px) {
+  .play-page .hs-table {
+    padding-inline: 28px;
+    padding-bottom: 220px;
+  }
+
+  .play-page .hs-hand-zone {
+    width: calc(100% - 250px);
+  }
+
+  .play-page .hs-combat-lane {
+    padding-inline: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .play-page .hs-table {
+    height: auto;
+    min-height: auto;
+    padding: 78px 10px 14px;
+  }
+
+  .play-page .hs-combat-lane {
+    min-height: 330px;
+    margin-top: 64px;
+    padding: 34px 8px 24px;
+  }
+
+  .play-page .hs-board-row {
+    min-height: 112px;
+    border-radius: 18px;
+  }
+
+  .play-page .hs-portrait-player {
+    bottom: 204px;
+  }
+
+  .play-page .hs-resource-player {
+    bottom: 208px;
+  }
+
+  .play-page .hs-hand-zone {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    width: auto;
+    transform: none;
+    translate: none;
+    margin-top: 80px;
+  }
+
+  .play-page .hs-hand-rail {
+    min-height: 198px;
+    justify-content: flex-start;
   }
 }
 

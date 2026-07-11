@@ -95,6 +95,31 @@ Intent:
 
 ## Known Visual Follow-Ups
 
+## 2026-07-11 Codex Battle Table Rebalance
+
+User screenshot feedback: the board was too dark, the two empty lanes looked like oversized UI panels, and the hand was compressed into a small strip at the bottom.
+
+This pass changed only the `/play` presentation layer:
+
+- `src/app/play/page.tsx`
+  - Enlarged hand cards to `132px / 164px / 178px` responsive widths.
+
+- `src/app/globals.css`
+  - Made the battle table fit the first desktop viewport with `height: calc(100vh - 90px)`.
+  - Reduced the dark table overlay so the board art and card art remain readable.
+  - Replaced the oversized capsule feeling of the two board rows with flatter, wider battle zones.
+  - Centered the hand at the bottom of the table and restored a single source of horizontal centering (the old transform was otherwise applied twice).
+  - Kept the player hero and mana strip above the hand, with the end-turn control on the right edge of the battlefield.
+  - Mobile resets the fixed table height and returns the hand to normal document flow.
+
+Validation:
+
+- `npx eslint src/app/play/page.tsx` passes with the existing three warnings only.
+- Local visual check at `1280x720` confirms the table, hand, hero and end-turn control are all visible in the first viewport.
+- No engine, quiz, card data, sound, or combat-event logic was changed in this pass.
+
+Follow-up for the animation pass: keep these zones as the stable layout anchors, then layer card flight, attack lunge, impact, damage, death, and turn-transition events above them.
+
 - Desktop 1280x720: after the 2026-07-11 size pass, the hand is larger and horizontally scrollable. If it crowds the board too much, reduce only the hand width first (`w-[132px] md:w-[164px] xl:w-[178px]`) before shrinking the whole table.
 - Mobile 390x844: the core vertical flow is visible, but further tuning may be needed after Claude's concurrent UI work stabilizes.
 - The battle log is now a small floating panel. If it competes with board readability, collapse it behind a small button.

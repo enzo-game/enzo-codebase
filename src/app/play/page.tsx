@@ -1116,7 +1116,7 @@ export default function PlayPage() {
                   onClick={() => tryPlay(c)}
                   disabled={!playable}
                   title={`${c.nameZh}\n學習小註：${learningText}`}
-                  className={`hs-card hs-hand-card ${RARITY_GLOW[c.rarity]} w-[96px] md:w-[108px] aspect-[5/7] shrink-0 text-left border-2 ${RARITY_COLOR[c.rarity]}
+                  className={`hs-card hs-hand-card ${RARITY_GLOW[c.rarity]} w-[132px] md:w-[164px] xl:w-[178px] aspect-[5/7] shrink-0 text-left border-2 ${RARITY_COLOR[c.rarity]}
                     ${playable ? "hs-card-playable cursor-pointer" : reason ? "hs-card-blocked cursor-not-allowed" : "opacity-45"}`}
                 >
                   {reason && (
