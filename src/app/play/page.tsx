@@ -948,7 +948,7 @@ export default function PlayPage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={art} alt={e.card.nameZh} className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
-                      <span className="hs-art-placeholder">
+                      <span className="hs-art-placeholder" data-theme={e.card.theme}>
                         {THEME_ZH[e.card.theme]}
                       </span>
                     )}
@@ -1009,7 +1009,7 @@ export default function PlayPage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={art} alt={e.card.nameZh} className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
-                      <span className="hs-art-placeholder">
+                      <span className="hs-art-placeholder" data-theme={e.card.theme}>
                         {THEME_ZH[e.card.theme]}
                       </span>
                     )}
@@ -1132,7 +1132,7 @@ export default function PlayPage() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={art} alt={c.nameZh} className="absolute inset-0 w-full h-full object-cover" />
                       ) : (
-                        <span className="hs-art-placeholder hs-art-placeholder-card">
+                        <span className="hs-art-placeholder hs-art-placeholder-card" data-theme={c.theme}>
                           {THEME_ZH[c.theme]}
                         </span>
                       )}
@@ -1339,7 +1339,7 @@ export default function PlayPage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={art} alt={c.nameZh} className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
-                      <span className="hs-art-placeholder">{THEME_ZH[c.theme]}</span>
+                      <span className="hs-art-placeholder" data-theme={c.theme}>{THEME_ZH[c.theme]}</span>
                     )}
                     <span className="absolute top-1 left-1 rounded bg-black/70 px-1 text-[10px] text-sky-200">{c.cost}</span>
                     <span className="absolute inset-x-0 bottom-0 truncate bg-black/70 py-0.5 text-center text-[10px]">

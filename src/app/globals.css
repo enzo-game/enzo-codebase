@@ -1543,6 +1543,39 @@ body {
   font-size: 18px;
 }
 
+/* 尚無專屬美術的卡：依題材給一個「有設計感」的漸層底＋題材字，不再是空黑框
+   （真圖仍待 Artemis→Codex→enzo-culture 管線；此為暫代視覺，非生成美術）。 */
+.hs-art-placeholder[data-theme="animal"] {
+  color: rgba(245, 222, 176, 0.55);
+  background:
+    radial-gradient(circle at 50% 32%, rgba(214, 158, 92, 0.32), transparent 58%),
+    linear-gradient(165deg, rgba(96, 66, 32, 0.96), rgba(26, 18, 9, 0.98));
+}
+.hs-art-placeholder[data-theme="plant"] {
+  color: rgba(206, 236, 206, 0.55);
+  background:
+    radial-gradient(circle at 50% 32%, rgba(104, 186, 118, 0.3), transparent 58%),
+    linear-gradient(165deg, rgba(30, 74, 44, 0.96), rgba(9, 26, 15, 0.98));
+}
+.hs-art-placeholder[data-theme="nature"] {
+  color: rgba(202, 226, 246, 0.55);
+  background:
+    radial-gradient(circle at 50% 32%, rgba(96, 162, 220, 0.3), transparent 58%),
+    linear-gradient(165deg, rgba(26, 66, 96, 0.96), rgba(7, 21, 33, 0.98));
+}
+.hs-art-placeholder[data-theme="legend"] {
+  color: rgba(250, 230, 182, 0.6);
+  background:
+    radial-gradient(circle at 50% 32%, rgba(240, 200, 110, 0.34), transparent 58%),
+    linear-gradient(165deg, rgba(96, 70, 24, 0.96), rgba(27, 19, 7, 0.98));
+}
+.hs-art-placeholder[data-theme="tool"] {
+  color: rgba(222, 226, 232, 0.55);
+  background:
+    radial-gradient(circle at 50% 32%, rgba(172, 176, 188, 0.28), transparent 58%),
+    linear-gradient(165deg, rgba(58, 62, 70, 0.96), rgba(17, 19, 23, 0.98));
+}
+
 /* 位置：費用壓左上角外側；攻／血壓卡片下緣兩角 */
 .hs-gem-cost {
   top: -10px;
