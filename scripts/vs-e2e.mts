@@ -16,6 +16,7 @@ const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const { POST: actionPOST } = await import("../src/app/api/match/action/route.ts");
 const { GET: viewGET } = await import("../src/app/api/match/view/route.ts");
+const { GET: leaderboardGET } = await import("../src/app/api/leaderboard/route.ts");
 const { spellTargetKind } = await import("../src/engine/game.ts");
 import type { SeatView, ClientTarget, MatchAction } from "../src/engine/match.ts";
 
@@ -126,14 +127,20 @@ async function main() {
   const tokenB = b.session!.access_token;
   await B.rpc("join_match", { p_code: room });
   const svc = createClient(URL_, SERVICE, { auth: { persistSession: false } });
+  const uidA = a.user!.id;
+  const uidB = b.user!.id;
+  // P4：設顯示名稱，稍後驗對局內對手名與天梯
+  await svc.from("profiles").update({ display_name: "甲" }).eq("id", uidA);
+  await svc.from("profiles").update({ display_name: "乙" }).eq("id", uidB);
   pass(`配對完成（房號 ${room}）`);
 
   // 反作弊：非當前座位不能動、無 token 401
   const seed = await view(tokenA, matchId); // 觸發伺服器發牌
   must(seed.yourTurn, "A 應先手");
   must(seed.you.hand.length === 4 && seed.opp.handCount === 4, "起手手牌數不對");
+  must(seed.youName === "甲" && seed.oppName === "乙", "view 應帶雙方顯示名稱");
   assertNoLeak(seed);
-  pass("伺服器發牌完成，A 先手、雙方起手 4 張、脱敏正常");
+  pass("伺服器發牌完成，A 先手、雙方起手 4 張、脱敏正常、帶名稱");
 
   const wrongTurn = await act(tokenB, matchId, { type: "endTurn" });
   must(wrongTurn.status === 400, "非當前座位動作應 400");
@@ -185,9 +192,34 @@ async function main() {
   must(afterOver.status === 400, "結束後動作應被拒");
   pass("對局結束後動作正確被拒");
 
-  // 收尾
+  // P4：勝負紀錄
+  const winnerUid = finalA.outcome === "win" ? uidA : uidB;
+  const loserUid = finalA.outcome === "win" ? uidB : uidA;
+  const winnerName = finalA.outcome === "win" ? "甲" : "乙";
+  const { data: wp } = await svc.from("profiles").select("wins,losses").eq("id", winnerUid).maybeSingle();
+  const { data: lp } = await svc.from("profiles").select("wins,losses").eq("id", loserUid).maybeSingle();
+  must(((wp as { wins: number })?.wins ?? 0) >= 1, "勝方 wins 應 +1");
+  must(((lp as { losses: number })?.losses ?? 0) >= 1, "敗方 losses 應 +1");
+  pass(`勝負紀錄：勝方 ${(wp as { wins: number }).wins} 勝、敗方 ${(lp as { losses: number }).losses} 敗`);
+
+  // P4：對局內雙方名稱
+  must(finalA.oppName === "乙" && finalB.oppName === "甲", "對局內應顯示對手名稱");
+  pass("對局內顯示雙方名稱");
+
+  // P4：天梯端點含勝方
+  const lbRes = await leaderboardGET();
+  const lbJson = (await lbRes.json()) as { leaderboard: { display_name: string; wins: number }[] };
+  must(
+    Array.isArray(lbJson.leaderboard) &&
+      lbJson.leaderboard.some((r) => r.display_name === winnerName && r.wins >= 1),
+    "天梯應含勝方戰績",
+  );
+  pass("天梯 /api/leaderboard 含勝方戰績");
+
+  // 收尾：刪對局 + 清掉測試用 profiles（避免污染正式天梯）
   await svc.from("matches").delete().eq("id", matchId);
-  console.log("\n全鏈路 e2e 全數通過 ✓ —— 線上對戰後端＋權威層真的能打完一局。");
+  await svc.from("profiles").delete().in("id", [uidA, uidB]);
+  console.log("\n全鏈路 e2e 全數通過 ✓ —— 線上對戰後端＋權威層＋留存真的能打完一局。");
 }
 
 main().catch((e) => {

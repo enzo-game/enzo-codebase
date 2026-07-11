@@ -50,6 +50,7 @@ function seatOf(m: MatchRow, uid: string): Seat | null {
 }
 
 const seatUid = (m: MatchRow, seat: Seat) => (seat === "a" ? m.player_a : m.player_b);
+const otherSeat = (seat: Seat): Seat => (seat === "a" ? "b" : "a");
 
 /** 讀 match（含 version），找不到回 null。 */
 async function loadMatch(svc: SupabaseClient, matchId: string): Promise<MatchRow | null> {
@@ -59,6 +60,31 @@ async function loadMatch(svc: SupabaseClient, matchId: string): Promise<MatchRow
     .eq("id", matchId)
     .maybeSingle();
   return (data as MatchRow) ?? null;
+}
+
+// ───────────────────────── P4：名稱注入 + 勝負紀錄 ─────────────────────────
+
+/** 讀雙方顯示名稱 {a,b}（讀不到就 undefined），供對局內顯示對手名。 */
+async function fetchNames(svc: SupabaseClient, m: MatchRow): Promise<Record<Seat, string | undefined>> {
+  const ids = [m.player_a, m.player_b].filter(Boolean) as string[];
+  const { data } = await svc.from("profiles").select("id,display_name").in("id", ids);
+  const byId = new Map((data ?? []).map((r: { id: string; display_name: string }) => [r.id, r.display_name]));
+  return { a: byId.get(m.player_a), b: m.player_b ? byId.get(m.player_b) : undefined };
+}
+
+/** 脱敏視角 + 雙方名稱。 */
+function viewWithNames(state: MatchState, seat: Seat, names: Record<Seat, string | undefined>): SeatView {
+  return { ...viewFor(state, seat), youName: names[seat], oppName: names[otherSeat(seat)] };
+}
+
+/** 對局結束記一次勝負（service role increment）。只在 finish 轉換那一次呼叫，故不需去重旗標。 */
+async function recordResult(svc: SupabaseClient, winnerUid: string, loserUid: string | null): Promise<void> {
+  const { data: w } = await svc.from("profiles").select("wins").eq("id", winnerUid).maybeSingle();
+  if (w) await svc.from("profiles").update({ wins: ((w as { wins: number }).wins ?? 0) + 1 }).eq("id", winnerUid);
+  if (loserUid) {
+    const { data: l } = await svc.from("profiles").select("losses").eq("id", loserUid).maybeSingle();
+    if (l) await svc.from("profiles").update({ losses: ((l as { losses: number }).losses ?? 0) + 1 }).eq("id", loserUid);
+  }
 }
 
 /** 讀權威狀態；若對局已 active 但尚未初始化，冪等地發牌建立。 */
@@ -136,7 +162,7 @@ export async function getView(authHeader: string | null, matchId: string): Promi
   if (!seat) return { ok: false, status: 403, error: "你不在這局" };
   const loaded = await loadEnforced(svc, m, Date.now());
   if (!loaded) return { ok: false, status: 409, error: "對局尚未開始" };
-  return { ok: true, view: viewFor(loaded.state, seat) };
+  return { ok: true, view: viewWithNames(loaded.state, seat, await fetchNames(svc, m)) };
 }
 
 /** POST 動作：認證 → 讀權威 → 套用 → version-guard 寫回 → 回自己視角。 */
@@ -188,7 +214,12 @@ export async function postAction(
       })
       .eq("id", m.id);
 
-    return { ok: true, view: viewFor(next, seat) };
+    // 剛分出勝負（本次是 finish 轉換）→ 記一次勝負。m.winner 之前為 null 保證只記一次。
+    if (next.winner && !m.winner && winnerUid) {
+      await recordResult(svc, winnerUid, seatUid(m, otherSeat(next.winner)));
+    }
+
+    return { ok: true, view: viewWithNames(next, seat, await fetchNames(svc, m)) };
   }
   return { ok: false, status: 409, error: "狀態版本衝突，請重試" };
 }
