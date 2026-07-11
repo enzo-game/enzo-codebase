@@ -199,7 +199,7 @@ export default function BattleMusic() {
       onClick={() => (on ? disable() : enable())}
       aria-label={on ? "關閉戰鬥配樂" : "開啟戰鬥配樂"}
       title={on ? "戰鬥配樂：開（點擊靜音）" : "戰鬥配樂：關（點擊播放）"}
-      className="fixed bottom-4 right-[68px] z-50 flex h-11 w-11 items-center justify-center rounded-full border border-slate-700 bg-slate-900/80 text-slate-100 shadow-lg backdrop-blur transition hover:bg-slate-800"
+      className="fixed bottom-4 left-[68px] sm:left-auto sm:right-[68px] z-50 flex h-11 w-11 items-center justify-center rounded-full border border-slate-700 bg-slate-900/80 text-slate-100 shadow-lg backdrop-blur transition hover:bg-slate-800"
     >
       <span aria-hidden>{on ? <IconMusicOn /> : <IconMusicOff />}</span>
     </button>

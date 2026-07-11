@@ -120,3 +120,46 @@ Intent:
 - Review `CARD_EXPANSION_LEGEND_PROPOSAL.md` with the user before implementing the remaining proposed cards.
 - Review the 8 generated Wave A card artworks in `/play` and replace only the specific images the user rejects.
 - Review the wording of `CARD_LEARNING`, especially `彩虹當空`, `Pusu Qhuni 巨岩`, and `沉睡的馬威`, with cultural reviewers before public release.
+
+---
+
+## 2026-07-12 · 事件驅動戰鬥系統（ORDER-070）
+
+把 `/play` 從「直接 setGame + 前後盤面 diff 推導特效」改成**引擎產生事件、畫面逐一播放**的架構。之前也已補上難度分級、配樂、mulligan/認輸/連勝、新手引導、多套對手（見 git log ORDER-064~069）。
+
+### 事件系統（engine 產生，view 播放 — 邏輯與視覺分離）
+
+- **型別**（`src/engine/types.ts`）：`CombatEvent` discriminated union + `EventStep = { event, state }`（每個事件附「發生後的權威盤面快照」）。事件類型：
+  `TURN_START / MANA_REFRESH / DRAW / CARD_PLAY / SUMMON / SPELL / ATTACK_WINDUP / ATTACK_LUNGE / IMPACT / DAMAGE / HEAL / DEATH / TURN_END`。
+- **產生器**（`src/engine/game.ts` 尾段）：`playCardFlow / attackFlow / startTurnFlow / endTurnFlow / enemyTurnFlow` 各回傳有序 `EventStep[]`。它們**複用既有純 reducer**（`playMinionFor`/`castSpell`/`resolveAttack`/…），並用 `deriveHits(before, after)` 在**每個子動作**後推導 DAMAGE/HEAL/DEATH/SUMMON（是引擎內的逐步推導，不是畫面拿兩張整回合快照亂猜）。
+- `runEnemyTurn` 現在 = `applyLast(enemyTurnFlow(...))`，AI 只有一份實作；`scripts/sim-ai.mts` 驗證難度勝率仍為 easy≈17% / normal≈47% / hard≈84%。
+
+### 播放器（`src/app/play/useCombat.ts`）
+
+- 擁有「顯示用 `game`」、`locked`（輸入鎖）、與全部動畫狀態。`play(steps)` 依序播放，播放期間 `locked=true`，所有輸入 handler 都 `if (locked) return`。
+- 每種事件的時間軸（見 `D` 常數）：卡牌上浮施放 → 隨從彈入 → 攻擊蓄力(windup)→突進(lunge，用 `getBoundingClientRect` 量攻擊者與目標算 transform)→命中閃光(impact)→傷害跳字 → 死亡殘影（先停頓再淡出化光；在移除前 `snapshotRects()` 記位置，避免瞬間消失）→ 法術色幕 → 回合橫幅 / 法力・抽牌脈動。
+- `registerEl(anchor)` callback ref 收集隨從/英雄 DOM，供突進位移與死亡殘影定位。
+
+### 動畫 CSS（`src/app/globals.css` 尾段「事件驅動戰鬥動畫時間軸」）
+
+`hs-windup / hs-impact / dmg-float(-heal) / combat-banner / combat-cast / spell-veil + spell-{damage,aoe,heal,summon,draw,buff} / death-ghost / mana-pulse / draw-pulse`，以及答題面板 `combat-quiz-*`、手牌 hover 放大。**全部在 `@media (prefers-reduced-motion: reduce)` 關閉**；播放器也把等待時間夾到 ~24ms 並跳過位移/殘影，reduced-motion 下仍可正常遊玩。
+
+### 答題（保留族語學習）
+
+答題視窗改成戰場流程的一部分：半透明背板（保留戰場可見）+ 琥珀框 + 「出牌考驗」抬頭 + 淡入，不再像跳出另一個網站視窗。族語題庫、發音、卡片學習小註都保留。
+
+### 驗收結果（瀏覽器實測）
+
+- ✅ 一眼分辨敵我/戰場/手牌/法力（敵上、我下、手牌貼底、法力靠我方、結束回合靠右）。
+- ✅ 出牌、攻擊、命中、死亡、抽牌、回合切換都有明顯但不拖沓動畫；實測：出牌→答題→召喚、隨從互毆雙死、整個敵方回合在鎖定下逐步播放、回合 2 法力/抽牌。
+- ✅ 連續操作不會重複/重播/錯亂：`locked` 播放期間擋所有輸入，事件序列一次算好再播。
+- ✅ 桌面 1280×720：戰場為第一視覺焦點（scrollY=0 全盤面可見）。
+- ✅ `prefers-reduced-motion`：程式與 CSS 皆處理（時間夾短、跳過位移/殘影）。
+- ⚠️ 手機 375px：已修掉「音樂鈕蓋住結束回合」（音訊鈕改到左下、桌面維持右下）。**但底部（手牌/我方英雄/結束回合/重新開始）仍偏擠**——這是既有 desktop-first 版面的限制，非本次事件系統造成。**後續待辦**：做一版手機專屬底部佈局。
+
+### 後續待辦
+
+- 手機版底部佈局重排（hero/hand/控制鈕分層，避免擠壓）。
+- 出牌「飛入」目前用中央施放示意，尚未做「從手牌該張精準飛到戰場落點」；要更精準需量手牌卡 rect → 戰場落點做 FLIP。
+- 頭目專屬立繪（走 Artemis→Codex→enzo-culture 管線）。
+- 攻擊突進在極端排版下 transform 由 rect 計算，若日後改版面需重測。

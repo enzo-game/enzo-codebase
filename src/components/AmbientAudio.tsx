@@ -180,7 +180,7 @@ export default function AmbientAudio() {
       onClick={() => (on ? disable() : enable())}
       aria-label={on ? "關閉環境配樂" : "開啟環境配樂"}
       title={on ? "環境配樂：開（點擊靜音）" : "環境配樂：關（點擊播放）"}
-      className="fixed bottom-4 right-4 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-slate-700 bg-slate-900/80 text-lg shadow-lg backdrop-blur transition hover:bg-slate-800"
+      className="fixed bottom-4 left-4 sm:left-auto sm:right-4 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-slate-700 bg-slate-900/80 text-lg shadow-lg backdrop-blur transition hover:bg-slate-800"
     >
       <span aria-hidden>{on ? <IconSpeakerOn /> : <IconSpeakerOff />}</span>
     </button>

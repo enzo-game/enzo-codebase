@@ -1420,10 +1420,14 @@ export default function PlayPage() {
         </div>
       )}
 
-      {/* 答題彈窗（真實太魯閣語詞庫；揭曉後自動播發音，手動按「繼續 ▶」結算） */}
+      {/* 答題考驗：戰場流程的一部分（半透明背板保留戰場、琥珀框；非跳出式視窗） */}
       {quiz && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-5">
+        <div className="combat-quiz-scrim fixed inset-0 bg-black/45 backdrop-blur-[3px] flex items-center justify-center p-4 z-50">
+          <div className="combat-quiz-panel w-full max-w-md rounded-2xl bg-slate-900/95 border border-amber-400/30 p-5 shadow-[0_0_60px_rgba(0,0,0,0.6)]">
+            <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-amber-200/70">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden />
+              出牌考驗 · 答對觸發加成
+            </div>
             {CARD_ART[quiz.card.id] && (
               <div className="relative rounded-xl overflow-hidden mb-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
