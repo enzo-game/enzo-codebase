@@ -934,7 +934,7 @@ export default function PlayPage() {
                   onClick={() => onEnemyMinion(e.key)}
                   disabled={!targetable}
                   title={`${e.card.nameZh}${kw ? `（${kw}）` : ""}`}
-                  className={`hs-token hs-token-enter w-[86px] md:w-[102px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
+                  className={`hs-token hs-token-enter w-[72px] md:w-[84px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
                     ${e.taunt ? "hs-token-taunt" : ""}
                     ${shakeMinions.has(e.key) ? "hs-token-hit" : ""}
                     ${windupKeys.has(e.key) ? "hs-windup" : ""}
@@ -991,7 +991,7 @@ export default function PlayPage() {
                   style={lungeStyle(e.key)}
                   onClick={() => onPlayerMinion(e.key)}
                   title={`${e.card.nameZh}${kw ? `（${kw}）` : ""}`}
-                  className={`hs-token hs-token-enter w-[86px] md:w-[102px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
+                  className={`hs-token hs-token-enter w-[72px] md:w-[84px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
                     ${e.taunt ? "hs-token-taunt" : ""}
                     ${shakeMinions.has(e.key) ? "hs-token-hit" : ""}
                     ${windupKeys.has(e.key) ? "hs-windup" : ""}
