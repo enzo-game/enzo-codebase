@@ -208,6 +208,20 @@ export default function Home() {
           />
         </div>
 
+        {/* 線上對戰入口（真人 PvP，ORDER-060 P2→P4 已上線） */}
+        <Link
+          href="/vs"
+          className="anim-logo mt-5 flex items-center justify-between gap-4 rounded-2xl border border-fuchsia-500/40 bg-gradient-to-r from-fuchsia-950/30 via-slate-900/40 to-sky-950/30 px-6 py-4 transition hover:border-fuchsia-400/70 hover:from-fuchsia-900/40"
+        >
+          <div className="min-w-0">
+            <div className="text-base font-semibold text-fuchsia-100/90">🌐 線上對戰 · 跟真人連線</div>
+            <div className="mt-0.5 text-xs text-slate-400">好友房房號連線 · 回合計時 · 斷線重連 · 🏆 天梯排行</div>
+          </div>
+          <span className="shrink-0 rounded-full border border-fuchsia-400/50 px-4 py-1.5 text-sm text-fuchsia-100/90">
+            連線對戰 →
+          </span>
+        </Link>
+
         {/* 三特色 */}
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           <FeatureCard
