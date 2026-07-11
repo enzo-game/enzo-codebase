@@ -125,6 +125,7 @@ async function main() {
   const { data: b } = await B.auth.signInAnonymously();
   const tokenB = b.session!.access_token;
   await B.rpc("join_match", { p_code: room });
+  const svc = createClient(URL_, SERVICE, { auth: { persistSession: false } });
   pass(`配對完成（房號 ${room}）`);
 
   // 反作弊：非當前座位不能動、無 token 401
@@ -141,6 +142,21 @@ async function main() {
   );
   must(noAuth.status === 401, "無 token 應 401");
   pass("反作弊：越權動作 400、無 token 401");
+
+  // P3 回合逾時（透過真 handler + 真 DB）：把權威狀態的截止改到過去，A 讀 view 應觸發伺服器自動結束回合
+  {
+    const { data: row } = await svc.from("match_state").select("state").eq("match_id", matchId).maybeSingle();
+    const stt = (row as { state: Record<string, unknown> }).state;
+    stt.deadline = 1; // 遠古＝必逾時
+    await svc.from("match_state").update({ state: stt }).eq("match_id", matchId);
+    const vA2 = await view(tokenA, matchId);
+    must(!vA2.yourTurn, "逾時後 A 不應再是自己回合");
+    must(vA2.turn === seed.turn + 1, "逾時應推進一回合");
+    must(typeof vA2.deadlineMs === "number" && vA2.deadlineMs > Date.now(), "逾時後應有新的未來截止");
+    const vB2 = await view(tokenB, matchId);
+    must(vB2.yourTurn, "逾時後應輪到 B");
+    pass("回合逾時：改截止到過去 → view 觸發伺服器 enforceDeadline 自動換手");
+  }
 
   // 完整對局：讀 view 判斷輪到誰，該座位走完一回合，直到分勝負
   let last: SeatView = seed;
@@ -170,7 +186,6 @@ async function main() {
   pass("對局結束後動作正確被拒");
 
   // 收尾
-  const svc = createClient(URL_, SERVICE, { auth: { persistSession: false } });
   await svc.from("matches").delete().eq("id", matchId);
   console.log("\n全鏈路 e2e 全數通過 ✓ —— 線上對戰後端＋權威層真的能打完一局。");
 }

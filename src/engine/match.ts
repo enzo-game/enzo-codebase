@@ -55,6 +55,7 @@ export type MatchState = {
   meta: Record<Seat, Meta>;
   stats: Record<Seat, { correct: number; wrong: number }>;
   winner: Seat | null;
+  deadline: number | null; // 現在這一回合的截止（epoch ms）；null＝不計時（如純引擎測試）
 };
 
 /** 客戶端相對目標：一律用「你 / 對手」，由伺服器翻成權威 side。 */
@@ -75,14 +76,19 @@ export type ApplyResult =
   | { ok: false; error: string };
 
 const TURN_SECONDS = 90;
+const TURN_MS = TURN_SECONDS * 1000;
+
+/** 依 now 算這回合截止；now=0（純引擎測試不帶時間）時回 null＝不計時。 */
+const deadlineFrom = (now: number): number | null => (now > 0 ? now + TURN_MS : null);
 
 const sideOf = (seat: Seat): Side => (seat === "a" ? "player" : "enemy");
 const other = (seat: Seat): Seat => (seat === "a" ? "b" : "a");
 
 // ───────────────────────── 初始化 ─────────────────────────
 
-/** 建立一局全新的權威狀態。座位 A 先手；座位 B 後手，多發 1 張補償先手優勢。 */
-export function initMatch(): MatchState {
+/** 建立一局全新的權威狀態。座位 A 先手；座位 B 後手，多發 1 張補償先手優勢。
+ *  now＝伺服器當前 epoch ms（用來設回合截止）；不帶（0）則不計時。 */
+export function initMatch(now = 0): MatchState {
   const a = buildDeck();
   const b = buildDeck();
   const game: Game = {
@@ -114,6 +120,7 @@ export function initMatch(): MatchState {
     meta: { a: { maxMana: 1, mana: 1 }, b: { maxMana: 0, mana: 0 } },
     stats: { a: { correct: 0, wrong: 0 }, b: { correct: 0, wrong: 0 } },
     winner: null,
+    deadline: deadlineFrom(now),
   };
 }
 
@@ -157,8 +164,8 @@ function validatePlay(s: MatchState, seat: Seat, card: Card, target?: Target): s
 
 // ───────────────────────── 回合轉換 ─────────────────────────
 
-/** 交棒給對手並開始其回合：加費、抽牌、隨從解除召喚失調。 */
-function passTurn(s: MatchState): MatchState {
+/** 交棒給對手並開始其回合：加費、抽牌、隨從解除召喚失調、重設回合截止、清掉未結算出牌。 */
+function passTurn(s: MatchState, now = 0): MatchState {
   const from = s.current;
   const to = other(from);
   // 先結算離場座位的「回合結束」效果
@@ -185,12 +192,26 @@ function passTurn(s: MatchState): MatchState {
   // 用 織者/山林試煉（＝A/B 的 side 記名），讓 desensitizeLog 依觀看者換成「你/對手」。
   g2.log = pushLog(g2.log, `── 換 ${to === "a" ? "織者" : "山林試煉"} 回合（第 ${turn} 回合）──`, "info");
 
-  return { ...s, game: g2, current: to, turn, meta };
+  return { ...s, game: g2, current: to, turn, meta, pending: null, deadline: deadlineFrom(now) };
+}
+
+// ───────────────────────── 回合逾時（伺服器懶執行）─────────────────────────
+
+/** 若現在（now）已過本回合截止，就自動結束當前座位的回合（丟棄未結算出牌）。
+ *  由 Route Handler 在每次 view/action 前呼叫；回傳是否真的發生逾時。純函式、時間由外部注入。 */
+export function enforceDeadline(s: MatchState, now: number): { state: MatchState; timedOut: boolean } {
+  if (s.winner || s.deadline == null || now < s.deadline) return { state: s, timedOut: false };
+  const lostName = s.current === "a" ? "織者" : "山林試煉";
+  const withLog: MatchState = {
+    ...s,
+    game: { ...s.game, log: pushLog(s.game.log, `⏰ ${lostName} 逾時，自動結束回合`, "sys") },
+  };
+  return { state: passTurn(withLog, now), timedOut: true };
 }
 
 // ───────────────────────── 主 reducer ─────────────────────────
 
-export function applyMatchAction(s: MatchState, seat: Seat, action: MatchAction): ApplyResult {
+export function applyMatchAction(s: MatchState, seat: Seat, action: MatchAction, now = 0): ApplyResult {
   if (action.type === "start") {
     // start 冪等：狀態已存在就原樣回傳（真正建立在 route handler 以 initMatch 做）
     return { ok: true, state: s };
@@ -205,7 +226,7 @@ export function applyMatchAction(s: MatchState, seat: Seat, action: MatchAction)
       ...s.game,
       winner: sideOf(win),
       phase: "over" as const,
-      log: pushLog(s.game.log, `${seat === "a" ? "座位A" : "座位B"} 認輸。`, "sys"),
+      log: pushLog(s.game.log, `${seat === "a" ? "織者" : "山林試煉"} 認輸。`, "sys"),
     };
     return { ok: true, state: { ...s, game: g, winner: win } };
   }
@@ -244,7 +265,7 @@ export function applyMatchAction(s: MatchState, seat: Seat, action: MatchAction)
     }
 
     case "endTurn": {
-      return { ok: true, state: syncWinner(passTurn(s)) };
+      return { ok: true, state: syncWinner(passTurn(s, now)) };
     }
   }
   return { ok: false, error: "未知動作" };
@@ -326,7 +347,8 @@ export type SeatView = {
   quiz: { cardId: string; prompt: string; options: string[]; chinese: string } | null;
   oppThinking: boolean; // 對手正在答題
   log: LogEntry[];
-  turnDeadlineSeconds: number;
+  deadlineMs: number | null; // 本回合截止（epoch ms）；client 用來倒數。null＝不計時
+  turnSeconds: number; // 一回合總秒數（給進度環當分母）
 };
 
 /** 把權威狀態脱敏成「某座位」看到的視角。這是唯一會下發到客戶端的東西。 */
@@ -380,7 +402,8 @@ export function viewFor(s: MatchState, seat: Seat): SeatView {
       : null,
     oppThinking: Boolean(oppPending),
     log: desensitizeLog(g.log, seat),
-    turnDeadlineSeconds: TURN_SECONDS,
+    deadlineMs: s.winner ? null : s.deadline,
+    turnSeconds: TURN_SECONDS,
   };
 }
 
