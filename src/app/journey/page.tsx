@@ -100,6 +100,11 @@ type EventCard = {
   kind: "天候" | "地形" | "正面" | "路段危機" | "啟程";
   pressure: number;
   desc: string;
+  // ORDER-080：事件差異化效果——原本 15 種事件全部只是「壓力 ±1」換皮（重玩無感）。
+  // 效果與事件敘事一一對應（人工撰寫）：food＝糧食增減、hp＝隊伍體力增減、
+  // ap＝今日行動點增減（結算於補滿之後、至少留 1）、obstacle＝當前障礙節點阻礙增減
+  // （非障礙節點時退化為壓力 +1）。
+  effect?: { food?: number; hp?: number; ap?: number; obstacle?: number };
 };
 
 // ───────────────────────── 圖示（v6，ORDER-039：全面移除表情符號）─────────────────────────
@@ -670,18 +675,21 @@ function buildNodesL2(): PathNode[] {
 }
 
 // v2 機制移植（ORDER-028 拍板）：擴充事件池至 12 項，紮營時隨機抽 1，重玩更有變化
+// ORDER-080（事件差異化）：原本全部事件只是「壓力 ±1」換皮——名字不同、後果全一樣，重玩無感。
+// 改為效果跟著敘事走（人工撰寫、與 desc 一一對應）：糧食、體力、行動點、阻礙各有事件觸碰，
+// 每晚抽到什麼真的會改變隔天怎麼玩。淨難度大致中性（拿走幾個 +1 壓力、換成等值的其他代價）。
 const EVENTS: EventCard[] = [
   // vocabId：風10-04 河流10-07 太陽11-02 石頭12-05 獵物16-08 雲11-12
   { name: "風起雲湧", vocabId: "10-04", kind: "天候", pressure: 1, desc: "山風漸強，隊伍步伐放緩。" },
   { name: "溪水上升", vocabId: "10-07", kind: "地形", pressure: 1, desc: "溪水漲起，橋段更難通行。" },
-  { name: "好天氣", vocabId: "11-02", kind: "正面", pressure: -1, desc: "天色轉晴，士氣回升。" },
-  { name: "落石再起", vocabId: "12-05", kind: "路段危機", pressure: 1, desc: "碎石不時滑落。" },
-  { name: "山林餽贈", vocabId: "16-08", kind: "正面", pressure: -1, desc: "沿途採得野菜與山產。" },
-  { name: "濃霧起", vocabId: "11-12", kind: "天候", pressure: 1, desc: "白霧壟罩，視線受阻。" },
+  { name: "好天氣", vocabId: "11-02", kind: "正面", pressure: -1, desc: "天色轉晴，士氣回升，隊伍恢復了一點力氣。", effect: { hp: 1 } },
+  { name: "落石再起", vocabId: "12-05", kind: "路段危機", pressure: 0, desc: "碎石不時滑落，剛清出來的路又被堆了回去。", effect: { obstacle: 1 } },
+  { name: "山林餽贈", vocabId: "16-08", kind: "正面", pressure: -1, desc: "沿途採得野菜與山產。", effect: { food: 1 } },
+  { name: "濃霧起", vocabId: "11-12", kind: "天候", pressure: 0, desc: "白霧壟罩，視線受阻，今天走不了太多路。", effect: { ap: -1 } },
   // vocabId：冷32-08 雪11-07 餓27-14 滑掉25-37 月亮11-03 幫忙34-05
   { name: "寒風刺骨", vocabId: "32-08", kind: "天候", pressure: 1, desc: "低溫讓隊伍手腳僵硬，動作慢了下來。" },
-  { name: "初雪飄落", vocabId: "11-07", kind: "天候", pressure: 1, desc: "細雪灑落山徑，腳下打滑，得放慢腳步。" },
-  { name: "飢腸轆轆", vocabId: "27-14", kind: "路段危機", pressure: 1, desc: "糧食消耗得比預期快，肚子開始抗議。" },
+  { name: "初雪飄落", vocabId: "11-07", kind: "天候", pressure: 0, desc: "細雪灑落山徑，腳下打滑，有人跌了一跤。", effect: { hp: -1 } },
+  { name: "飢腸轆轆", vocabId: "27-14", kind: "路段危機", pressure: 0, desc: "糧食消耗得比預期快，肚子開始抗議。", effect: { food: -1 } },
   { name: "濕滑坡地", vocabId: "25-37", kind: "地形", pressure: 1, desc: "剛下過雨的坡地又濕又滑，得小心行走。" },
   { name: "月色皎潔", vocabId: "11-03", kind: "正面", pressure: -1, desc: "夜裡的月光意外地明亮，找路輕鬆不少。" },
   { name: "隊伍互相打氣", vocabId: "34-05", kind: "正面", pressure: -1, desc: "疲憊時互相扶持一把，士氣回升不少。" },
@@ -691,9 +699,9 @@ const EVENTS: EventCard[] = [
 // （檢查裝備受潮／雷雨將至），vocabId 皆為 klokah 已驗證真實詞。
 const EVENTS_L2: EventCard[] = [
   ...EVENTS,
-  { name: "裝備受潮", vocabId: "32-17", kind: "天候", pressure: 1, desc: "雨水滲進行囊，部分裝備又濕又重，行動更費力。" }, // mhuriq 濕的
+  { name: "裝備受潮", vocabId: "32-17", kind: "天候", pressure: 0, desc: "雨水滲進行囊，部分裝備又濕又重，今天行動更費力。", effect: { ap: -1 } }, // mhuriq 濕的
   { name: "雷聲逼近", vocabId: "11-10", kind: "天候", pressure: 1, desc: "遠方天空開始閃爍白光，雷聲的間隔越來越短。" }, // bruwa 雷
-  { name: "雨勢漸歇", vocabId: "11-31", kind: "正面", pressure: -1, desc: "雨停了一陣，隊伍抓緊空檔整裝趕路。" }, // msuwal 雨停
+  { name: "雨勢漸歇", vocabId: "11-31", kind: "正面", pressure: -1, desc: "雨停了一陣，隊伍抓緊空檔整裝趕路，今天能多走一段。", effect: { ap: 1 } }, // msuwal 雨停
 ];
 
 // ───────────────────────── 關卡設定（ORDER-050，P2：第二關上線）─────────────────────────
@@ -1529,10 +1537,46 @@ function camp(g: JGame): JGame {
   const ev = pool[Math.floor(Math.random() * pool.length)];
   ng.event = ev;
   ng.pressure = Math.max(0, Math.min(ng.maxPressure, ng.pressure + ev.pressure));
+  // ORDER-080（事件差異化）：套用事件的非壓力效果，並把實際結果寫進 log
+  const fxParts: string[] = [];
+  if (ev.pressure !== 0) fxParts.push(`壓力 ${ev.pressure > 0 ? "+" : ""}${ev.pressure}`);
+  if (ev.effect) {
+    if (ev.effect.food) {
+      if (ev.effect.food < 0 && ng.res.food <= 0) {
+        // 糧食已見底還要再扣：轉為壓力 +1（肚子更慌）
+        ng.pressure = Math.min(ng.maxPressure, ng.pressure + 1);
+        fxParts.push("糧食已空，壓力 +1");
+      } else {
+        ng.res.food = Math.max(0, ng.res.food + ev.effect.food);
+        fxParts.push(`糧食 ${ev.effect.food > 0 ? "+" : ""}${ev.effect.food}`);
+      }
+    }
+    if (ev.effect.hp) {
+      ng.teamHp = Math.max(0, Math.min(ng.maxTeamHp, ng.teamHp + ev.effect.hp));
+      fxParts.push(`隊伍體力 ${ev.effect.hp > 0 ? "+" : ""}${ev.effect.hp}`);
+    }
+    if (ev.effect.ap) {
+      // 行動點效果套在補滿之後：負值至少留 1（不讓玩家一天完全動不了），正值不超過上限
+      ng.ap = Math.max(1, Math.min(ng.maxAp, ng.ap + ev.effect.ap));
+      fxParts.push(`今日行動點 ${ev.effect.ap > 0 ? "+" : ""}${ev.effect.ap}`);
+    }
+    if (ev.effect.obstacle) {
+      const cur = ng.nodes[ng.idx];
+      if (cur && cur.type === "obstacle" && !cur.cleared) {
+        cur.obstacle += ev.effect.obstacle;
+        fxParts.push(`「${cur.name}」阻礙 +${ev.effect.obstacle}`);
+      } else {
+        // 不在障礙節點：退化為壓力 +1（碎石聲讓人心驚）
+        ng.pressure = Math.min(ng.maxPressure, ng.pressure + 1);
+        fxParts.push("壓力 +1");
+      }
+    }
+  }
+  const bad = ev.pressure > 0 || (ev.effect ? (ev.effect.food ?? 0) < 0 || (ev.effect.hp ?? 0) < 0 || (ev.effect.ap ?? 0) < 0 || !!ev.effect.obstacle : false);
   ng.log = pushLog(
     ng.log,
-    `第 ${ng.day} 日｜事件「${ev.name}」（${ev.kind}）：壓力 ${ev.pressure >= 0 ? "+" : ""}${ev.pressure}。${ev.desc}`,
-    ev.pressure > 0 ? "bad" : "good",
+    `第 ${ng.day} 日｜事件「${ev.name}」（${ev.kind}）：${fxParts.join("、") || "平安無事"}。${ev.desc}`,
+    bad ? "bad" : "good",
   );
 
   // 危急（壓力≥8）：行動點上限收緊，套用今日事件後的最終壓力值判定
@@ -2026,9 +2070,11 @@ export default function JourneyPage() {
 
   useEffect(() => {
     if (!mounted || coachTried || coach !== null) return;
-    // 只在「全新第一關開局」觸發：第 1 日、起點、且開場章節卡與節點故事卡都已看完關閉
+    // 只在「全新第一關開局」觸發：第 1 日、起點、開場章節卡已看完關閉。
+    // ORDER-080：拿掉 seenStories 條件——ORDER-056 之後起點故事卡在 day1/idx0 被明確抑制
+    // （改為前進時前置傳說首段），舊條件永遠不成立，是教學死碼的第二層原因。
     if (game.levelId !== "l1" || game.day !== 1 || game.idx !== 0) return;
-    if (anyModalOpen || seenChapters < 0 || seenStories.size < 1) return;
+    if (anyModalOpen || seenChapters < 0) return;
     let done = true;
     try {
       done = localStorage.getItem(LS_COACH_DONE) === "1";
@@ -2037,13 +2083,10 @@ export default function JourneyPage() {
     }
     /* eslint-disable react-hooks/set-state-in-effect */
     setCoachTried(true);
-    if (!done) {
-      try {
-        localStorage.setItem(LS_COACH_DONE, "1");
-      } catch {
-        /* 忽略寫入失敗 */
-      }
-    }
+    // ORDER-080：修復死碼——原本這裡只寫 localStorage 旗標、從未 setCoach(0)，
+    // 整套教學 UI（COACH_STEPS／cutout 量測／jny-coach-cutout）寫好了卻永遠不會出現。
+    // 旗標改由 finishCoach()（看完或跳過）才寫，中途關頁下次還會再教。
+    if (!done) setCoach(0);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [mounted, coachTried, coach, game.levelId, game.day, game.idx, anyModalOpen, seenChapters, seenStories]);
 
@@ -3571,7 +3614,7 @@ export default function JourneyPage() {
               </li>
               <li className="flex gap-2">
                 <IconMoon className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
-                <span><b>紮營</b>收束當日：消耗糧食（見上）；糧食不足則隊伍體力 -2；當前路段未通行則壓力 +2。</span>
+                <span><b>紮營</b>收束當日：消耗糧食（見上）；糧食不足則隊伍體力 -2；當前路段未通行則壓力 +2。換日抽一張<b>每日事件</b>——效果跟著事件走：有的加減壓力，有的動糧食（山林餽贈／飢腸轆轆）、體力（好天氣／初雪）、今日行動點（濃霧／裝備受潮／雨勢漸歇），落石再起還會把清到一半的阻礙堆回去。</span>
               </li>
               <li className="flex gap-2">
                 <IconAlert className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
