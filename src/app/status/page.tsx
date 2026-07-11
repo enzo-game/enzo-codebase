@@ -3,6 +3,7 @@ import {
   artBatches,
   reviewItems,
   otherLines,
+  autoOrders,
   PIPELINE_STAGES,
   LAST_UPDATED,
   PROD_URL,
@@ -147,6 +148,37 @@ export default function StatusPage() {
               <p className="mt-2 text-xs text-slate-400">{r.blocker}</p>
             </div>
           ))}
+        </div>
+
+        {/* 四、全部 ORDER 自動追蹤（git log 為準，每小時自動更新） */}
+        <h2 className="mb-3 mt-8 text-sm font-semibold uppercase tracking-wider text-slate-400">
+          四、全部 ORDER 自動追蹤
+          <span className="ml-2 normal-case font-normal text-slate-500">（git log 為準，每小時自動生成）</span>
+        </h2>
+        <div className="overflow-x-auto rounded-xl border border-slate-800">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead>
+              <tr className="border-b border-slate-800 bg-slate-900/60 text-xs text-slate-400">
+                <th className="p-3 text-left font-medium">單號</th>
+                <th className="p-3 text-left font-medium">標題</th>
+                <th className="p-2 text-center font-medium">狀態</th>
+                <th className="p-3 text-left font-medium">說明 / 下一步</th>
+              </tr>
+            </thead>
+            <tbody>
+              {autoOrders.map((r) => (
+                <tr key={r.order} className="border-b border-slate-800/60 last:border-0">
+                  <td className="p-3 font-mono text-xs text-slate-300 whitespace-nowrap">{r.order}</td>
+                  <td className="p-3 leading-snug">{r.name}</td>
+                  <td className="p-2 text-center"><StageDot s={r.status} /></td>
+                  <td className="p-3">
+                    <div className="text-xs text-slate-400">{r.blocker}</div>
+                    {r.next !== "—" && <div className="mt-0.5 text-[11px] text-slate-500">下一步：{r.next}</div>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
         <footer className="mt-10 border-t border-slate-800 pt-4 text-xs text-slate-600">

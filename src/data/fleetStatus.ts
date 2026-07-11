@@ -2,7 +2,7 @@
 // 更新狀態＝改這個檔。頁面 src/app/status/page.tsx 依此渲染。
 // 對應純文字版：enzo-team-principal/STATUS.md
 
-export const LAST_UPDATED = "2026-07-08";
+export const LAST_UPDATED = "2026-07-11";
 export const PROD_URL = "https://enzo-codebase.vercel.app";
 
 export type Stage = "done" | "wip" | "blocked" | "na";
@@ -106,3 +106,62 @@ export const otherLines: ItemRow[] = [
     next: "司令",
   },
 ];
+
+// ───────────────────────── 全部 ORDER 自動追蹤 ─────────────────────────
+// 由 git log 生成（enzo-team-principal/scripts/gen-fleet-status.mjs，每小時 cron）。
+// next 是自由字串（可能多個負責人），故不用 Owner enum。此區塊下方由腳本自動覆寫，勿手改。
+export type AutoOrderRow = { order: string; name: string; status: Stage; blocker: string; next: string };
+
+// AUTO-ORDERS-START （由 scripts/gen-fleet-status.mjs 自動生成，勿手改此區塊）
+export const autoOrders: AutoOrderRow[] = [
+  { order: "ORDER-071", name: "模式 A 核心循環 v3：卡組成長 + 織能引擎（解「玩法太簡單」）", status: "wip", blocker: "進行中", next: "Themis/Hermes/Calypso/Mnemosyne" },
+  { order: "ORDER-070", name: "inline quiz, hand hover-zoom, mobile fix, handoff", status: "done", blocker: "已上線｜2026-07-11｜PR#51", next: "—" },
+  { order: "ORDER-069", name: "multiple AI opponents with themed decks", status: "done", blocker: "已上線｜2026-07-11", next: "—" },
+  { order: "ORDER-068", name: "crisper card-play 咔嗒 snap sound", status: "done", blocker: "已上線｜2026-07-11", next: "—" },
+  { order: "ORDER-067", name: "interactive first-run onboarding", status: "done", blocker: "已上線｜2026-07-11", next: "—" },
+  { order: "ORDER-066", name: "replayability — mulligan, concede, win streak", status: "done", blocker: "已上線｜2026-07-11", next: "—" },
+  { order: "ORDER-065", name: "battle music + combat juice", status: "done", blocker: "已上線｜2026-07-11｜PR#50", next: "—" },
+  { order: "ORDER-064", name: "AI difficulty tiers easy/normal/hard", status: "done", blocker: "已上線｜2026-07-11｜PR#49", next: "—" },
+  { order: "ORDER-063", name: "+6 low-risk cards, no culture-review needed", status: "done", blocker: "已上線｜2026-07-11｜PR#48", next: "—" },
+  { order: "ORDER-060", name: "online friend-room matchmaking scaffold", status: "wip", blocker: "P0/P1 已上線；P2 線上對戰待接 Supabase", next: "Hermes" },
+  { order: "ORDER-059", name: "add 2 low-risk legend-safe cards 退水河床 / 樹根護徑", status: "done", blocker: "已上線｜2026-07-10", next: "—" },
+  { order: "ORDER-058", name: "Hearthstone-style board + 8 legend cards + learning notes", status: "done", blocker: "已上線｜2026-07-10", next: "—" },
+  { order: "ORDER-057", name: "branching narrative + WordMatch per-level quiz type", status: "done", blocker: "已上線｜2026-07-10", next: "—" },
+  { order: "ORDER-056", name: "remove obstacle build minigame, front-load first legend passage", status: "done", blocker: "已上線｜2026-07-10｜PR#47", next: "—" },
+  { order: "ORDER-055", name: "legend chapter system + 小米接力 + difficulty pass", status: "done", blocker: "已上線｜2026-07-10｜PR#46", next: "—" },
+  { order: "ORDER-054", name: "replace bridge drag-build with audio-first 聽音搭板 minigame", status: "done", blocker: "已上線｜2026-07-10｜PR#45", next: "—" },
+  { order: "ORDER-051", name: "Epic visual overhaul + action spotlight guidance + bridge build variant", status: "done", blocker: "已上線｜2026-07-10｜PR#44", next: "—" },
+  { order: "ORDER-049", name: "Hearthstone-style card frames + faceted gem stats", status: "done", blocker: "已上線｜2026-07-10｜PR#42", next: "—" },
+  { order: "ORDER-048", name: "Tighten Mode A economy per boredom review P1", status: "done", blocker: "已上線｜2026-07-10｜PR#39", next: "—" },
+  { order: "ORDER-044", name: "Add ORDER-044 card art to /play battle page", status: "done", blocker: "已上線｜2026-07-10｜PR#40", next: "—" },
+  { order: "ORDER-043", name: "Replace v1 cards with Legends set and Hearthstone-style engine in /play", status: "done", blocker: "已上線｜2026-07-10｜PR#38", next: "—" },
+  { order: "ORDER-031", name: "補上答題閘門——硬清/謹慎探勘/補給不再能繞過族語題（ORDER-031）", status: "done", blocker: "已上線｜2026-07-09｜PR#26", next: "—" },
+  { order: "ORDER-030", name: "任務面板放大 + 節點故事上線（ORDER-030）", status: "done", blocker: "已上線｜2026-07-09｜PR#25", next: "—" },
+  { order: "ORDER-028", name: "機制移植——事件節點隨機池（ORDER-028 第二項）", status: "done", blocker: "已上線｜2026-07-09｜PR#23", next: "—" },
+  { order: "ORDER-026", name: "序幕氛圍特效層——微光粒子／山霧流動／祖靈光點（ORDER-026）", status: "done", blocker: "已上線｜2026-07-09｜PR#20", next: "—" },
+  { order: "ORDER-025", name: "融入 5 則有出處太魯閣族傳說（ORDER-025，司令核准）", status: "done", blocker: "已上線｜2026-07-09｜PR#19", next: "—" },
+  { order: "ORDER-024", name: "任務面板——主線目標＋這一步該做什麼＋支線（ORDER-024）", status: "done", blocker: "已上線｜2026-07-09｜PR#18", next: "—" },
+  { order: "ORDER-023", name: "序幕頁 /prologue（故事帶入）", status: "done", blocker: "已上線｜2026-07-09｜PR#16", next: "—" },
+  { order: "ORDER-022", name: "首頁刪副標＋入口動態化", status: "done", blocker: "完成（非程式單）", next: "—" },
+  { order: "ORDER-021", name: "資源金幣族語落字（決策#22 執行）", status: "done", blocker: "完成（非程式單）", next: "—" },
+  { order: "ORDER-020", name: "UI 音效（配樂升級第一波）", status: "done", blocker: "已上線｜2026-07-09｜PR#13", next: "—" },
+  { order: "ORDER-019", name: "品牌更名（峽谷行者 Canyon Walker）＋環境配樂", status: "done", blocker: "完成（非程式單）", next: "—" },
+  { order: "ORDER-018", name: "中性裝飾外框（§16.2 菱形織紋紅線之中性替代）", status: "done", blocker: "已上線｜2026-07-08｜PR#11", next: "—" },
+  { order: "ORDER-017", name: "山徑 /journey 介面升級（圖1，承 ORDER-015）（美術部分）", status: "done", blocker: "已上線｜2026-07-08｜PR#9", next: "—" },
+  { order: "ORDER-016", name: "《山徑織圖》模式 A 文化把關（地名 / 敘事框架 / 角色）", status: "done", blocker: "已上線｜2026-07-08｜PR#7", next: "—" },
+  { order: "ORDER-015", name: "模式 A 山徑介面美術 MD（《山徑織圖》，全 placeholder 先行） 已完成", status: "done", blocker: "已上線｜2026-07-08｜PR#4", next: "—" },
+  { order: "ORDER-014", name: "模式 A 山徑灰盒 MVP（/journey，《山徑織圖》單關 + 族語答題閘門）", status: "done", blocker: "已上線｜PR#3（早期單，commit 未掛號）", next: "—" },
+  { order: "ORDER-013", name: "《山徑織圖》整理為「模式 A」正式機制規格 + 族語答題閘門設計", status: "done", blocker: "完成（設計規格單）", next: "—" },
+  { order: "ORDER-012", name: "雙模式架構：模式選擇 + 山徑劇情模式（模式 A）", status: "done", blocker: "已上線｜PR#3（早期單，commit 未掛號）", next: "—" },
+  { order: "ORDER-011", name: "/play 從單人練習擴成「vs 系統」對戰迴圈", status: "done", blocker: "已上線（早期單，commit 未掛號）", next: "—" },
+  { order: "ORDER-010", name: "卡池擴充（30→60）+ 導入文化牌系 + UI 概念整合", status: "wip", blocker: "進行中", next: "Calypso" },
+  { order: "ORDER-009", name: "建立 Codex 生圖管線 + 產出首批生圖 MD", status: "wip", blocker: "進行中", next: "Codex" },
+  { order: "ORDER-008", name: "以 hunter.db 真實詞彙與題庫替換示範佔位（30 張卡）", status: "wip", blocker: "進行中", next: "Mnemosyne" },
+  { order: "ORDER-007", name: "30 張卡命名與題材的文化審查", status: "wip", blocker: "進行中", next: "Themis" },
+  { order: "ORDER-005", name: "將第 21–30 張卡接入前端（達成 MVP 30 張牌組）", status: "done", blocker: "完成（非程式單）", next: "—" },
+  { order: "ORDER-004", name: "補齊 MVP 卡表至 30 張", status: "done", blocker: "完成（非程式單）", next: "—" },
+  { order: "ORDER-003", name: "出牌答題原型（/play）+ 首頁", status: "done", blocker: "已上線｜2026-07-07", next: "—" },
+  { order: "ORDER-002", name: "建立詞彙管線與 20 卡綁定槽", status: "done", blocker: "完成（非程式單）", next: "—" },
+  { order: "ORDER-001", name: "設計首發卡牌（20 張）", status: "done", blocker: "完成（非程式單）", next: "—" },
+];
+// AUTO-ORDERS-END
