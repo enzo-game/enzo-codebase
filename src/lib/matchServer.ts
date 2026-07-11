@@ -6,6 +6,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   initMatch,
   applyMatchAction,
+  enforceDeadline,
   viewFor,
   type MatchState,
   type MatchAction,
@@ -61,20 +62,63 @@ async function loadMatch(svc: SupabaseClient, matchId: string): Promise<MatchRow
 }
 
 /** 讀權威狀態；若對局已 active 但尚未初始化，冪等地發牌建立。 */
-async function ensureState(svc: SupabaseClient, m: MatchRow): Promise<{ state: MatchState; version: number } | null> {
+const iso = (ms: number | null) => (ms == null ? null : new Date(ms).toISOString());
+
+async function ensureState(
+  svc: SupabaseClient,
+  m: MatchRow,
+  now: number,
+): Promise<{ state: MatchState; version: number } | null> {
   const { data } = await svc.from("match_state").select("state,version").eq("match_id", m.id).maybeSingle();
   if (data) return { state: data.state as MatchState, version: (data as { version: number }).version };
   if (m.status !== "active" || !m.player_b) return null; // 還沒兩人到齊，無狀態可建
-  // 首次初始化：發牌。on conflict do nothing 保證雙方同時觸發也只留一份。
-  const fresh = initMatch();
+  // 首次初始化：發牌（帶 now 設回合截止）。on conflict do nothing 保證雙方同時觸發也只留一份。
+  const fresh = initMatch(now);
   await svc.from("match_state").insert({ match_id: m.id, state: fresh, version: 0 }).select().maybeSingle();
   const { data: after } = await svc.from("match_state").select("state,version").eq("match_id", m.id).maybeSingle();
   if (!after) return null;
   await svc
     .from("matches")
-    .update({ turn_owner: seatUid(m, fresh.current), version: 0 })
+    .update({ turn_owner: seatUid(m, fresh.current), turn_deadline: iso(fresh.deadline), version: 0 })
     .eq("id", m.id);
   return { state: after.state as MatchState, version: (after as { version: number }).version };
+}
+
+/** 讀權威狀態，並在讀到的當下懶執行「回合逾時」：若已過截止就自動結束當前回合、寫回、bump version
+ *  （Realtime poke 兩端）。回傳強制後的最新 {state, version}。 */
+async function loadEnforced(
+  svc: SupabaseClient,
+  m: MatchRow,
+  now: number,
+): Promise<{ state: MatchState; version: number } | null> {
+  const loaded = await ensureState(svc, m, now);
+  if (!loaded) return null;
+  const { state, timedOut } = enforceDeadline(loaded.state, now);
+  if (!timedOut) return loaded;
+
+  const nextVersion = loaded.version + 1;
+  const { data: written } = await svc
+    .from("match_state")
+    .update({ state, version: nextVersion, updated_at: new Date().toISOString() })
+    .eq("match_id", m.id)
+    .eq("version", loaded.version) // version-guard：別人搶先寫就以對方的為準
+    .select("match_id")
+    .maybeSingle();
+  if (!written) {
+    const { data: re } = await svc.from("match_state").select("state,version").eq("match_id", m.id).maybeSingle();
+    return re ? { state: re.state as MatchState, version: (re as { version: number }).version } : loaded;
+  }
+  await svc
+    .from("matches")
+    .update({
+      turn_owner: state.winner ? null : seatUid(m, state.current),
+      turn_deadline: iso(state.deadline),
+      status: state.winner ? "finished" : "active",
+      version: nextVersion,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", m.id);
+  return { state, version: nextVersion };
 }
 
 export type ViewResult =
@@ -90,7 +134,7 @@ export async function getView(authHeader: string | null, matchId: string): Promi
   if (!m) return { ok: false, status: 404, error: "對局不存在" };
   const seat = seatOf(m, uid);
   if (!seat) return { ok: false, status: 403, error: "你不在這局" };
-  const loaded = await ensureState(svc, m);
+  const loaded = await loadEnforced(svc, m, Date.now());
   if (!loaded) return { ok: false, status: 409, error: "對局尚未開始" };
   return { ok: true, view: viewFor(loaded.state, seat) };
 }
@@ -109,12 +153,13 @@ export async function postAction(
   const seat = seatOf(m, uid);
   if (!seat) return { ok: false, status: 403, error: "你不在這局" };
 
-  // 樂觀鎖：讀 → 套 → 寫（where version 相符）；衝突重試一次。
+  // 樂觀鎖：讀（含逾時強制）→ 套 → 寫（where version 相符）；衝突重試一次。
   for (let attempt = 0; attempt < 2; attempt++) {
-    const loaded = await ensureState(svc, m);
+    const now = Date.now();
+    const loaded = await loadEnforced(svc, m, now);
     if (!loaded) return { ok: false, status: 409, error: "對局尚未開始" };
 
-    const result = applyMatchAction(loaded.state, seat, action);
+    const result = applyMatchAction(loaded.state, seat, action, now);
     if (!result.ok) return { ok: false, status: 400, error: result.error };
 
     const next = result.state;
@@ -135,6 +180,7 @@ export async function postAction(
       .from("matches")
       .update({
         turn_owner: next.winner ? null : seatUid(m, next.current),
+        turn_deadline: iso(next.deadline),
         winner: winnerUid,
         status: next.winner ? "finished" : "active",
         version: nextVersion,

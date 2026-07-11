@@ -7,7 +7,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabaseConfigured } from "@/lib/supabase";
-import { createRoom, joinRoom, ensureAnonSession, subscribeMatch, type Match } from "@/lib/vs";
+import {
+  createRoom,
+  joinRoom,
+  ensureAnonSession,
+  subscribeMatch,
+  findMyActiveMatch,
+  type Match,
+} from "@/lib/vs";
 
 type View = "idle" | "creating" | "waiting" | "joining" | "connected" | "error";
 
@@ -17,12 +24,27 @@ export default function VsPage() {
   const [match, setMatch] = useState<Match | null>(null);
   const [code, setCode] = useState("");
   const [err, setErr] = useState("");
+  const [resume, setResume] = useState<Match | null>(null); // 進行中的對局（斷線重連）
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   // 卸載時清掉 Realtime 訂閱
   useEffect(() => {
     return () => {
       channelRef.current?.unsubscribe();
+    };
+  }, []);
+
+  // 進大廳先看有沒有一場還在進行的對局，有就給「回到對戰」
+  useEffect(() => {
+    if (!supabaseConfigured) return;
+    let alive = true;
+    findMyActiveMatch()
+      .then((m) => {
+        if (alive) setResume(m);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
     };
   }, []);
 
@@ -96,6 +118,14 @@ export default function VsPage() {
           <NotConfigured />
         ) : view === "idle" ? (
           <div className="space-y-3">
+            {resume ? (
+              <button
+                onClick={() => enterBattle(resume)}
+                className="w-full rounded-lg border border-amber-500/60 bg-amber-950/40 hover:bg-amber-900/40 py-3 font-semibold text-amber-200 transition"
+              >
+                ↩︎ 回到進行中的對戰（房號 {resume.room_code}）
+              </button>
+            ) : null}
             <button
               onClick={handleCreate}
               className="w-full rounded-lg bg-emerald-600 hover:bg-emerald-500 py-3 font-semibold transition"

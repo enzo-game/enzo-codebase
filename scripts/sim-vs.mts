@@ -5,6 +5,7 @@ import {
   initMatch,
   applyMatchAction,
   viewFor,
+  enforceDeadline,
   type MatchState,
   type Seat,
   type ClientTarget,
@@ -171,6 +172,35 @@ for (let i = 0; i < GAMES; i++) {
     !applyMatchAction(s, "a", { type: "attack", attackerKey: "x", target: { kind: "hero" } }).ok,
     "無隨從攻擊應被拒",
   );
+}
+
+// ───────────────────────── 回合逾時（P3）抽驗 ─────────────────────────
+{
+  const T0 = 1_000_000;
+  let s = initMatch(T0);
+  must(s.deadline === T0 + 90_000, "initMatch 應設回合截止");
+  // 未到截止 → 不逾時
+  must(!enforceDeadline(s, T0 + 1000).timedOut, "未到截止不應逾時");
+  // A 選了一張牌卡在待答，然後逾時 → 該回合作廢、換 B、pending 清掉、手牌沒少
+  const handBefore = s.game.pHand.length;
+  const playable = s.game.pHand.find((c) => c.cost <= s.meta.a.mana)?.id;
+  if (playable) {
+    const r = applyMatchAction(s, "a", { type: "playCard", cardId: playable }, T0);
+    must(r.ok, "playCard 應成功");
+    s = (r as { ok: true; state: MatchState }).state;
+    must(s.pending != null, "應進入待答");
+  }
+  const to = enforceDeadline(s, T0 + 90_000 + 1);
+  must(to.timedOut, "過截止應逾時");
+  must(to.state.current === "b", "逾時應換對手回合");
+  must(to.state.pending === null, "逾時應丟棄未結算出牌");
+  must(to.state.game.pHand.length === handBefore, "逾時不應扣掉未打出的手牌");
+  must(to.state.deadline === T0 + 90_000 + 1 + 90_000, "逾時後應重設新回合截止");
+  // 逾時後對方視角：換它的回合、拿得到新的 deadlineMs
+  const vb = viewFor(to.state, "b");
+  must(vb.yourTurn, "逾時後應輪到 B");
+  must(typeof vb.deadlineMs === "number", "應下發 deadlineMs 供倒數");
+  console.log("回合逾時（P3）：截止設定/懶執行/清待答/重設/脱敏 全數通過 ✓");
 }
 
 const decided = winA + winB;

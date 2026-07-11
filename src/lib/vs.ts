@@ -51,8 +51,13 @@ export async function joinRoom(code: string): Promise<Match> {
   return data as Match;
 }
 
-/** 訂閱單一對局的變動（對手加入、狀態轉 active、之後 P2 的 state 更新都會推來）。 */
-export function subscribeMatch(matchId: string, onChange: (m: Match) => void): RealtimeChannel {
+/** 訂閱單一對局的變動（對手加入、狀態轉 active、之後 P2 的 state 更新都會推來）。
+ *  onStatus 回報 Realtime 連線狀態（SUBSCRIBED / CHANNEL_ERROR / TIMED_OUT / CLOSED），供斷線指示。 */
+export function subscribeMatch(
+  matchId: string,
+  onChange: (m: Match) => void,
+  onStatus?: (status: string) => void,
+): RealtimeChannel {
   const sb = client();
   const channel = sb
     .channel(`match:${matchId}`)
@@ -61,8 +66,22 @@ export function subscribeMatch(matchId: string, onChange: (m: Match) => void): R
       { event: "UPDATE", schema: "public", table: "matches", filter: `id=eq.${matchId}` },
       (payload) => onChange(payload.new as Match),
     )
-    .subscribe();
+    .subscribe((status) => onStatus?.(status));
   return channel;
+}
+
+/** 找出我目前「進行中」的對局（斷線重連 / 回大廳後復歸用）。RLS 只會回我參與的列。 */
+export async function findMyActiveMatch(): Promise<Match | null> {
+  const uid = await ensureAnonSession();
+  const sb = client();
+  const { data } = await sb
+    .from("matches")
+    .select("*")
+    .eq("status", "active")
+    .or(`player_a.eq.${uid},player_b.eq.${uid}`)
+    .order("updated_at", { ascending: false })
+    .limit(1);
+  return (data?.[0] as Match) ?? null;
 }
 
 /** 讀取單一對局現況（訂閱前先抓一次，避免錯過剛發生的變動）。 */

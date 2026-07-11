@@ -29,6 +29,8 @@ export default function BattlePage() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [selecting, setSelecting] = useState<Selecting>(null);
+  const [connected, setConnected] = useState(true); // Realtime 連線狀態
+  const [nowTs, setNowTs] = useState(() => Date.now()); // 每秒跳動，用來導出倒數
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   const refresh = useCallback(async () => {
@@ -47,12 +49,16 @@ export default function BattlePage() {
         await ensureAnonSession();
         if (!alive) return;
         await refresh();
-        channelRef.current = subscribeMatch(matchId, () => void refresh());
+        channelRef.current = subscribeMatch(
+          matchId,
+          () => void refresh(),
+          (status) => setConnected(status === "SUBSCRIBED"),
+        );
       } catch (e) {
         if (alive) setErr(msg(e));
       }
     })();
-    // 備援輪詢：Realtime 偶爾漏推時仍能同步（回合制，4s 足夠）
+    // 備援輪詢：Realtime 偶爾漏推時仍能同步（回合制，4s 足夠）；斷線時也靠它續命
     const poll = setInterval(() => void refresh(), 4000);
     return () => {
       alive = false;
@@ -60,6 +66,20 @@ export default function BattlePage() {
       channelRef.current?.unsubscribe();
     };
   }, [matchId, refresh]);
+
+  // 每秒跳動一次（setState 在 interval callback 內，非 effect 同步呼叫）
+  useEffect(() => {
+    const t = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // 由 deadlineMs 與 nowTs 導出倒數秒數（純導出，不存 state）。
+  // 歸零後的逾時結算不在這裡觸發：交給既有的 4s 備援輪詢打 getView → 伺服器懶執行 enforceDeadline，
+  // 90s 的回合計時容得下最多 4s 的延遲，也避免在 effect 內同步呼叫 setState。
+  const secondsLeft =
+    view && view.phase !== "over" && view.deadlineMs != null
+      ? Math.max(0, Math.ceil((view.deadlineMs - nowTs) / 1000))
+      : null;
 
   // 送出一個意圖：樂觀地用回傳視角即時更新，並清掉指定狀態。
   const act = useCallback(
@@ -146,7 +166,7 @@ export default function BattlePage() {
         <Link href="/vs" className="text-xs text-neutral-500 hover:text-neutral-300 underline">
           ← 大廳
         </Link>
-        <TurnBadge view={view} />
+        <TurnBadge view={view} secondsLeft={secondsLeft} />
         <button
           onClick={() => act({ type: "concede" })}
           disabled={view.phase === "over" || busy}
@@ -155,6 +175,11 @@ export default function BattlePage() {
           認輸
         </button>
       </div>
+      {!connected && view.phase !== "over" ? (
+        <div className="bg-amber-900/40 text-amber-200 text-xs text-center py-1 animate-pulse">
+          連線中斷，重新連線中…（仍會自動同步）
+        </div>
+      ) : null}
 
       <div className="flex-1 flex flex-col justify-between max-w-5xl w-full mx-auto px-3 py-4 gap-3">
         {/* 對手 */}
@@ -271,14 +296,30 @@ function targetHighlight(view: SeatView, selecting: Selecting) {
 
 // ───────────────────────── 子元件 ─────────────────────────
 
-function TurnBadge({ view }: { view: SeatView }) {
+function TurnBadge({ view, secondsLeft }: { view: SeatView; secondsLeft: number | null }) {
   if (view.phase === "over") {
     return <span className="text-sm font-semibold text-neutral-300">對局結束</span>;
   }
-  if (view.oppThinking) return <span className="text-sm text-amber-300 animate-pulse">對手出牌答題中…</span>;
+  const clock =
+    secondsLeft != null ? (
+      <span className={`ml-2 tabular-nums font-mono ${secondsLeft <= 10 ? "text-rose-400 animate-pulse" : "text-neutral-400"}`}>
+        ⏳ {secondsLeft}s
+      </span>
+    ) : null;
+  if (view.oppThinking) {
+    return (
+      <span className="text-sm">
+        <span className="text-amber-300 animate-pulse">對手出牌答題中…</span>
+        {clock}
+      </span>
+    );
+  }
   return (
-    <span className={`text-sm font-semibold ${view.yourTurn ? "text-emerald-400" : "text-neutral-400"}`}>
-      {view.yourTurn ? "你的回合" : "對手回合"} · 第 {view.turn} 回合
+    <span className="text-sm font-semibold">
+      <span className={view.yourTurn ? "text-emerald-400" : "text-neutral-400"}>
+        {view.yourTurn ? "你的回合" : "對手回合"} · 第 {view.turn} 回合
+      </span>
+      {clock}
     </span>
   );
 }
