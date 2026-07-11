@@ -788,6 +788,14 @@ body {
 .hs-can-attack {
   cursor: pointer;
 }
+/* 攻擊指示箭頭：選定攻擊者 → 從隨從指向滑鼠的發光箭頭 */
+.attack-arrow {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.55));
+}
 @media (prefers-reduced-motion: reduce) {
   .hs-hand-card {
     transition: none;

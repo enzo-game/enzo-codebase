@@ -392,6 +392,40 @@ function playVocabAudio(id: string) {
   }
 }
 
+// 攻擊指示箭頭：選定攻擊者後，從該隨從畫一條發光箭頭指向滑鼠，明確表示「正在選攻擊目標」。
+function AttackArrow({ fromKey }: { fromKey: string }) {
+  const [end, setEnd] = useState<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => setEnd({ x: e.clientX, y: e.clientY });
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
+  }, []);
+  const el = typeof document !== "undefined" ? document.querySelector<HTMLElement>(`[data-mkey="${fromKey}"]`) : null;
+  const r = el?.getBoundingClientRect();
+  if (!r || !end) return null;
+  const sx = r.left + r.width / 2;
+  const sy = r.top + r.height / 2;
+  const midX = (sx + end.x) / 2;
+  const midY = (sy + end.y) / 2 - 44;
+  return (
+    <svg className="attack-arrow" width="100%" height="100%" aria-hidden>
+      <defs>
+        <marker id="atk-head" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto">
+          <path d="M0 0 L9 4.5 L0 9 L2.4 4.5 Z" fill="#fecaca" />
+        </marker>
+      </defs>
+      <path
+        d={`M ${sx} ${sy} Q ${midX} ${midY} ${end.x} ${end.y}`}
+        fill="none"
+        stroke="rgba(251, 113, 133, 0.92)"
+        strokeWidth="5"
+        strokeLinecap="round"
+        markerEnd="url(#atk-head)"
+      />
+    </svg>
+  );
+}
+
 // ───────────────────────── 元件 ─────────────────────────
 
 export default function PlayPage() {
@@ -753,6 +787,7 @@ export default function PlayPage() {
         </div>
       )}
       {spellFx && <div className={`spell-veil spell-${spellFx.vfx}`} aria-hidden />}
+      {selected && !pending && !quiz && !locked && !game.winner && <AttackArrow fromKey={selected} />}
       {ghosts.map((g) => (
         <div
           key={g.id}
@@ -988,6 +1023,7 @@ export default function PlayPage() {
                 <button
                   key={e.key}
                   ref={registerEl(e.key)}
+                  data-mkey={e.key}
                   style={lungeStyle(e.key)}
                   onClick={() => onPlayerMinion(e.key)}
                   title={`${e.card.nameZh}${kw ? `（${kw}）` : ""}`}
@@ -1073,11 +1109,10 @@ export default function PlayPage() {
             className={`hs-resource-strip hs-resource-player ${manaPulse === "player" ? "mana-pulse" : ""} ${drawPulse === "player" ? "draw-pulse" : ""}`}
             aria-label={`我方法力 ${game.pMana}/${game.pMaxMana}`}
           >
-            <span className="hs-mana-label">我方法力</span>
             <span className="hs-mana-text">{game.pMana}/{game.pMaxMana}</span>
             <span className="hs-crystals" aria-hidden>
-              {Array.from({ length: 10 }).map((_, i) => (
-                <span key={i} className={i < game.pMana ? "hs-crystal is-filled" : i < game.pMaxMana ? "hs-crystal is-empty" : "hs-crystal"} />
+              {Array.from({ length: Math.max(game.pMaxMana, 1) }).map((_, i) => (
+                <span key={i} className={i < game.pMana ? "hs-crystal is-filled" : "hs-crystal is-empty"} />
               ))}
             </span>
           </div>
