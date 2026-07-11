@@ -126,3 +126,32 @@ export async function sendAction(matchId: string, action: MatchAction): Promise<
   if (!res.ok) throw new Error(json.error ?? "動作失敗");
   return json.view as SeatView;
 }
+
+// ───────────────────────── P4：個人檔案 / 天梯 ─────────────────────────
+
+export type Profile = { display_name: string; wins: number; losses: number };
+
+/** 讀我自己的檔案（RLS 只讓讀自己）。 */
+export async function myProfile(): Promise<Profile | null> {
+  const uid = await ensureAnonSession();
+  const sb = client();
+  const { data } = await sb.from("profiles").select("display_name,wins,losses").eq("id", uid).maybeSingle();
+  return (data as Profile) ?? null;
+}
+
+/** 設定我的顯示名稱（RLS self-update）。 */
+export async function setDisplayName(name: string): Promise<void> {
+  const uid = await ensureAnonSession();
+  const sb = client();
+  const trimmed = name.trim().slice(0, 20) || "織者";
+  const { error } = await sb.from("profiles").update({ display_name: trimmed }).eq("id", uid);
+  if (error) throw error;
+}
+
+/** 天梯前 20（走 service-role 端點，跨玩家讀取）。 */
+export async function fetchLeaderboard(): Promise<Profile[]> {
+  const res = await fetch("/api/leaderboard", { cache: "no-store" });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error ?? "讀取失敗");
+  return json.leaderboard as Profile[];
+}

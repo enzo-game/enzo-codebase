@@ -185,7 +185,7 @@ export default function BattlePage() {
         {/* 對手 */}
         <section className="space-y-2">
           <HeroBar
-            label="對手"
+            label={view.oppName || "對手"}
             hp={view.opp.hp}
             mana={view.opp.mana}
             maxMana={view.opp.maxMana}
@@ -219,7 +219,7 @@ export default function BattlePage() {
             }
           />
           <HeroBar
-            label="你"
+            label={view.youName || "你"}
             hp={view.you.hp}
             mana={view.you.mana}
             maxMana={view.you.maxMana}
@@ -345,7 +345,7 @@ function HeroBar(props: {
           : "border-neutral-800 bg-neutral-900/60 cursor-default"
       }`}
     >
-      <span className="text-xs text-neutral-400 w-10">{label}</span>
+      <span className="text-xs text-neutral-400 min-w-10 max-w-[7rem] truncate">{label}</span>
       <span className="text-lg font-bold text-rose-300 tabular-nums">♥ {hp}</span>
       <span className="text-sm text-sky-300 tabular-nums">◆ {mana}/{maxMana}</span>
       <span className="text-xs text-neutral-500 ml-auto tabular-nums">

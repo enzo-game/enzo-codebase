@@ -13,7 +13,10 @@ import {
   ensureAnonSession,
   subscribeMatch,
   findMyActiveMatch,
+  myProfile,
+  setDisplayName,
   type Match,
+  type Profile,
 } from "@/lib/vs";
 
 type View = "idle" | "creating" | "waiting" | "joining" | "connected" | "error";
@@ -25,6 +28,9 @@ export default function VsPage() {
   const [code, setCode] = useState("");
   const [err, setErr] = useState("");
   const [resume, setResume] = useState<Match | null>(null); // 進行中的對局（斷線重連）
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [nameInput, setNameInput] = useState("");
+  const [savedName, setSavedName] = useState(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   // 卸載時清掉 Realtime 訂閱
@@ -34,19 +40,38 @@ export default function VsPage() {
     };
   }, []);
 
-  // 進大廳先看有沒有一場還在進行的對局，有就給「回到對戰」
+  // 進大廳先看有沒有一場還在進行的對局（回到對戰）＋ 讀我的檔案（戰績 / 名稱）
   useEffect(() => {
     if (!supabaseConfigured) return;
     let alive = true;
     findMyActiveMatch()
-      .then((m) => {
-        if (alive) setResume(m);
+      .then((m) => alive && setResume(m))
+      .catch(() => {});
+    myProfile()
+      .then((p) => {
+        if (alive && p) {
+          setProfile(p);
+          setNameInput(p.display_name);
+        }
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
   }, []);
+
+  async function saveName() {
+    const name = nameInput.trim();
+    if (!name || name === profile?.display_name) return;
+    try {
+      await setDisplayName(name);
+      setProfile((p) => (p ? { ...p, display_name: name } : p));
+      setSavedName(true);
+      setTimeout(() => setSavedName(false), 1500);
+    } catch (e) {
+      setErr(msg(e));
+    }
+  }
 
   function enterBattle(m: Match) {
     channelRef.current?.unsubscribe();
@@ -118,6 +143,26 @@ export default function VsPage() {
           <NotConfigured />
         ) : view === "idle" ? (
           <div className="space-y-3">
+            <div className="rounded-lg bg-neutral-900/60 border border-neutral-800 px-3 py-2.5 mb-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-neutral-500 shrink-0">名稱</span>
+                <input
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  onBlur={saveName}
+                  onKeyDown={(e) => e.key === "Enter" && saveName()}
+                  maxLength={20}
+                  placeholder="織者"
+                  className="flex-1 min-w-0 bg-transparent text-sm focus:outline-none border-b border-neutral-700 focus:border-emerald-500 pb-0.5"
+                />
+                {savedName ? <span className="text-xs text-emerald-400 shrink-0">已存</span> : null}
+              </div>
+              {profile ? (
+                <p className="text-xs text-neutral-500 mt-1.5">
+                  戰績 <span className="text-emerald-400">{profile.wins} 勝</span> · {profile.losses} 敗
+                </p>
+              ) : null}
+            </div>
             {resume ? (
               <button
                 onClick={() => enterBattle(resume)}
@@ -185,7 +230,10 @@ export default function VsPage() {
           </div>
         )}
 
-        <div className="mt-10 text-center">
+        <div className="mt-10 flex items-center justify-center gap-5">
+          <Link href="/vs/leaderboard" className="text-sm text-amber-300/80 hover:text-amber-200 underline">
+            🏆 天梯
+          </Link>
           <Link href="/play" className="text-sm text-neutral-500 hover:text-neutral-300 underline">
             ← 單機對 AI
           </Link>

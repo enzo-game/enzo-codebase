@@ -349,6 +349,9 @@ export type SeatView = {
   log: LogEntry[];
   deadlineMs: number | null; // 本回合截止（epoch ms）；client 用來倒數。null＝不計時
   turnSeconds: number; // 一回合總秒數（給進度環當分母）
+  // P4：雙方顯示名稱。引擎純函式不碰 DB，由 matchServer 讀 profiles 後注入（undefined＝不顯示）。
+  youName?: string;
+  oppName?: string;
 };
 
 /** 把權威狀態脱敏成「某座位」看到的視角。這是唯一會下發到客戶端的東西。 */
