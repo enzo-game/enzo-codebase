@@ -118,3 +118,26 @@ MVP 建議先做 **P0→P2 的好友房**（輸入房號對戰），最快能讓
 - 現有 `Game` 型別要拆成「權威完整態」與「玩家視角去敏態」兩份 —— 這是 P0/P2 的主要重構量。
 - 文化素材（卡牌傳說/詞彙）不受此工程影響，維持既有 guardrail。
 - 成本：Supabase 免費層足夠 MVP 驗證。
+
+---
+
+## 7. P2 實作註記（2026-07-11，架構微調）
+
+**權威計算改放 Vercel Route Handler，不用 Supabase Edge Function。** 兩者對「伺服器權威」等價，
+但 Route Handler 走既有 Vercel 部署管線（不需 Docker / `supabase login`）、且能直接 import 現有
+TS 引擎（不必移植到 Deno），更貼合 CLAUDE.md「前後端全 Vercel」。Supabase 僅負責 DB＋Realtime＋匿名 Auth。
+
+資料流：
+```
+玩家送意圖 → POST /api/match/action（service role，跑 src/engine/match.ts 權威 reducer）
+          → 寫 match_state.state（完整態，RLS deny-all，client 讀不到）
+          → bump matches.version → Realtime 推 matches 列（只有 version 等公開欄位，無機密）
+兩端收到 poke → GET /api/match/view → 伺服器回「自己座位的脱敏視角」（對手手牌/牌庫只給張數）
+```
+
+反作弊全數落實：答題對錯伺服器判、動作合法性伺服器重算、隱藏資訊只存 match_state、洗牌 seed 在伺服器。
+產出：`src/engine/match.ts`、`src/lib/matchServer.ts`、`src/app/api/match/{action,view}/route.ts`、
+`src/app/vs/[id]/page.tsx`、`supabase/migrations/0002_match_play.sql`、`scripts/sim-vs.mts`（無頭驗證）。
+
+**上線前置（只差這步）**：接上 Supabase 專案 —— `.env.local` 與 Vercel 填三把金鑰、開 Anonymous
+Sign-ins、套 `supabase/migrations`（0001+0002）。之後兩個瀏覽器即可完整對打。

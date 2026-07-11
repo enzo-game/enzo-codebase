@@ -1,6 +1,7 @@
 // 線上對戰（好友房）連線層。ORDER-060 P1。
 // 匿名登入 + 建房/加入房（走 SECURITY DEFINER RPC）+ Realtime 訂閱對局列。
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import type { MatchAction, SeatView } from "@/engine/match";
 import { supabase } from "./supabase";
 
 export type MatchStatus = "waiting" | "active" | "finished";
@@ -70,4 +71,39 @@ export async function fetchMatch(matchId: string): Promise<Match | null> {
   const { data, error } = await sb.from("matches").select("*").eq("id", matchId).maybeSingle();
   if (error) throw error;
   return (data as Match) ?? null;
+}
+
+// ───────────────────────── P2：權威對戰視角 / 意圖 ─────────────────────────
+// 完整權威狀態存在 client 讀不到的 match_state；一切經 Vercel Route Handler 收送。
+async function accessToken(): Promise<string> {
+  const sb = client();
+  const { data } = await sb.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("尚未登入");
+  return token;
+}
+
+/** 拉自己座位的脱敏視角（收到 Realtime poke 後呼叫）。 */
+export async function fetchView(matchId: string): Promise<SeatView> {
+  const token = await accessToken();
+  const res = await fetch(`/api/match/view?id=${encodeURIComponent(matchId)}`, {
+    headers: { authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error ?? "讀取失敗");
+  return json.view as SeatView;
+}
+
+/** 送出對戰意圖；伺服器權威結算後回傳自己視角（立即更新，不必等 poke）。 */
+export async function sendAction(matchId: string, action: MatchAction): Promise<SeatView> {
+  const token = await accessToken();
+  const res = await fetch("/api/match/action", {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ matchId, action }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error ?? "動作失敗");
+  return json.view as SeatView;
 }
