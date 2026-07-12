@@ -94,6 +94,34 @@ export const CARDS: Card[] = [
   { id: "leg-p11", nameZh: "落葉鋪路", type: "spell", cost: 1, rarity: "common", theme: "plant", vocabId: "08-06", effect: "buffFriend11", effectText: "一個友方隨從 +1/+1", bonusText: "並獲得衝鋒" },
   { id: "leg-p12", nameZh: "蕨徑", type: "minion", cost: 2, attack: 1, health: 3, rarity: "common", theme: "plant", vocabId: "08-21", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+0/+2", bonusStats: { atk: 0, hp: 2 } },
   { id: "leg-p13", nameZh: "花開", type: "spell", cost: 3, rarity: "common", theme: "plant", vocabId: "08-09", effect: "healHero5", effectText: "回復我方英雄 5 點", bonusText: "額外回復 3 點" },
+
+  // ══════════════════════════════════════════════════════════════
+  // ORDER-078 雙人對戰擴充 Batch 1 · 山林動物（24，只用引擎現有 effect；vocabId 全查證）
+  // ══════════════════════════════════════════════════════════════
+  { id: "leg-a15", nameZh: "山貓", type: "minion", cost: 2, attack: 2, health: 2, rarity: "common", theme: "animal", vocabId: "07-05", keywords: ["stealth"], effectText: "潛行", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-a16", nameZh: "獼猴", type: "minion", cost: 3, attack: 3, health: 2, rarity: "common", theme: "animal", vocabId: "07-09", keywords: ["charge"], effectText: "衝鋒", bonusText: "+1/+0", bonusStats: { atk: 1, hp: 0 } },
+  { id: "leg-a17", nameZh: "老鷹", type: "minion", cost: 4, attack: 4, health: 3, rarity: "rare", theme: "animal", vocabId: "07-54", keywords: ["charge"], effectText: "衝鋒", bonusText: "+1/+0", bonusStats: { atk: 1, hp: 0 } },
+  { id: "leg-a18", nameZh: "松鼠", type: "minion", cost: 1, attack: 1, health: 2, rarity: "common", theme: "animal", vocabId: "07-30", effect: "draw1", effectText: "戰吼：抽 1 張牌", bonusText: "再抽 1 張" },
+  { id: "leg-a19", nameZh: "蝴蝶", type: "minion", cost: 1, attack: 1, health: 1, rarity: "common", theme: "animal", vocabId: "07-27", keywords: ["stealth"], effectText: "潛行", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-a20", nameZh: "蜜蜂", type: "minion", cost: 2, attack: 2, health: 1, rarity: "common", theme: "animal", vocabId: "07-35", keywords: ["charge"], effectText: "衝鋒", bonusText: "+1/+0", bonusStats: { atk: 1, hp: 0 } },
+  { id: "leg-a21", nameZh: "虎頭蜂", type: "minion", cost: 3, attack: 3, health: 2, rarity: "rare", theme: "animal", vocabId: "07-59", keywords: ["charge"], effectText: "衝鋒", bonusText: "+1/+0", bonusStats: { atk: 1, hp: 0 } },
+  { id: "leg-a22", nameZh: "螃蟹", type: "minion", cost: 2, attack: 1, health: 4, rarity: "common", theme: "animal", vocabId: "07-46", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+0/+2", bonusStats: { atk: 0, hp: 2 } },
+  { id: "leg-a23", nameZh: "溪蝦", type: "minion", cost: 1, attack: 1, health: 1, rarity: "common", theme: "animal", vocabId: "07-42", effectText: "—", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-a24", nameZh: "野鴨", type: "minion", cost: 2, attack: 2, health: 3, rarity: "common", theme: "animal", vocabId: "07-38", effectText: "—", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-a25", nameZh: "鵝", type: "minion", cost: 3, attack: 2, health: 4, rarity: "common", theme: "animal", vocabId: "07-56", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+0/+2", bonusStats: { atk: 0, hp: 2 } },
+  { id: "leg-a26", nameZh: "雞", type: "minion", cost: 1, attack: 1, health: 2, rarity: "common", theme: "animal", vocabId: "07-08", effectText: "—", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-a27", nameZh: "麻雀", type: "minion", cost: 1, attack: 1, health: 1, rarity: "common", theme: "animal", vocabId: "07-52", keywords: ["charge"], effectText: "衝鋒", bonusText: "+1/+0", bonusStats: { atk: 1, hp: 0 } },
+  { id: "leg-a28", nameZh: "鴿子", type: "minion", cost: 2, attack: 2, health: 2, rarity: "common", theme: "animal", vocabId: "07-16", effect: "draw1", effectText: "戰吼：抽 1 張牌", bonusText: "再抽 1 張" },
+  { id: "leg-a29", nameZh: "田間鼠", type: "minion", cost: 1, attack: 1, health: 1, rarity: "common", theme: "animal", vocabId: "07-11", keywords: ["stealth"], effectText: "潛行", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-a30", nameZh: "田鼠", type: "minion", cost: 2, attack: 2, health: 2, rarity: "common", theme: "animal", vocabId: "07-31", keywords: ["stealth"], effectText: "潛行", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-a31", nameZh: "蝸牛", type: "minion", cost: 2, attack: 0, health: 5, rarity: "common", theme: "animal", vocabId: "07-51", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+0/+2", bonusStats: { atk: 0, hp: 2 } },
+  { id: "leg-a32", nameZh: "螞蟻", type: "minion", cost: 2, attack: 1, health: 3, rarity: "common", theme: "animal", vocabId: "07-55", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+0/+2", bonusStats: { atk: 0, hp: 2 } },
+  { id: "leg-a33", nameZh: "蝙蝠", type: "minion", cost: 3, attack: 3, health: 2, rarity: "rare", theme: "animal", vocabId: "07-50", keywords: ["stealth"], effectText: "潛行", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-a34", nameZh: "烏鴉", type: "minion", cost: 3, attack: 3, health: 3, rarity: "common", theme: "animal", vocabId: "07-62", effectText: "—", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-a35", nameZh: "水牛", type: "minion", cost: 5, attack: 4, health: 6, rarity: "rare", theme: "animal", vocabId: "07-10", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-a36", nameZh: "馬", type: "minion", cost: 4, attack: 4, health: 4, rarity: "rare", theme: "animal", vocabId: "07-44", keywords: ["charge"], effectText: "衝鋒", bonusText: "+1/+0", bonusStats: { atk: 1, hp: 0 } },
+  { id: "leg-a37", nameZh: "幼犬", type: "minion", cost: 1, attack: 1, health: 1, rarity: "common", theme: "animal", vocabId: "07-63", keywords: ["charge"], effectText: "衝鋒", bonusText: "+1/+0", bonusStats: { atk: 1, hp: 0 } },
+  { id: "leg-a38", nameZh: "山鳥", type: "minion", cost: 2, attack: 2, health: 2, rarity: "common", theme: "animal", vocabId: "07-06", keywords: ["charge"], effectText: "衝鋒", bonusText: "+1/+0", bonusStats: { atk: 1, hp: 0 } },
 ];
 
 // 幼樹 token（不入牌庫，僅由 Pusu Qhuni 戰吼召喚）
@@ -168,6 +196,31 @@ export const CARD_LEARNING: Record<string, string> = {
   "leg-p12": "蕨類是山林常見地被植物，成叢護徑，卡牌用嘲諷呈現遮蔽。",
   "leg-p13": "花朵連到植物與季節詞彙，綻放的意象在牌面轉成回復與生機。",
   "leg-token-sapling": "幼樹連到 Pusu Qhuni 的樹木意象，也提醒牌面以植物代替人物神聖化。",
+  // ── ORDER-078 擴充 Batch 1 · 山林動物（24）──
+  "leg-a15": "山貓行動隱密，潛行效果連到牠夜間無聲的獵食習性。",
+  "leg-a16": "獼猴是山林常見動物，靈活攀跳的身手轉成牌面的衝鋒。",
+  "leg-a17": "老鷹盤旋高空、俯衝迅捷，衝鋒效果表現牠的速度。",
+  "leg-a18": "松鼠在林間穿梭儲糧，抽牌呼應牠收集食物的習性。",
+  "leg-a19": "蝴蝶輕巧難捉，潛行效果連到牠翩飛的身影。",
+  "leg-a20": "蜜蜂群飛採蜜，快速的螫刺轉成牌面的衝鋒。",
+  "leg-a21": "虎頭蜂是山林中需要保持距離的昆蟲，兇猛突襲轉成衝鋒。",
+  "leg-a22": "螃蟹在溪石間橫行，硬殼護身轉成嘲諷防守。",
+  "leg-a23": "溪蝦連到溪流生態與飲食詞彙，是從水域環境學動物詞的一張牌。",
+  "leg-a24": "野鴨連到溪流與濕地環境，是從水邊學動物詞的一張牌。",
+  "leg-a25": "鵝會鳴叫看守，警戒的性子轉成牌面的嘲諷防守。",
+  "leg-a26": "雞是聚落常見家禽，基礎戰力讓玩家從日常生活學族語。",
+  "leg-a27": "麻雀成群快飛，靈巧的身影轉成牌面的衝鋒。",
+  "leg-a28": "鴿子善於認路歸巢，抽牌呼應牠傳訊帶回的意象。",
+  "leg-a29": "老鼠善於藏身，潛行效果連到牠隱密的行動。",
+  "leg-a30": "田鼠在田間打洞穿行，潛行效果連到牠隱蔽的習性。",
+  "leg-a31": "蝸牛背殼緩行，厚殼護身轉成嘲諷防守。",
+  "leg-a32": "螞蟻群聚築巢、分工合作，眾多身形轉成嘲諷防守。",
+  "leg-a33": "蝙蝠夜間無聲飛行，潛行效果連到牠黑暗中的行動。",
+  "leg-a34": "烏鴉是山林常見鳥類，牌面只作自然生態的鳥，不做凶兆敘事。",
+  "leg-a35": "水牛體壯力大，穩健的身形轉成嘲諷防守的中堅戰力。",
+  "leg-a36": "馬奔行迅捷，衝鋒效果表現牠的速度。",
+  "leg-a37": "幼犬活潑好動，一衝而出的衝鋒表現牠的朝氣。",
+  "leg-a38": "山鳥掠飛林間，衝鋒效果表現牠的敏捷。",
 };
 
 export const RARITY_COLOR: Record<Rarity, string> = {
