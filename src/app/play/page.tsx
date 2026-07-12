@@ -1440,7 +1440,9 @@ export default function PlayPage() {
               <li className="flex gap-3">
                 <span className="shrink-0 w-6 h-6 rounded-full bg-amber-500/90 text-black text-xs font-bold grid place-items-center">4</span>
                 <span>
-                  <span className="font-semibold text-amber-100">隨從與攻擊</span>：隨從有攻擊／生命，剛打出的隨從要「下一回合」才能攻擊。輪到你時，先點自己的隨從、再點敵方隨從或英雄發動攻擊。
+                  <span className="font-semibold text-amber-100">隨從與攻擊</span>：隨從有攻擊／生命。
+                  <span className="text-rose-300 font-semibold">當回合剛打出的隨從不能立刻攻擊，要等下一回合</span>（除非牌上有「衝鋒」）。
+                  輪到你時，先點自己已可攻擊的隨從（會發光），再點敵方隨從或英雄發動攻擊。
                 </span>
               </li>
               <li className="flex gap-3">
