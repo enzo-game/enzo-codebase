@@ -438,7 +438,7 @@ body {
     radial-gradient(ellipse 48% 34% at 18% 0%, rgba(226, 164, 58, 0.15), transparent 68%),
     radial-gradient(ellipse 44% 38% at 100% 70%, rgba(22, 101, 52, 0.18), transparent 70%),
     linear-gradient(180deg, rgba(4, 8, 14, 0.88), rgba(3, 10, 16, 0.96)),
-    url("/images/cards/board-battle.jpg");
+    url("/images/play/board-altar.png");
   background-attachment: fixed;
   background-position: center;
   background-size: cover;
@@ -2299,6 +2299,7 @@ body {
   height: calc(100vh - 96px);
   min-height: 620px;
   padding: 92px 150px 224px;
+  background-image: url("/images/play/board-altar.jpg") !important;
 }
 
 /* 頂部敵方狀態列：英雄、手牌、牌庫與法力集中在上方。 */
