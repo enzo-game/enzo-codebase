@@ -8,7 +8,14 @@ import { vocab } from "@/data/truku";
 export type CardType = "minion" | "spell";
 export type Rarity = "common" | "rare" | "epic" | "legendary";
 export type Theme = "legend" | "animal" | "nature" | "plant" | "tool";
-export type Keyword = "taunt" | "stealth" | "charge";
+export type Keyword =
+  | "taunt"
+  | "stealth"
+  | "charge"
+  | "divineShield" // 石鎧：抵擋第一次傷害
+  | "lifesteal" // 汲取：造成傷害時同額回復英雄
+  | "windfury" // 疾風：每回合攻擊兩次
+  | "rush"; // 突襲：登場當回合可打隨從、不可打臉
 
 export interface Card {
   id: string;
@@ -32,11 +39,15 @@ export interface Card {
   bonusStats?: { atk: number; hp: number };
   /** 答對時額外獲得的關鍵字（隨從） */
   bonusKeywords?: Keyword[];
+  /** 亡語效果 id（隨從死亡時觸發；引擎解讀） */
+  deathrattle?: string;
+  /** 法術增幅：此隨從在場時，我方法術傷害 +N */
+  spellDamage?: number;
 }
 
 export const CARDS: Card[] = [
   // ── 傳說系列（5 則核准傳說）──
-  { id: "leg-l01", nameZh: "沿路小米", type: "minion", cost: 1, attack: 0, health: 3, rarity: "rare", theme: "legend", vocabId: "21-18", effect: "healHero1", effectText: "回合結束：回復我方英雄 1", bonusText: "改為回復 2" },
+  { id: "leg-l01", nameZh: "沿路小米", type: "minion", cost: 1, attack: 0, health: 3, rarity: "rare", theme: "legend", vocabId: "21-18", effect: "healHero1", deathrattle: "drawOwner1", effectText: "回合結束：回復我方英雄 1；亡語：抽 1 張牌", bonusText: "改為回復 2" },
   { id: "leg-l02", nameZh: "獵弓", type: "spell", cost: 2, rarity: "common", theme: "legend", vocabId: "16-01", effect: "dmgAny2", effectText: "造成 2 點傷害（任一目標）", bonusText: "改為 3 點" },
   { id: "leg-l03", nameZh: "馬威的腳印", type: "spell", cost: 2, rarity: "rare", theme: "legend", vocabId: "10-12", effect: "friendTaunt03", effectText: "一個友方隨從獲得嘲諷與 +0/+3", bonusText: "額外 +0/+2" },
   { id: "leg-l04", nameZh: "溪水暴漲", type: "spell", cost: 3, rarity: "rare", theme: "legend", vocabId: "10-07", effect: "shuffleBackEnemy", effectText: "將一個敵方隨從洗回敵方牌庫", bonusText: "額外抽 1 張" },
@@ -55,7 +66,7 @@ export const CARDS: Card[] = [
   { id: "leg-n02", nameZh: "濃霧", type: "spell", cost: 2, rarity: "rare", theme: "nature", vocabId: "11-12", effect: "allFriendStealth", effectText: "我方所有隨從獲得潛行", bonusText: "各 +0/+1" },
   { id: "leg-n03", nameZh: "雷聲", type: "spell", cost: 3, rarity: "common", theme: "nature", vocabId: "11-10", effect: "dmgEnemyHero3", effectText: "對敵方英雄造成 3 點傷害", bonusText: "改為 4 點" },
   { id: "leg-n04", nameZh: "月光", type: "spell", cost: 3, rarity: "rare", theme: "nature", vocabId: "11-03", effect: "draw2", effectText: "抽 2 張牌", bonusText: "再抽 1 張" },
-  { id: "leg-n05", nameZh: "山嵐", type: "minion", cost: 3, attack: 2, health: 2, rarity: "common", theme: "nature", vocabId: "10-04", keywords: ["stealth"], effectText: "潛行", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-n05", nameZh: "山嵐", type: "minion", cost: 3, attack: 2, health: 2, rarity: "common", theme: "nature", vocabId: "10-04", keywords: ["stealth"], spellDamage: 1, effectText: "潛行、法術增幅 +1", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
   { id: "leg-n06", nameZh: "閃電", type: "spell", cost: 5, rarity: "rare", theme: "nature", vocabId: "11-14", effect: "dmgAny5", effectText: "對一個目標造成 5 點傷害", bonusText: "改為 6 點" },
   { id: "leg-n07", nameZh: "颱風", type: "spell", cost: 8, rarity: "epic", theme: "nature", vocabId: "11-21", effect: "aoeEnemy3", effectText: "對所有敵方隨從造成 3 點傷害", bonusText: "改為 4 點" },
   { id: "leg-n08", nameZh: "休息的夜", type: "spell", cost: 2, rarity: "rare", theme: "nature", vocabId: "13-22", effect: "allFriendStealth", effectText: "我方所有隨從獲得潛行", bonusText: "各 +0/+1" },
@@ -67,23 +78,23 @@ export const CARDS: Card[] = [
   { id: "leg-n14", nameZh: "地震", type: "spell", cost: 4, rarity: "rare", theme: "nature", vocabId: "11-19", effect: "dmgMinion4", effectText: "對一個隨從造成 4 點傷害", bonusText: "改為 5 點" },
   // ── 山林動物 ──
   { id: "leg-a01", nameZh: "山羌", type: "minion", cost: 1, attack: 2, health: 1, rarity: "common", theme: "animal", vocabId: "07-24", keywords: ["charge"], effectText: "衝鋒", bonusText: "+1/+0", bonusStats: { atk: 1, hp: 0 } },
-  { id: "leg-a02", nameZh: "山豬", type: "minion", cost: 2, attack: 3, health: 2, rarity: "common", theme: "animal", vocabId: "07-15", effectText: "—", bonusText: "+0/+1", bonusStats: { atk: 0, hp: 1 } },
+  { id: "leg-a02", nameZh: "山豬", type: "minion", cost: 2, attack: 3, health: 2, rarity: "common", theme: "animal", vocabId: "07-15", keywords: ["rush"], effectText: "突襲", bonusText: "+0/+1", bonusStats: { atk: 0, hp: 1 } },
   { id: "leg-a03", nameZh: "飛鼠", type: "minion", cost: 2, attack: 2, health: 2, rarity: "common", theme: "animal", vocabId: "07-20", effect: "draw1", effectText: "戰吼：抽 1 張牌", bonusText: "再抽 1 張" },
   { id: "leg-a04", nameZh: "獵犬", type: "minion", cost: 2, attack: 2, health: 3, rarity: "common", theme: "animal", vocabId: "07-03", effectText: "—", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
   { id: "leg-a05", nameZh: "水鳥", type: "minion", cost: 3, attack: 2, health: 4, rarity: "common", theme: "animal", vocabId: "07-57", effectText: "—", bonusText: "獲得嘲諷", bonusKeywords: ["taunt"] },
-  { id: "leg-a06", nameZh: "穿山甲", type: "minion", cost: 3, attack: 2, health: 5, rarity: "common", theme: "animal", vocabId: "07-14", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+0/+2", bonusStats: { atk: 0, hp: 2 } },
+  { id: "leg-a06", nameZh: "穿山甲", type: "minion", cost: 3, attack: 2, health: 5, rarity: "common", theme: "animal", vocabId: "07-14", keywords: ["taunt", "divineShield"], effectText: "嘲諷、石鎧", bonusText: "+0/+2", bonusStats: { atk: 0, hp: 2 } },
   { id: "leg-a07", nameZh: "雲豹", type: "minion", cost: 5, attack: 5, health: 4, rarity: "epic", theme: "animal", vocabId: "07-21", keywords: ["stealth"], effectText: "潛行", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
   { id: "leg-a08", nameZh: "水鹿", type: "minion", cost: 5, attack: 5, health: 5, rarity: "rare", theme: "animal", vocabId: "07-22", effectText: "—", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
-  { id: "leg-a09", nameZh: "黑熊", type: "minion", cost: 6, attack: 6, health: 6, rarity: "rare", theme: "animal", vocabId: "07-23", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-a09", nameZh: "黑熊", type: "minion", cost: 6, attack: 6, health: 6, rarity: "rare", theme: "animal", vocabId: "07-23", keywords: ["taunt", "lifesteal"], effectText: "嘲諷、汲取", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
   { id: "leg-a10", nameZh: "貓頭鷹", type: "minion", cost: 3, attack: 2, health: 3, rarity: "common", theme: "animal", vocabId: "07-13", keywords: ["stealth"], effectText: "潛行", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
-  { id: "leg-a11", nameZh: "烏龜", type: "minion", cost: 2, attack: 1, health: 4, rarity: "common", theme: "animal", vocabId: "07-18", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+0/+2", bonusStats: { atk: 0, hp: 2 } },
+  { id: "leg-a11", nameZh: "烏龜", type: "minion", cost: 2, attack: 1, health: 4, rarity: "common", theme: "animal", vocabId: "07-18", keywords: ["taunt"], effectText: "嘲諷", bonusText: "獲得石鎧", bonusKeywords: ["divineShield"] },
   { id: "leg-a12", nameZh: "青蛙", type: "minion", cost: 1, attack: 1, health: 1, rarity: "common", theme: "animal", vocabId: "07-12", keywords: ["charge"], effectText: "衝鋒", bonusText: "+1/+0", bonusStats: { atk: 1, hp: 0 } },
-  { id: "leg-a13", nameZh: "山羊", type: "minion", cost: 4, attack: 4, health: 4, rarity: "common", theme: "animal", vocabId: "07-04", effectText: "—", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-a13", nameZh: "山羊", type: "minion", cost: 4, attack: 4, health: 4, rarity: "common", theme: "animal", vocabId: "07-04", keywords: ["windfury"], effectText: "疾風", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
   { id: "leg-a14", nameZh: "溪魚", type: "minion", cost: 2, attack: 2, health: 3, rarity: "common", theme: "animal", vocabId: "07-07", effectText: "—", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
   // ── 植物與器物（純器物，無人物）──
   { id: "leg-p01", nameZh: "涉水而過", type: "spell", cost: 1, rarity: "common", theme: "tool", vocabId: "26-61", effect: "buffFriend11", effectText: "一個友方隨從 +1/+1", bonusText: "並獲得衝鋒" },
   { id: "leg-p02", nameZh: "石壓陷阱", type: "spell", cost: 2, rarity: "common", theme: "tool", vocabId: "16-09", effect: "dmgEnemyMinion3", effectText: "對一個敵方隨從造成 3 點傷害", bonusText: "改為 4 點" },
-  { id: "leg-p03", nameZh: "香菇", type: "minion", cost: 2, attack: 1, health: 4, rarity: "common", theme: "plant", vocabId: "08-18", effectText: "—", bonusText: "獲得嘲諷", bonusKeywords: ["taunt"] },
+  { id: "leg-p03", nameZh: "香菇", type: "minion", cost: 2, attack: 1, health: 4, rarity: "common", theme: "plant", vocabId: "08-18", deathrattle: "summonSapling", effectText: "亡語：召喚一個 2/2 幼樹", bonusText: "獲得嘲諷", bonusKeywords: ["taunt"] },
   { id: "leg-p04", nameZh: "火塘", type: "spell", cost: 3, rarity: "common", theme: "tool", vocabId: "30-39", effect: "healHero5", effectText: "回復我方英雄 5 點", bonusText: "額外回復 3 點" },
   { id: "leg-p05", nameZh: "千年檜木", type: "minion", cost: 5, attack: 2, health: 8, rarity: "rare", theme: "plant", vocabId: "08-03", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+0/+3", bonusStats: { atk: 0, hp: 3 } },
   { id: "leg-p06", nameZh: "風停後的路", type: "spell", cost: 2, rarity: "common", theme: "tool", vocabId: "11-31", effect: "buffFriend11", effectText: "一個友方隨從 +1/+1", bonusText: "並獲得衝鋒" },

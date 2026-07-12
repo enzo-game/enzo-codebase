@@ -181,8 +181,8 @@ function passTurn(s: MatchState, now = 0): MatchState {
   // 該座位隨從回復攻擊權、抽 1 張
   g = {
     ...g,
-    pBoard: toSide === "player" ? g.pBoard.map((m) => ({ ...m, canAttack: true })) : g.pBoard,
-    eBoard: toSide === "enemy" ? g.eBoard.map((m) => ({ ...m, canAttack: true })) : g.eBoard,
+    pBoard: toSide === "player" ? g.pBoard.map((m) => ({ ...m, canAttack: true, attacksUsed: 0, rushBound: false })) : g.pBoard,
+    eBoard: toSide === "enemy" ? g.eBoard.map((m) => ({ ...m, canAttack: true, attacksUsed: 0, rushBound: false })) : g.eBoard,
   };
   const g2 = { ...g, pDeck: [...g.pDeck], pHand: [...g.pHand], eDeck: [...g.eDeck], eHand: [...g.eHand] };
   drawCards(g2, toSide, 1);
