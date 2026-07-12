@@ -539,8 +539,6 @@ body {
 /* 只有敵方英雄置中（player 走右下角，不能沿用 -50% 位移，否則 lightningcss 會把 player 的歸零位移當 no-op 移除） */
 .hs-portrait-enemy {
   top: 62px;
-  left: 50%;
-  translate: -50% 0;
   border-color: rgba(244, 63, 94, 0.52);
 }
 
@@ -548,9 +546,6 @@ body {
   left: auto;
   right: 14px;
   bottom: 12px;
-  translate: 0 0;
-  transform: scale(0.64);
-  transform-origin: bottom right;
   border-color: rgba(56, 189, 248, 0.56);
 }
 
@@ -1246,49 +1241,62 @@ body {
   font-size: 12px;
 }
 
+/* ─────────── 爐石式精簡英雄（/play 與 /vs 共用）───────────
+ * 只留圓形頭像＋角落小血量徽章，不做寬膠囊、名稱、"生命 HP" 字樣，
+ * 才不會擋住中央戰場、對手手牌與隨從（看不到嘲諷）。
+ * 敵方縮到左上角、我方縮到左下角，右側留給結束回合／法力／音效。 */
 .play-page .hs-portrait {
-  width: min(348px, calc(100% - 200px));
-  min-height: 78px;
-  padding: 8px 12px 8px 8px;
-  background:
-    linear-gradient(180deg, rgba(27, 38, 49, 0.92), rgba(7, 13, 19, 0.92)),
-    rgba(4, 12, 19, 0.84);
-  box-shadow:
-    0 12px 26px rgba(0, 0, 0, 0.44),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  display: block;
+  width: 58px;
+  min-height: 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
 }
-
-/* 對手英雄：同樣精簡（頭像＋血量）置中於上方 */
+.play-page .hs-portrait-art {
+  width: 58px;
+  height: 58px;
+  border-width: 3px;
+}
+.play-page .hs-portrait-name,
+.play-page .hs-portrait-sub,
+.play-page .hs-hp-label {
+  display: none;
+}
+/* 血量：頭像右下角的小紅徽章 */
+.play-page .hs-portrait-hp {
+  position: absolute;
+  right: -7px;
+  bottom: -6px;
+  min-width: 0;
+  width: auto;
+  height: auto;
+  padding: 1px 6px;
+  gap: 0;
+  border-width: 2px;
+  border-radius: 999px;
+  flex-direction: row;
+}
+.play-page .hs-portrait-hp .hs-hp-value {
+  font-size: 13px;
+}
+/* 敵方英雄：左上角小圓 */
 .play-page .hs-portrait-enemy {
   top: 14px;
-  width: auto;
-  min-height: 0;
-  padding: 5px 8px 5px 5px;
-  grid-template-columns: auto auto;
-  column-gap: 6px;
+  left: 18px;
+  right: auto;
+  bottom: auto;
 }
-
-/* 我方英雄：精簡（頭像＋血量）置中於下方，位於手牌上方 */
-/* 我方英雄（血條）：擺右下角，不擋戰場 */
+/* 我方英雄：左下角小圓 */
 .play-page .hs-portrait-player {
-  left: auto;
-  right: 16px;
+  left: 18px;
+  right: auto;
   bottom: 14px;
-  translate: none !important;
+  top: auto;
   transform: none;
-  width: auto;
-  min-height: 0;
-  padding: 5px 8px 5px 5px;
-  grid-template-columns: auto auto;
-  column-gap: 6px;
-}
-.play-page .hs-portrait-player .hs-portrait-name,
-.play-page .hs-portrait-player .hs-portrait-sub {
-  display: none;
-}
-.play-page .hs-portrait-enemy .hs-portrait-name,
-.play-page .hs-portrait-enemy .hs-portrait-sub {
-  display: none;
 }
 
 .play-page .hs-resource-enemy {
@@ -2307,24 +2315,26 @@ body {
   top: 6px;
 }
 
+/* 敵方英雄：左上角小圓頭像，不擋對手手牌與戰場（看得到嘲諷） */
 .play-page .hs-portrait-enemy {
-  top: 46px;
-  width: min(410px, calc(100% - 260px));
-  min-height: 72px;
-  grid-template-columns: 56px minmax(0, 1fr) auto;
-  grid-template-rows: auto auto;
-  column-gap: 9px;
-  padding: 7px 12px 7px 7px;
+  top: 14px;
+  left: 18px;
+  right: auto;
+  bottom: auto;
+  width: 58px;
+  min-height: 0;
+  padding: 0;
+  column-gap: 0;
 }
 
 .play-page .hs-portrait-enemy .hs-portrait-art {
-  width: 56px;
-  height: 56px;
+  width: 58px;
+  height: 58px;
 }
 
 .play-page .hs-portrait-enemy .hs-portrait-name,
 .play-page .hs-portrait-enemy .hs-portrait-sub {
-  display: block;
+  display: none;
 }
 
 .play-page .hs-resource-enemy {
@@ -2350,34 +2360,34 @@ body {
 }
 
 /* 玩家操作區：英雄置中、法力靠近英雄、手牌完整落在底部。 */
+/* 我方英雄：左下角小圓頭像 */
 .play-page .hs-portrait-player {
-  left: 50%;
+  left: 18px;
   right: auto;
-  bottom: 194px;
-  translate: -50% 0 !important;
+  bottom: 14px;
+  top: auto;
   transform: none;
-  width: min(330px, calc(100% - 360px));
-  min-height: 72px;
-  grid-template-columns: 56px minmax(0, 1fr) auto;
-  grid-template-rows: auto auto;
-  column-gap: 9px;
-  padding: 7px 12px 7px 7px;
+  width: 58px;
+  min-height: 0;
+  padding: 0;
+  column-gap: 0;
 }
 
 .play-page .hs-portrait-player .hs-portrait-art {
-  width: 56px;
-  height: 56px;
+  width: 58px;
+  height: 58px;
 }
 
 .play-page .hs-portrait-player .hs-portrait-name,
 .play-page .hs-portrait-player .hs-portrait-sub {
-  display: block;
+  display: none;
 }
 
+/* 法力條：左下角，疊在我方英雄圓頭像上方 */
 .play-page .hs-resource-player {
-  left: calc(50% + 180px);
+  left: 16px;
   right: auto;
-  bottom: 211px;
+  bottom: 82px;
 }
 
 .play-page .hs-hand-zone {
@@ -2413,16 +2423,20 @@ body {
   }
 
   .play-page .hs-portrait-player {
-    width: min(300px, calc(100% - 280px));
+    left: 18px;
+    right: auto;
+    bottom: 14px;
+    width: 58px;
   }
 
   .play-page .hs-resource-player {
-    left: auto;
-    right: 24px;
+    left: 16px;
+    right: auto;
+    bottom: 82px;
   }
 
   .play-page .hs-hand-zone {
-    width: calc(100% - 260px);
+    width: calc(100% - 200px);
   }
 }
 
@@ -2434,12 +2448,18 @@ body {
   }
 
   .play-page .hs-portrait-enemy {
-    top: 54px;
-    width: min(280px, calc(100% - 22px));
+    top: 12px;
+    left: 12px;
+    width: 54px;
+  }
+
+  .play-page .hs-portrait-enemy .hs-portrait-art {
+    width: 54px;
+    height: 54px;
   }
 
   .play-page .hs-resource-enemy {
-    top: 18px;
+    top: 14px;
     right: 12px;
   }
 
@@ -2450,16 +2470,21 @@ body {
   }
 
   .play-page .hs-portrait-player {
-    left: 50%;
+    left: 12px;
     right: auto;
-    bottom: 214px;
-    width: min(276px, calc(100% - 22px));
+    bottom: 12px;
+    width: 54px;
+  }
+
+  .play-page .hs-portrait-player .hs-portrait-art {
+    width: 54px;
+    height: 54px;
   }
 
   .play-page .hs-resource-player {
-    left: auto;
-    right: 12px;
-    bottom: 268px;
+    left: 12px;
+    right: auto;
+    bottom: 74px;
   }
 
   .play-page .hs-hand-zone {
