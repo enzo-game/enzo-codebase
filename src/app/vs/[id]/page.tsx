@@ -179,7 +179,7 @@ export default function BattlePage() {
   const highlight = targetHighlight(view, selecting);
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col">
+    <main className="play-page min-h-screen bg-neutral-950 text-neutral-100 flex flex-col">
       <AmbientAudio />
       <BattleMusic />
       <GemDefs />
@@ -405,9 +405,10 @@ function QuizModal({ quiz, disabled, onAnswer }: { quiz: NonNullable<SeatView["q
 
 function BattleLog({ log }: { log: SeatView["log"] }) {
   const tone: Record<string, string> = { good: "text-emerald-300", bad: "text-rose-300", sys: "text-neutral-400", info: "text-sky-300" };
+  // 懸浮在右邊、半透明（~80% 不透明），不佔版面、不擋牌桌；pointer-events-none 讓點擊穿透到底下的卡。
   return (
-    <div className="max-w-3xl w-full mx-auto h-12 overflow-y-auto px-4 py-1 text-[11px] leading-relaxed">
-      {log.slice(0, 4).map((e) => (
+    <div className="vs-battle-log fixed right-2 top-[15%] z-30 w-52 max-h-[140px] overflow-y-auto rounded-lg border border-neutral-700/50 bg-neutral-950/80 backdrop-blur-sm px-3 py-2 text-[11px] leading-relaxed shadow-lg pointer-events-none">
+      {log.slice(0, 5).map((e) => (
         <div key={e.key} className={tone[e.tone] ?? "text-neutral-400"}>{e.text}</div>
       ))}
     </div>
