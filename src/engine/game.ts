@@ -50,16 +50,99 @@ export function cloneGame(g: Game): Game {
   };
 }
 
-/** 對戰場上單一隨從造成傷害，死亡即移除 */
+/** 對單一隨從造成傷害：石鎧（聖盾）先抵擋一次；死亡不在此移除，交給 reap() 觸發亡語後清場。 */
 export function hurt(board: Minion[], key: string, n: number): Minion[] {
-  return board
-    .map((m) => (m.key === key ? { ...m, health: m.health - n } : m))
-    .filter((m) => m.health > 0);
+  if (n <= 0) return board;
+  return board.map((m) => {
+    if (m.key !== key) return m;
+    if (m.divineShield) return { ...m, divineShield: false }; // 石鎧抵擋，血量不減
+    return { ...m, health: m.health - n };
+  });
 }
 
-/** 對整排隨從造成傷害（AoE 不受潛行保護） */
+/** 對整排隨從造成傷害（AoE 不受潛行保護）；石鎧同樣先抵擋，死亡交給 reap()。 */
 export function aoe(board: Minion[], n: number): Minion[] {
-  return board.map((m) => ({ ...m, health: m.health - n })).filter((m) => m.health > 0);
+  if (n <= 0) return board;
+  return board.map((m) => {
+    if (m.divineShield) return { ...m, divineShield: false };
+    return { ...m, health: m.health - n };
+  });
+}
+
+/** 這一側在場隨從提供的法術增幅總和（法術傷害 +N）。 */
+export function spellPower(g: Game, side: Side): number {
+  const board = side === "player" ? g.pBoard : g.eBoard;
+  return board.reduce((s, m) => s + (m.spellDamage ?? 0), 0);
+}
+
+/** 依關鍵字（含答對加成關鍵字）與數值加成，產生一隻在場隨從。 */
+export function spawnMinion(card: Card, isCorrect: boolean): Minion {
+  const bs = isCorrect ? card.bonusStats : undefined;
+  const kws = new Set([...(card.keywords ?? []), ...((isCorrect ? card.bonusKeywords : undefined) ?? [])]);
+  const atk = (card.attack ?? 0) + (bs?.atk ?? 0);
+  const hp = (card.health ?? 0) + (bs?.hp ?? 0);
+  const hasCharge = kws.has("charge");
+  const hasRush = kws.has("rush");
+  return {
+    key: uid(),
+    card,
+    attack: atk,
+    health: hp,
+    maxHealth: hp,
+    canAttack: hasCharge || hasRush, // 衝鋒/突襲：登場即可攻擊
+    taunt: kws.has("taunt"),
+    stealth: kws.has("stealth"),
+    bonus: isCorrect,
+    divineShield: kws.has("divineShield") || undefined,
+    lifesteal: kws.has("lifesteal") || undefined,
+    windfury: kws.has("windfury") || undefined,
+    rushBound: (hasRush && !hasCharge) || undefined, // 突襲（非衝鋒）：本回合不可打臉
+    attacksUsed: 0,
+    spellDamage: card.spellDamage,
+  };
+}
+
+/** 亡語結算：dyingSide＝死亡隨從所屬方。 */
+function runDeathrattle(ng: Game, dyingSide: Side, card: Card): void {
+  const my = dyingSide === "player";
+  const who = my ? "織者" : "山林試煉";
+  switch (card.deathrattle) {
+    case "drawOwner1": {
+      const n = drawCards(ng, dyingSide, 1);
+      if (n > 0) ng.log = pushLog(ng.log, `${card.nameZh} 亡語：${who}抽 ${n} 張牌`, my ? "info" : "sys");
+      break;
+    }
+    case "summonSapling": {
+      const board = my ? ng.pBoard : ng.eBoard;
+      if (board.length < BOARD_MAX) {
+        const sap = spawnMinion(TOKEN_SAPLING, false);
+        if (my) ng.pBoard = [...ng.pBoard, sap];
+        else ng.eBoard = [...ng.eBoard, sap];
+        ng.log = pushLog(ng.log, `${card.nameZh} 亡語：召喚一個 2/2 幼樹`, my ? "info" : "sys");
+      }
+      break;
+    }
+    case "healOwnerHero2": {
+      if (my) ng.playerHp = Math.min(HERO_HP, ng.playerHp + 2);
+      else ng.enemyHp = Math.min(HERO_HP, ng.enemyHp + 2);
+      ng.log = pushLog(ng.log, `${card.nameZh} 亡語：回復${who} 2 點`, my ? "info" : "sys");
+      break;
+    }
+  }
+}
+
+/** 清場：把血量歸零的隨從移除，並依序觸發其亡語（亡語連鎖最多處理數輪）。 */
+export function reap(ng: Game): Game {
+  for (let pass = 0; pass < 4; pass++) {
+    const deadP = ng.pBoard.filter((m) => m.health <= 0);
+    const deadE = ng.eBoard.filter((m) => m.health <= 0);
+    if (deadP.length === 0 && deadE.length === 0) break;
+    ng.pBoard = ng.pBoard.filter((m) => m.health > 0);
+    ng.eBoard = ng.eBoard.filter((m) => m.health > 0);
+    for (const m of deadP) if (m.card.deathrattle) runDeathrattle(ng, "player", m.card);
+    for (const m of deadE) if (m.card.deathrattle) runDeathrattle(ng, "enemy", m.card);
+  }
+  return ng;
 }
 
 export function checkWinner(g: Game): Game {
@@ -140,21 +223,9 @@ export function playMinionFor(g: Game, side: Side, card: Card, isCorrect: boolea
   const board = my ? ng.pBoard : ng.eBoard;
   if (board.length >= BOARD_MAX) return ng;
 
-  const bs = isCorrect ? card.bonusStats : undefined;
-  const kws = new Set([...(card.keywords ?? []), ...((isCorrect ? card.bonusKeywords : undefined) ?? [])]);
-  const atk = (card.attack ?? 0) + (bs?.atk ?? 0);
-  const hp = (card.health ?? 0) + (bs?.hp ?? 0);
-  const minion: Minion = {
-    key: uid(),
-    card,
-    attack: atk,
-    health: hp,
-    maxHealth: hp,
-    canAttack: kws.has("charge"),
-    taunt: kws.has("taunt"),
-    stealth: kws.has("stealth"),
-    bonus: isCorrect,
-  };
+  const minion = spawnMinion(card, isCorrect);
+  const atk = minion.attack;
+  const hp = minion.health;
   if (my) ng.pBoard = [...ng.pBoard, minion];
   else ng.eBoard = [...ng.eBoard, minion];
 
@@ -183,17 +254,7 @@ export function playMinionFor(g: Game, side: Side, card: Card, isCorrect: boolea
       for (let i = 0; i < count; i++) {
         const b = my ? ng.pBoard : ng.eBoard;
         if (b.length >= BOARD_MAX) break;
-        const sap: Minion = {
-          key: uid(),
-          card: TOKEN_SAPLING,
-          attack: TOKEN_SAPLING.attack ?? 2,
-          health: TOKEN_SAPLING.health ?? 2,
-          maxHealth: TOKEN_SAPLING.health ?? 2,
-          canAttack: false,
-          taunt: false,
-          stealth: false,
-          bonus: false,
-        };
+        const sap = spawnMinion(TOKEN_SAPLING, false);
         if (my) ng.pBoard = [...ng.pBoard, sap];
         else ng.eBoard = [...ng.eBoard, sap];
         summoned++;
@@ -209,7 +270,7 @@ export function playMinionFor(g: Game, side: Side, card: Card, isCorrect: boolea
       break;
     }
   }
-  return checkWinner(ng);
+  return checkWinner(reap(ng));
 }
 
 // ───────────────────────── 法術結算 ─────────────────────────
@@ -245,13 +306,14 @@ export function castSpell(g: Game, side: Side, card: Card, isCorrect: boolean, t
     return name;
   };
 
+  const sp = spellPower(ng, side); // 我方在場隨從提供的法術增幅
   let note = "";
   switch (card.effect) {
     case "dmgAny2":
     case "dmgAny5":
     case "dmgAny8": {
       const base = card.effect === "dmgAny2" ? 2 : card.effect === "dmgAny5" ? 5 : 8;
-      const n = card.effect === "dmgAny8" ? 8 : base + (isCorrect ? 1 : 0);
+      const n = (card.effect === "dmgAny8" ? 8 : base + (isCorrect ? 1 : 0)) + sp;
       if (!target || target.kind === "hero") {
         dmgFoeHero(n);
         note = `對${foeHeroName}造成 ${n} 點傷害`;
@@ -265,34 +327,34 @@ export function castSpell(g: Game, side: Side, card: Card, isCorrect: boolean, t
       break;
     }
     case "dmgMinion4": {
-      const n = isCorrect ? 5 : 4;
+      const n = (isCorrect ? 5 : 4) + sp;
       note = `對${hurtTarget(n)}造成 ${n} 點傷害`;
       break;
     }
     case "dmgEnemyMinion3": {
-      const n = isCorrect ? 4 : 3;
+      const n = (isCorrect ? 4 : 3) + sp;
       note = `對${hurtTarget(n)}造成 ${n} 點傷害`;
       break;
     }
     case "dmgEnemyHero3": {
-      const n = isCorrect ? 4 : 3;
+      const n = (isCorrect ? 4 : 3) + sp;
       dmgFoeHero(n);
       note = `對${foeHeroName}造成 ${n} 點傷害`;
       break;
     }
     case "aoeEnemy3": {
-      const n = isCorrect ? 4 : 3;
+      const n = (isCorrect ? 4 : 3) + sp;
       setBoard(foeSide, aoe(getBoard(foeSide), n));
       note = `對所有敵方隨從造成 ${n} 點傷害`;
       break;
     }
     case "twoSuns": {
-      dmgFoeHero(4);
-      setBoard(foeSide, aoe(getBoard(foeSide), 1));
+      dmgFoeHero(4 + sp);
+      setBoard(foeSide, aoe(getBoard(foeSide), 1 + sp));
       if (!isCorrect) setBoard(side, aoe(getBoard(side), 1));
       note = isCorrect
-        ? `對${foeHeroName}造成 4 點傷害；敵方隨從各受 1 點（我方免疫）`
-        : `對${foeHeroName}造成 4 點傷害；雙方隨從各受 1 點`;
+        ? `對${foeHeroName}造成 ${4 + sp} 點傷害；敵方隨從各受 ${1 + sp} 點（我方免疫）`
+        : `對${foeHeroName}造成 ${4 + sp} 點傷害；敵方隨從各受 ${1 + sp} 點、我方各受 1 點`;
       break;
     }
     case "floodAll4": {
@@ -405,7 +467,7 @@ export function castSpell(g: Game, side: Side, card: Card, isCorrect: boolean, t
   } else {
     ng.log = pushLog(ng.log, `山林試煉施放「${card.nameZh}」：${note}`, "sys");
   }
-  return checkWinner(ng);
+  return checkWinner(reap(ng));
 }
 
 // ───────────────────────── 玩家出牌（答題後結算）─────────────────────────
@@ -437,43 +499,73 @@ export function resolveAttack(g: Game, side: Side, attackerKey: string, target: 
   const atkBoard = my ? ng.pBoard : ng.eBoard;
   const defBoard = my ? ng.eBoard : ng.pBoard;
   const attacker = atkBoard.find((m) => m.key === attackerKey);
-  if (!attacker || !attacker.canAttack) return g;
+  if (!attacker || !attacker.canAttack || attacker.attack <= 0) return g;
+
+  // 突襲：登場當回合不可攻擊英雄
+  if (target.kind === "hero" && attacker.rushBound) return g;
 
   const legal = attackTargets(defBoard);
   if (target.kind === "hero" && !legal.heroAllowed) return g;
   if (target.kind === "minion" && !legal.keys.has(target.key)) return g;
 
   const tone: LogEntry["tone"] = my ? "info" : "sys";
-  const spend = (b: Minion[], hpLeft: number) =>
-    b
-      .map((m) => (m.key === attackerKey ? { ...m, health: hpLeft, canAttack: false, stealth: false } : m))
-      .filter((m) => m.health > 0);
+  const healSide = (s: Side, n: number) => {
+    if (n <= 0) return;
+    if (s === "player") ng.playerHp = Math.min(HERO_HP, ng.playerHp + n);
+    else ng.enemyHp = Math.min(HERO_HP, ng.enemyHp + n);
+  };
+  // 攻擊者攻擊後：疾風判斷是否還能再攻一次；潛行解除
+  const markAttacked = (b: Minion[]) =>
+    b.map((m) => {
+      if (m.key !== attackerKey) return m;
+      const used = (m.attacksUsed ?? 0) + 1;
+      const maxA = m.windfury ? 2 : 1;
+      return { ...m, attacksUsed: used, canAttack: used < maxA, stealth: false };
+    });
 
   if (target.kind === "hero") {
     if (my) ng.enemyHp = Math.max(0, ng.enemyHp - attacker.attack);
     else ng.playerHp = Math.max(0, ng.playerHp - attacker.attack);
-    if (my) ng.pBoard = spend(ng.pBoard, attacker.health);
-    else ng.eBoard = spend(ng.eBoard, attacker.health);
-    ng.log = pushLog(ng.log, `${attacker.card.nameZh} 攻擊${my ? "山林試煉" : "織者"} ${attacker.attack} 點`, tone);
+    if (attacker.lifesteal) healSide(side, attacker.attack); // 汲取：同額回復自己英雄
+    if (my) ng.pBoard = markAttacked(ng.pBoard);
+    else ng.eBoard = markAttacked(ng.eBoard);
+    ng.log = pushLog(
+      ng.log,
+      `${attacker.card.nameZh} 攻擊${my ? "山林試煉" : "織者"} ${attacker.attack} 點${attacker.lifesteal ? "，汲取回復" : ""}`,
+      tone,
+    );
   } else {
     const t = defBoard.find((m) => m.key === target.key);
     if (!t) return g;
-    const aHp = attacker.health - t.attack;
-    const tHp = t.health - attacker.attack;
+    // 傷害前快照（石鎧會吸收，實際造成傷害＝無盾時的攻擊力）
+    const dealtToTarget = t.divineShield ? 0 : attacker.attack;
+    const dealtToAttacker = attacker.divineShield ? 0 : t.attack;
+    const defSide: Side = my ? "enemy" : "player";
+
+    // 互相造成傷害（hurt 內含石鎧抵擋）
     if (my) {
-      ng.pBoard = spend(ng.pBoard, aHp);
       ng.eBoard = hurt(ng.eBoard, t.key, attacker.attack);
+      ng.pBoard = hurt(ng.pBoard, attackerKey, t.attack);
+      ng.pBoard = markAttacked(ng.pBoard);
     } else {
-      ng.eBoard = spend(ng.eBoard, aHp);
       ng.pBoard = hurt(ng.pBoard, t.key, attacker.attack);
+      ng.eBoard = hurt(ng.eBoard, attackerKey, t.attack);
+      ng.eBoard = markAttacked(ng.eBoard);
     }
+    // 汲取：實際造成傷害才回復（石鎧抵擋則不回）
+    if (attacker.lifesteal) healSide(side, dealtToTarget);
+    if (t.lifesteal) healSide(defSide, dealtToAttacker);
+
+    const notes: string[] = [];
+    if (dealtToTarget === 0) notes.push("石鎧抵擋");
+    if (attacker.lifesteal && dealtToTarget > 0) notes.push("汲取回復");
     ng.log = pushLog(
       ng.log,
-      `${attacker.card.nameZh}（${attacker.attack}/${aHp}）換 ${t.card.nameZh}（${t.attack}/${tHp}）`,
+      `${attacker.card.nameZh}（${attacker.attack}）換 ${t.card.nameZh}（${t.attack}）${notes.length ? "：" + notes.join("、") : ""}`,
       tone,
     );
   }
-  return checkWinner(ng);
+  return checkWinner(reap(ng));
 }
 
 // ───────────────────────── 回合結束效果 ─────────────────────────
@@ -552,6 +644,14 @@ function chooseEnemyAttackTarget(
 
   const cands = ng.pBoard.filter((m) => legal.keys.has(m.key));
 
+  // 突襲：登場當回合只能打隨從（不可打臉）——沒有隨從可打就這回合放棄攻擊
+  if (cur.rushBound) {
+    if (cands.length === 0) return null;
+    const killable = cands.filter((t) => cur.attack >= t.health).sort((a, b) => b.attack - a.attack);
+    const pick = killable[0] ?? [...cands].sort((a, b) => b.attack - a.attack)[0];
+    return { kind: "minion", side: "player", key: pick.key };
+  }
+
   // 簡單：幾乎只打臉（放生玩家隨從），玩家更容易翻盤
   if (difficulty === "easy") {
     if (cands.length === 0 || Math.random() < 0.8) return { kind: "hero" };
@@ -580,7 +680,7 @@ export function startPlayerTurn(g: Game): Game {
   ng.phase = "player";
   ng.pMaxMana = Math.min(ng.pMaxMana + 1, 10);
   ng.pMana = ng.pMaxMana;
-  ng.pBoard = ng.pBoard.map((m) => ({ ...m, canAttack: true }));
+  ng.pBoard = ng.pBoard.map((m) => ({ ...m, canAttack: true, attacksUsed: 0, rushBound: false }));
   drawCards(ng, "player", 1);
   ng.log = pushLog(ng.log, `── 第 ${ng.turn} 回合 ──`, "info");
   return ng;
@@ -790,7 +890,7 @@ export function enemyTurnFlow(g: Game, difficulty: Difficulty = "normal"): Event
   drawCards(ng, "enemy", 1);
   const drew = ng.eHand.length - preDraw.eHand.length;
   if (drew > 0) steps.push({ event: { t: "DRAW", side: "enemy", count: drew }, state: ng });
-  ng = { ...ng, eBoard: ng.eBoard.map((m) => ({ ...m, canAttack: true })) };
+  ng = { ...ng, eBoard: ng.eBoard.map((m) => ({ ...m, canAttack: true, attacksUsed: 0, rushBound: false })) };
 
   const bonusChance = AI_BONUS_CHANCE[difficulty];
 
@@ -860,15 +960,27 @@ function enemyAttackFlow(g: Game, difficulty: Difficulty, steps: EventStep[]): G
     }
   }
 
+  // 讓某隻這回合不再被選為攻擊者（突襲無目標／攻擊被拒時退場，避免卡住其他可攻擊者）
+  const retire = (state: Game, key: string): Game => ({
+    ...state,
+    eBoard: state.eBoard.map((m) => (m.key === key ? { ...m, canAttack: false } : m)),
+  });
+
   let guard = 24;
   while (!ng.winner && guard-- > 0) {
     const cur = ng.eBoard.find((m) => m.canAttack && m.attack > 0);
     if (!cur) break;
     const legal = attackTargets(ng.pBoard);
     const target = chooseEnemyAttackTarget(ng, cur, legal, difficulty);
-    if (!target) break;
+    if (!target) {
+      ng = retire(ng, cur.key);
+      continue;
+    }
     const after = pushAttack(ng, cur.key, target);
-    if (after === ng) break;
+    if (after === ng) {
+      ng = retire(ng, cur.key);
+      continue;
+    }
     ng = after;
   }
   return ng;
