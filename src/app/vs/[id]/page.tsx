@@ -202,7 +202,14 @@ export default function BattlePage() {
       ) : null}
 
       {/* 爐石式牌桌 */}
-      <div className="hs-table relative overflow-hidden bg-cover bg-center" style={{ backgroundImage: `url(${BOARD_BG})` }}>
+      <div
+        className="hs-table relative overflow-hidden bg-cover bg-center"
+        style={{ backgroundImage: `url(${BOARD_BG})` }}
+        onClick={(e) => {
+          // 已選定攻擊者，卻點在空白戰場（沒有落在任何隨從／英雄上）＝放棄這次攻擊。
+          if (e.target === e.currentTarget && selecting?.mode === "attack") setSelecting(null);
+        }}
+      >
         <div className="hs-table-shade absolute inset-0" aria-hidden />
 
         <CardBackFan count={view.opp.handCount} />
