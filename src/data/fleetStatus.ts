@@ -156,9 +156,9 @@ export const otherLines: ItemRow[] = [
   },
   {
     name: "ORDER-071 模式 A v3 進階技法卡＋織能引擎",
-    status: "wip",
-    blocker: "核心邏輯＋build 已過（feature branch）；進階卡入場管道（撿卡 3 選 1）未做、待司令審 diff",
-    next: "司令",
+    status: "done",
+    blocker: "撿卡 3 選 1 入場管道已補齊、織能接上四個小遊戲；卡名/vocabId 待 Mnemosyne+Themis 終審（TODO 標記在 CARD_POOL_ADVANCED）",
+    next: "Mnemosyne",
   },
 ];
 

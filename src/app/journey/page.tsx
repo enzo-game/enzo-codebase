@@ -108,6 +108,7 @@ type JGame = {
   trialedNodes: string[]; // v7（ORDER-042）：已做過「族語試煉」的節點 id（每節點限一次）
   fastDebt: number | null; // ORDER-048（P1）：事件節點「快速通過」的延遲反噬——記下兩節點後的 idx，走到時壓力+2
   milletPlanted: number; // ORDER-055（小米接力）：本局紮營時沿路種下的小米數（僅第二關會種；入 localStorage 銀行）
+  pickupsOffered: string[]; // ORDER-071（撿卡 3 選 1）：已提供過撿卡的節點 id——清障後每節點只出現一次
 };
 
 // ORDER-071（模式 A v3）：織能池上限（⚖️ 平衡旋鈕，見 mode-a-v3-advanced-cards-and-weave.md §四）
@@ -855,6 +856,7 @@ function newGame(levelId: LevelId): JGame {
     trialedNodes: [],
     fastDebt: null,
     milletPlanted: 0,
+    pickupsOffered: [],
   };
 }
 
@@ -1210,7 +1212,11 @@ function resolveWordMatch(g: JGame, results: { vocabId: string; correct: boolean
   ng.correct += correctCount;
   ng.wrong += results.length - correctCount;
   // ORDER-079（連擊一致化）：小遊戲的每一詞也進連擊（依序結算，答錯歸零）
-  for (const r of results) ng.streak = r.correct ? ng.streak + 1 : 0;
+  // ORDER-071：答對走 gainCorrect 統一入口（streak＋織能＋A1 折扣），答錯歸零連擊（織能不扣）
+  for (const r of results) {
+    if (r.correct) gainCorrect(ng);
+    else ng.streak = 0;
+  }
   const n2 = ng.nodes[ng.idx];
   n2.cleared = true;
   ng.log = pushLog(ng.log, `✓ 詞彙配對：${results.length} 個族語詞全部辨識出來了，隊伍認出路標，穿過了霧。`, "good");
@@ -1249,7 +1255,11 @@ function resolveBridgeListen(g: JGame, results: { vocabId: string; correct: bool
   ng.correct += correctCount;
   ng.wrong += results.length - correctCount;
   // ORDER-079（連擊一致化）：小遊戲的每一詞也進連擊（依序結算，答錯歸零）
-  for (const r of results) ng.streak = r.correct ? ng.streak + 1 : 0;
+  // ORDER-071：答對走 gainCorrect 統一入口（streak＋織能＋A1 折扣），答錯歸零連擊（織能不扣）
+  for (const r of results) {
+    if (r.correct) gainCorrect(ng);
+    else ng.streak = 0;
+  }
   const n2 = ng.nodes[ng.idx];
   n2.obstacle = 0;
   n2.cleared = true;
@@ -1364,7 +1374,11 @@ function applyNodeTrial(g: JGame, nodeId: string, results: { vocabId: string; co
   ng.correct += correctCount;
   ng.wrong += total - correctCount;
   // ORDER-079（連擊一致化）：試煉的每一題也進連擊（依序結算，答錯歸零）
-  for (const r of results) ng.streak = r.correct ? ng.streak + 1 : 0;
+  // ORDER-071：答對走 gainCorrect 統一入口（streak＋織能＋A1 折扣），答錯歸零連擊（織能不扣）
+  for (const r of results) {
+    if (r.correct) gainCorrect(ng);
+    else ng.streak = 0;
+  }
   const passed = total > 0 && correctCount / total >= 2 / 3;
   const node = ng.nodes[ng.idx];
   if (passed) {
@@ -1414,7 +1428,11 @@ function resolveRockClear(g: JGame, results: { vocabId: string; correct: boolean
   const correctCount = results.filter((r) => r.correct).length;
   ng.correct += correctCount;
   ng.wrong += results.length - correctCount;
-  for (const r of results) ng.streak = r.correct ? ng.streak + 1 : 0;
+  // ORDER-071：答對走 gainCorrect 統一入口（streak＋織能＋A1 折扣），答錯歸零連擊（織能不扣）
+  for (const r of results) {
+    if (r.correct) gainCorrect(ng);
+    else ng.streak = 0;
+  }
   const n2 = ng.nodes[ng.idx];
   n2.obstacle = 0;
   n2.cleared = true;
@@ -2119,6 +2137,8 @@ export default function JourneyPage() {
   const [wordMatch, setWordMatch] = useState<{ ids: string[] } | null>(null);
   // ORDER-079：聽音搬石小遊戲（障礙節點）——須在 anyModalOpen 之前宣告
   const [rockClear, setRockClear] = useState<{ ids: string[] } | null>(null);
+  // ORDER-071（撿卡 3 選 1）：清障後的進階技法卡選單（3 張隨機，選 1 或跳過）
+  const [cardPick, setCardPick] = useState<JCard[] | null>(null);
   const [callbackCard, setCallbackCard] = useState<"left" | "right" | null>(null);
   const [callbackShown, setCallbackShown] = useState(false);
 
@@ -2159,6 +2179,7 @@ export default function JourneyPage() {
     !!bridgeListen ||
     !!wordMatch ||
     !!rockClear ||
+    !!cardPick ||
     branchCardOpen ||
     callbackCard !== null ||
     legendCard !== null ||
@@ -2508,6 +2529,39 @@ export default function JourneyPage() {
     setGame((g) => settle({ ...g, log: pushLog(g.log, "先不搬了：這一輪的力氣已經花下去，石堆還在原地。", "info") }));
   }
 
+  // ORDER-071（撿卡 3 選 1）：清障後的進階技法卡入場管道——修理型節點（落石/吊橋/危害）
+  // 一被清除、且沒有其他全螢幕卡蓋著，就從進階卡池抽 3 張供選 1（或跳過）。每節點只出現一次
+  // （pickupsOffered 進 JGame，restart 歸零）。這是設計文件 §二的取得方式，前一版漏做導致整套進階卡是死碼。
+  const curNodeForPick = game.nodes[game.idx];
+  useEffect(() => {
+    if (!mounted || game.status !== "playing" || cardPick !== null || anyModalOpen) return;
+    const node = game.nodes[game.idx];
+    if (!node || !node.cleared) return;
+    if (node.type !== "obstacle" && node.type !== "bridge" && node.type !== "hazard") return;
+    if (game.pickupsOffered.includes(node.id)) return;
+    const picks = shuffle([...CARD_POOL_ADVANCED]).slice(0, 3).map((proto) => ({ ...proto, key: uid() }));
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setCardPick(picks);
+    setGame((g) => ({ ...g, pickupsOffered: [...g.pickupsOffered, node.id] }));
+    /* eslint-enable react-hooks/set-state-in-effect */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, game.status, game.idx, curNodeForPick?.cleared, cardPick, anyModalOpen]);
+
+  function pickAdvancedCard(card: JCard) {
+    sfxPlayCard();
+    setGame((g) => ({
+      ...g,
+      hand: [...g.hand, card],
+      log: pushLog(g.log, `撿起技法「${card.name}」——收進手牌，隨時可用。`, "good"),
+    }));
+    setCardPick(null);
+  }
+
+  function skipAdvancedCard() {
+    setGame((g) => settle({ ...g, log: pushLog(g.log, "這次先不撿——輕裝上路。", "info") }));
+    setCardPick(null);
+  }
+
   const finishWordMatch = useCallback((results: { vocabId: string; correct: boolean }[]) => {
     setGame((g) => resolveWordMatch(g, results));
     setWordMatch(null);
@@ -2578,6 +2632,8 @@ export default function JourneyPage() {
     // ORDER-079：重置聽音搬石與新紀錄徽章
     setRockClear(null);
     setNewRecord(false);
+    // ORDER-071：重置撿卡選單（pickupsOffered 由 newGame 歸零）
+    setCardPick(null);
   }
 
   // mount 前：SSR 與 client 首渲染皆輸出此骨架，確保 HTML 一致（避免 hydration mismatch）
@@ -3672,6 +3728,49 @@ export default function JourneyPage() {
         />
       )}
 
+      {/* 撿卡 3 選 1（ORDER-071）：清障後的進階技法卡入場管道。卡面樣式沿用手牌 hs-card。 */}
+      {cardPick && (
+        <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/75 p-3 backdrop-blur-[6px] sm:p-6">
+          <div className="repair-modal w-full max-w-2xl px-5 py-6 my-4 sm:px-7">
+            <header className="relative z-[2] mb-4 text-center">
+              <p className={`${notoSansTC.className} mb-1 text-sm font-bold tracking-[0.08em] text-amber-300`}>
+                路清了 · 撿一手技法
+              </p>
+              <h3 className={`${notoSerifTC.className} repair-title text-2xl font-black`}>三選一</h3>
+              <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-amber-100/70">
+                隊伍在清出來的路上歇口氣，交換這段路學到的做法——挑一張收進手牌，或輕裝上路。
+              </p>
+            </header>
+            <div className="relative z-[2] flex flex-wrap justify-center gap-3">
+              {cardPick.map((c) => (
+                <button
+                  key={c.key}
+                  onClick={() => pickAdvancedCard(c)}
+                  className="hs-card hs-card-playable w-40 p-2 text-left"
+                >
+                  <CostGem n={c.cost} />
+                  <div className="relative mb-1.5 flex h-16 w-full items-center justify-center overflow-hidden rounded-lg bg-[#0b1722]">
+                    <IconTarget className="w-6 h-6 text-amber-300/50" />
+                    <span className="hs-art-frame rounded-lg" aria-hidden />
+                  </div>
+                  <div className="hs-name-banner -mx-2 flex items-center justify-between px-2 py-0.5">
+                    <span className={`${notoSerifTC.className} text-sm font-bold`}>{c.name}</span>
+                    <span className="text-[9px] tracking-[0.15em] text-amber-200/70">{cardTypeLabel(c.type)}</span>
+                  </div>
+                  <div className="text-[10px] text-amber-100/60 mt-1.5 leading-snug">{c.desc}</div>
+                  {c.quiz && <div className="text-[10px] text-sky-300/70 mt-1">★ 需答族語題</div>}
+                </button>
+              ))}
+            </div>
+            <footer className="relative z-[2] mt-4 flex justify-center">
+              <button onClick={skipAdvancedCard} className="repair-secondary-btn rounded-xl px-5 py-2 text-xs font-bold">
+                ✦ 先不撿了
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
+
       {/* 跨節點呼應故事卡（ORDER-057）：把「當初的選擇」講出來（stat 結算已在 enterNode 完成）。 */}
       {callbackCard !== null && (
         <div className="fixed inset-0 z-[55] flex items-center justify-center bg-black/80 backdrop-blur-[4px] p-4">
@@ -3769,6 +3868,10 @@ export default function JourneyPage() {
               <li className="flex gap-2">
                 <IconFlame className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
                 <span>連續答對 3 題族語題會觸發<b>「順風」</b>，補 1 行動點——搬石、搭板、配對、試煉的每一題都算連擊，答錯才歸零。<b>支線目標</b>每達成一項，勝利結算 +5 分；各關的<b>歷史最佳評分</b>會記下來，等你刷新。</span>
+              </li>
+              <li className="flex gap-2">
+                <IconTarget className="mt-0.5 h-4 w-4 shrink-0 text-sky-300" />
+                <span><b>織能</b>：每答對 1 題累積 1 點（上限 6，答錯不扣）。可主動消費：<b>2 點</b>＝下一張牌免答題全額、<b>3 點</b>＝當前阻礙 -1、<b>5 點</b>＝本日暫解「祖先的路」門檻。清除落石／吊橋／危害後會出現<b>「撿卡三選一」</b>——進階技法卡只能這樣入手，不進起始牌庫。</span>
               </li>
               <li className="flex gap-2">
                 <IconGauge className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
