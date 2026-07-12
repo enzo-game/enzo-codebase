@@ -229,7 +229,7 @@ export default function BattlePage() {
           <div className="hs-target-callout">
             {selecting.mode === "spell"
               ? `選擇「${selecting.card.nameZh}」的目標`
-              : "選擇攻擊目標（有嘲諷需先打嘲諷；再點一次隨從取消）"}
+              : attackHint(view, selecting.attackerKey)}
           </div>
         ) : null}
 
@@ -333,6 +333,23 @@ export default function BattlePage() {
 }
 
 // ───────────────────────── 目標高亮 ─────────────────────────
+// 選了隨從要攻擊時的具體提示：能打誰、為什麼、怎麼取消。
+function attackHint(view: SeatView, attackerKey: string): string {
+  const attacker = view.you.board.find((m) => m.key === attackerKey);
+  const name = attacker?.card.nameZh ?? "隨從";
+  const cancel = `（再點一次「${name}」可取消）`;
+  const taunts = view.opp.board.filter((m) => m.taunt && !m.stealth);
+  if (taunts.length > 0) {
+    const names = taunts.map((m) => `「${m.card.nameZh}」`).join("、");
+    return `「${name}」出擊：對手有嘲諷（${names}），必須先打嘲諷的隨從，不能越過去打英雄。${cancel}`;
+  }
+  const oppMinions = view.opp.board.filter((m) => !m.stealth);
+  if (oppMinions.length > 0) {
+    return `「${name}」出擊：沒有嘲諷擋路，可以打對手的隨從，或直接打對手英雄——點你要打的目標。${cancel}`;
+  }
+  return `「${name}」出擊：對手場上沒有隨從，直接打對手英雄吧——點對手英雄。${cancel}`;
+}
+
 function targetHighlight(view: SeatView, selecting: Selecting) {
   const none = { oppHero: false, youHero: false, oppMinions: new Set<string>(), youMinions: new Set<string>() };
   if (!selecting) return none;
