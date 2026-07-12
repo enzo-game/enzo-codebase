@@ -534,11 +534,13 @@ body {
     0 16px 30px rgba(0, 0, 0, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     inset 0 0 22px rgba(226, 164, 58, 0.08);
-  translate: -50% 0;
 }
 
+/* 只有敵方英雄置中（player 走右下角，不能沿用 -50% 位移，否則 lightningcss 會把 player 的歸零位移當 no-op 移除） */
 .hs-portrait-enemy {
   top: 62px;
+  left: 50%;
+  translate: -50% 0;
   border-color: rgba(244, 63, 94, 0.52);
 }
 
@@ -1246,11 +1248,12 @@ body {
 }
 
 /* 我方英雄：精簡（頭像＋血量）置中於下方，位於手牌上方 */
+/* 我方英雄（血條）：擺右下角，不擋戰場 */
 .play-page .hs-portrait-player {
-  left: 50%;
-  right: auto;
-  bottom: 244px;
-  translate: -50% 0;
+  left: auto;
+  right: 16px;
+  bottom: 14px;
+  translate: none !important;
   transform: none;
   width: auto;
   min-height: 0;
@@ -1272,11 +1275,11 @@ body {
   right: 28px;
 }
 
-/* 法力條：放我方英雄左側，不與其他控制重疊 */
+/* 法力條：疊在右下角英雄上方 */
 .play-page .hs-resource-player {
   left: auto;
-  right: calc(50% + 96px);
-  bottom: 252px;
+  right: 16px;
+  bottom: 96px;
 }
 
 .play-page .hs-hand-zone {
@@ -1284,7 +1287,8 @@ body {
   left: 50%;
   bottom: 30px;
   z-index: 35;
-  width: min(980px, calc(100% - 360px));
+  /* 收窄，讓滿手牌右緣也不會鑽到右下角英雄底下 */
+  width: min(940px, calc(100% - 470px));
   margin-top: 0;
   transform: translateX(-50%);
   translate: none;
@@ -1312,12 +1316,12 @@ body {
   width: clamp(118px, 7vw, 136px) !important;
 }
 
-/* 結束回合：固定右下角，不壓到英雄或法力條 */
+/* 結束回合：中右側，不壓到英雄或法力條 */
 .play-page .hs-end-turn-big {
   right: 24px;
-  bottom: 24px;
-  top: auto;
-  transform: none;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
   min-width: 146px;
   min-height: 62px;
   font-size: 16px;
@@ -1329,8 +1333,8 @@ body {
 
 .play-page .hs-reset-small {
   right: 30px;
-  bottom: 96px;
-  top: auto;
+  top: calc(50% + 52px);
+  bottom: auto;
 }
 
 /* 戰鬥紀錄：左側小型可展開標籤（收合＝直書標籤；hover 展開全文） */
