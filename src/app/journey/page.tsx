@@ -296,6 +296,11 @@ const LS_MILLET_BANK = "cw_millet_bank";
 const MILLET_BANK_CAP = 3;
 // ORDER-079：每關最佳難度評分（localStorage key 前綴＋levelId）——給「再打一次刷新紀錄」的重玩目標
 const LS_BEST_PREFIX = "cw_best_score_";
+// ORDER-081（P2 複習出題）：跨局詞彙成績單——每詞記「最後一次答對/答錯」，答錯的進複習池，
+// 下一局出題優先再考（pickVocabIds 種入至多一半）。純學習資料，非文化內容。
+const LS_VOCAB_REVIEW = "cw_vocab_review";
+// 複習池模組級快取：mount 時載入、每局結束更新。SSR 期間為空陣列（出題只在 client 觸發）。
+let REVIEW_POOL: string[] = [];
 // ORDER-079：聽音搬石（障礙節點的語言優先小遊戲）——石頭顆數
 const ROCK_STONES = 5;
 // ORDER-051：電影感全頁背景——沿用已過文化複核的既有場景圖（stories/scene-start-v1），暗化 80%＋vignette
@@ -671,12 +676,18 @@ const NODE_STORY_IMG_L2: Record<string, string> = {
 function buildNodesL1(): PathNode[] {
   // vocabId：河流10-07 石頭12-05 橋樑12-07 家12-01 部落24-04
   const ev = EVENT_NODE_POOL[Math.floor(Math.random() * EVENT_NODE_POOL.length)];
+  // ORDER-081（重玩變化）：落石點數 2-4 隨機（原固定 3）；事件與補給節點 50% 互換順序——
+  // 同一條路，這一趟先遇岔路還是先到營地、落石多厚，局局不同。id 跟著節點走（trialedNodes/
+  // pickupsOffered/撿卡去重都以 id 記，互換不影響）。
+  const rockPts = 2 + Math.floor(Math.random() * 3);
+  const eventNode: PathNode = { id: "n3", name: ev.name, vocabId: ev.vocabId, type: "event", obstacle: 0, cleared: false };
+  const supplyNode: PathNode = { id: "n4", name: "山腰營地", vocabId: "12-01", type: "supply", obstacle: 0, cleared: false };
+  const mid = Math.random() < 0.5 ? [eventNode, supplyNode] : [supplyNode, eventNode];
   return [
     { id: "n0", name: "立霧溪口（起點）", vocabId: "10-07", type: "start", obstacle: 0, cleared: true },
-    { id: "n1", name: "落石路段", vocabId: "12-05", type: "obstacle", obstacle: 3, cleared: false }, // ORDER-055 難度調升：2→3
+    { id: "n1", name: "落石路段", vocabId: "12-05", type: "obstacle", obstacle: rockPts, cleared: false },
     { id: "n2", name: "峽谷吊橋", vocabId: "12-07", type: "bridge", obstacle: 1, cleared: false },
-    { id: "n3", name: ev.name, vocabId: ev.vocabId, type: "event", obstacle: 0, cleared: false },
-    { id: "n4", name: "山腰營地", vocabId: "12-01", type: "supply", obstacle: 0, cleared: false },
+    ...mid,
     { id: "n5", name: "部落（目的地）", vocabId: "24-04", type: "destination", obstacle: 0, cleared: false },
   ];
 }
@@ -705,10 +716,13 @@ function buildNodesL2(): PathNode[] {
     { id: "m0", name: "稜線登山口（起點）", vocabId: "10-22", type: "start", obstacle: 0, cleared: true },
     { id: "m1", name: "溪岔口", vocabId: "10-07", type: "branch", obstacle: 0, cleared: false },
     mkHazard(2, hazards[0]),
-    { id: "m3", name: "崩落的石堆", vocabId: "12-11", type: "obstacle", obstacle: 3, cleared: false },
+    // ORDER-081（重玩變化）：石堆點數 2-4 隨機；後段危害與營地 50% 互換順序。
+    // m3 是跨節點呼應點（CALLBACK_NODE_ID），必須保持在岔口後兩格，位置不動、只變點數。
+    { id: "m3", name: "崩落的石堆", vocabId: "12-11", type: "obstacle", obstacle: 2 + Math.floor(Math.random() * 3), cleared: false },
     { id: "m4", name: "霧中辨路", vocabId: "11-12", type: "match", obstacle: 0, cleared: false },
-    mkHazard(5, hazards[1]),
-    { id: "m6", name: "背風凹地（營地）", vocabId: "11-17", type: "supply", obstacle: 0, cleared: false },
+    ...(Math.random() < 0.5
+      ? [mkHazard(5, hazards[1]), { id: "m6", name: "背風凹地（營地）", vocabId: "11-17", type: "supply" as NodeType, obstacle: 0, cleared: false }]
+      : [{ id: "m6", name: "背風凹地（營地）", vocabId: "11-17", type: "supply" as NodeType, obstacle: 0, cleared: false }, mkHazard(5, hazards[1])]),
     { id: "m7", name: "山腳背風處（目的地）", vocabId: "10-12", type: "destination", obstacle: 0, cleared: false },
   ];
 }
@@ -973,6 +987,13 @@ function pickVocabIds(g: JGame, n: number, opts?: { audioOnly?: boolean; anchor?
   const pool = opts?.audioOnly ? VOCAB.filter((v) => v.hasAudio) : VOCAB;
   const ids = new Set<string>();
   if (opts?.anchor && (!opts.audioOnly || vocab(opts.anchor).hasAudio)) ids.add(opts.anchor);
+  // ORDER-081（P2 複習出題）：先種入複習池的詞（上一局答錯的），至多佔一半——
+  // 讓「需複習」的詞真的會在下一局路上再遇到，而不是考過就忘。
+  const validIds = new Set(pool.map((v) => v.id));
+  const reviewFit = shuffle(REVIEW_POOL.filter((id) => validIds.has(id) && !asked.has(id) && !ids.has(id)));
+  // 單題抽（卡牌/硬清等）floor(n/2)=0 永遠抽不到複習詞——改為 50% 機率帶一題複習
+  const reviewSlots = n === 1 ? (Math.random() < 0.5 ? 1 : 0) : Math.max(0, Math.floor(n / 2) - ids.size);
+  for (const id of reviewFit.slice(0, reviewSlots)) ids.add(id);
   const fresh = pool.filter((v) => !asked.has(v.id) && !ids.has(v.id));
   const source = fresh.length >= n - ids.size ? fresh : pool;
   while (ids.size < Math.min(n, pool.length)) {
@@ -1996,6 +2017,14 @@ export default function JourneyPage() {
     } catch {
       /* localStorage 不可用：不顯示歷史最佳 */
     }
+    // ORDER-081（P2）：載入跨局複習池（過濾掉詞庫中已不存在的 id，vocab() 對未知 id 會 throw）
+    try {
+      const store = JSON.parse(localStorage.getItem(LS_VOCAB_REVIEW) ?? "{}") as Record<string, { last: string }>;
+      const valid = new Set(VOCAB.map((v) => v.id));
+      REVIEW_POOL = Object.entries(store).filter(([id, v]) => valid.has(id) && v.last === "wrong").map(([id]) => id);
+    } catch {
+      REVIEW_POOL = [];
+    }
     // 開局套用小米銀行（ORDER-055 小米接力：上一局沿路種下的小米，這一局開局糧 +N）
     setGame(consumeMilletBank(newGame(lvl)));
     setMounted(true);
@@ -2019,6 +2048,34 @@ export default function JourneyPage() {
       }
     }
   }, [game.status, game.levelId]);
+
+  // ORDER-081（P2 詞彙成績單）：局末把 wordLog 併入跨局成績單（每詞記最後一次結果），
+  // 答錯的進複習池；並統計「複習成功」（開局時在複習池、這局最後答對）供結算畫面顯示。
+  const reviewProcessedRef = useRef(false);
+  const [reviewSummary, setReviewSummary] = useState<{ reviewedOk: number; needReview: number } | null>(null);
+  useEffect(() => {
+    if (game.status === "playing" || reviewProcessedRef.current || game.wordLog.length === 0) return;
+    reviewProcessedRef.current = true;
+    const lastById = new Map<string, boolean>();
+    for (const { vocabId, correct } of game.wordLog) lastById.set(vocabId, correct);
+    let store: Record<string, { last: string }> = {};
+    try {
+      store = JSON.parse(localStorage.getItem(LS_VOCAB_REVIEW) ?? "{}");
+    } catch {
+      store = {};
+    }
+    // 「複習成功」＝合併前 store 裡標 wrong、這局最後答對的詞（store 只在局末更新，等同開局快照）
+    const reviewedOk = [...lastById].filter(([id, ok]) => ok && store[id]?.last === "wrong").length;
+    for (const [id, ok] of lastById) store[id] = { last: ok ? "right" : "wrong" };
+    try {
+      localStorage.setItem(LS_VOCAB_REVIEW, JSON.stringify(store));
+    } catch {
+      /* 寫入失敗：本局結果不入成績單 */
+    }
+    REVIEW_POOL = Object.entries(store).filter(([, v]) => v.last === "wrong").map(([id]) => id);
+    setReviewSummary({ reviewedOk, needReview: REVIEW_POOL.length });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.status]);
 
   // ORDER-079：勝利時結算最佳紀錄——高於歷史最佳就存檔並亮「新紀錄」徽章
   useEffect(() => {
@@ -2677,6 +2734,9 @@ export default function JourneyPage() {
     setNewRecord(false);
     // ORDER-071：重置撿卡選單（pickupsOffered 由 newGame 歸零）
     setCardPick(null);
+    // ORDER-081（P2）：局末統計旗標歸零（複習基準直接讀 store，無需快照）
+    reviewProcessedRef.current = false;
+    setReviewSummary(null);
   }
 
   // mount 前：SSR 與 client 首渲染皆輸出此骨架，確保 HTML 一致（避免 hydration mismatch）
@@ -4148,13 +4208,25 @@ export default function JourneyPage() {
             {(() => {
               const byId = new Map<string, boolean>();
               for (const { vocabId, correct } of game.wordLog) byId.set(vocabId, correct);
-              const words = [...byId.entries()];
+              // ORDER-081（P2 成績單分級）：答錯的排前面（需複習優先看見）
+              const words = [...byId.entries()].sort((x, y) => Number(x[1]) - Number(y[1]));
               if (words.length === 0) return null;
               return (
                 <div className="mb-4 rounded-xl border border-slate-700 bg-slate-950/60 p-3 text-left">
                   <div className="text-xs uppercase tracking-wider text-emerald-400 font-semibold mb-2">
                     這趟學了什麼（{words.filter(([, ok]) => ok).length}/{words.length} 詞答對）
                   </div>
+                  {/* ORDER-081（P2）：跨局複習摘要——複習成功數＋目前累積的需複習詞數（下一局會優先再考） */}
+                  {reviewSummary && (reviewSummary.reviewedOk > 0 || reviewSummary.needReview > 0) && (
+                    <div className="mb-2 text-[11px] leading-relaxed text-sky-300/90">
+                      {reviewSummary.reviewedOk > 0 && <>上次答錯的詞這局答對了 {reviewSummary.reviewedOk} 個——複習成功！</>}
+                      {reviewSummary.needReview > 0 && (
+                        <span className="block text-amber-300/85">
+                          需複習 {reviewSummary.needReview} 詞（標 ✕ 的）——下一局路上會優先再遇到它們。
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <div className="grid gap-1.5 max-h-56 overflow-y-auto pr-1">
                     {words.map(([vocabId, ok]) => {
                       const entry = vocab(vocabId);
