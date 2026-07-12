@@ -31,6 +31,7 @@ export default function VsPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [nameInput, setNameInput] = useState("");
   const [savedName, setSavedName] = useState(false);
+  const [copied, setCopied] = useState(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   // 卸載時清掉 Realtime 訂閱
@@ -58,6 +59,19 @@ export default function VsPage() {
     return () => {
       alive = false;
     };
+  }, []);
+
+  // 帶 ?room=XXXX 進來（邀請連結）→ 自動填房號並加入（延一拍避免 effect 內同步 setState）
+  useEffect(() => {
+    if (!supabaseConfigured) return;
+    const room = new URLSearchParams(window.location.search).get("room");
+    if (!room) return;
+    const t = setTimeout(() => {
+      setCode(room.toUpperCase());
+      void doJoin(room);
+    }, 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function saveName() {
@@ -105,16 +119,17 @@ export default function VsPage() {
     }
   }
 
-  async function handleJoin() {
+  async function doJoin(rawCode: string) {
     setErr("");
-    if (code.trim().length < 4) {
+    const c = rawCode.trim().toUpperCase();
+    if (c.length < 4) {
       setErr("請輸入房號");
       return;
     }
     setView("joining");
     try {
       await ensureAnonSession();
-      const m = await joinRoom(code);
+      const m = await joinRoom(c);
       setMatch(m);
       setView("connected"); // join 成功即為 active
       enterBattle(m); // 直接進盤面（我方為後手 B）
@@ -124,6 +139,10 @@ export default function VsPage() {
     }
   }
 
+  function handleJoin() {
+    void doJoin(code);
+  }
+
   function reset() {
     channelRef.current?.unsubscribe();
     channelRef.current = null;
@@ -131,6 +150,20 @@ export default function VsPage() {
     setCode("");
     setErr("");
     setView("idle");
+  }
+
+  function inviteUrl(roomCode: string) {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    return `${origin}/vs?room=${roomCode}`;
+  }
+  async function copyInvite(roomCode: string) {
+    try {
+      await navigator.clipboard.writeText(inviteUrl(roomCode));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setErr("複製失敗，請長按連結手動複製");
+    }
   }
 
   return (
@@ -197,10 +230,29 @@ export default function VsPage() {
           <p className="text-center text-neutral-400">{view === "creating" ? "建立房間中…" : "加入中…"}</p>
         ) : view === "waiting" ? (
           <div className="text-center space-y-5">
-            <p className="text-sm text-neutral-400">把房號給對方，等他加入</p>
+            <p className="text-sm text-neutral-400">把房號或邀請連結給對方，等他加入</p>
             <div className="text-4xl font-mono tracking-[0.4em] bg-neutral-900 border border-neutral-700 rounded-xl py-6">
               {match?.room_code}
             </div>
+            {match ? (
+              <div className="space-y-2">
+                <p className="text-xs text-neutral-500">邀請連結（點對方裝置開啟會自動加入）</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={inviteUrl(match.room_code)}
+                    onFocus={(e) => e.currentTarget.select()}
+                    className="flex-1 min-w-0 rounded-lg bg-neutral-900 border border-neutral-700 px-3 py-2 text-xs text-neutral-300 truncate focus:outline-none focus:border-emerald-500"
+                  />
+                  <button
+                    onClick={() => copyInvite(match.room_code)}
+                    className="shrink-0 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-2 text-xs font-semibold transition"
+                  >
+                    {copied ? "已複製" : "複製"}
+                  </button>
+                </div>
+              </div>
+            ) : null}
             <p className="text-sm text-neutral-500 animate-pulse">等待對手接上…</p>
             <button onClick={reset} className="text-sm text-neutral-500 hover:text-neutral-300 underline">
               取消
