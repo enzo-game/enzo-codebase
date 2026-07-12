@@ -31,7 +31,16 @@ const THEME_ZH: Record<Theme, string> = {
 };
 const RARITY_ZH: Record<Rarity, string> = { common: "普通", rare: "稀有", epic: "史詩", legendary: "傳說" };
 const TYPE_ZH: Record<CardType, string> = { minion: "隨從", spell: "法術" };
-const KEYWORD_ZH: Record<Keyword, string> = { taunt: "嘲諷", stealth: "潛行", charge: "衝鋒" };
+const KEYWORD_ZH: Record<Keyword, string> = {
+  taunt: "嘲諷",
+  stealth: "潛行",
+  charge: "衝鋒",
+  divineShield: "石鎧",
+  lifesteal: "汲取",
+  windfury: "疾風",
+  rush: "突襲",
+};
+const KEYWORD_ORDER: Keyword[] = ["taunt", "stealth", "charge", "divineShield", "lifesteal", "windfury", "rush"];
 
 const RARITY_DOT: Record<Rarity, string> = {
   common: "bg-slate-300",
@@ -243,7 +252,7 @@ export default function CollectionPage() {
             </Pill>
           ))}
           <span className="ml-3 mr-1 text-xs text-slate-500">關鍵字</span>
-          {(["taunt", "stealth", "charge"] as Keyword[]).map((k) => (
+          {KEYWORD_ORDER.map((k) => (
             <Pill key={k} active={f.keyword === k} onClick={() => setF((s) => ({ ...s, keyword: s.keyword === k ? null : k }))}>
               {KEYWORD_ZH[k]}
             </Pill>
