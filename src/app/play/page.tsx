@@ -686,17 +686,18 @@ export default function PlayPage() {
             <div
               className="flex items-center rounded border border-slate-600/60 overflow-hidden"
               role="group"
-              aria-label="電腦難度"
+              aria-label="難度（電腦強度＋答題）"
             >
               {([
-                ["easy", "簡單"],
-                ["normal", "普通"],
-                ["hard", "困難"],
-              ] as [Difficulty, string][]).map(([d, label]) => (
+                ["easy", "簡單", "電腦較弱．答題考單字"],
+                ["normal", "普通", "電腦普通．答題考單字"],
+                ["hard", "困難", "電腦較強．答題改考句子（更難）"],
+              ] as [Difficulty, string, string][]).map(([d, label, hint]) => (
                 <button
                   key={d}
                   onClick={() => changeDifficulty(d)}
                   aria-pressed={difficulty === d}
+                  title={hint}
                   className={`px-2 py-1 transition ${
                     difficulty === d
                       ? "bg-sky-500 text-black font-semibold"
@@ -707,6 +708,14 @@ export default function PlayPage() {
                 </button>
               ))}
             </div>
+            {difficulty === "hard" && (
+              <span
+                className="rounded border border-amber-400/50 bg-amber-950/40 px-2 py-1 text-amber-200"
+                title="困難模式：答題改考句子（四選一），不再是單字"
+              >
+                困難：答題考句子
+              </span>
+            )}
             <button
               onClick={() => setShowOpponents(true)}
               title="更換對手（頭目）"
@@ -1278,7 +1287,10 @@ export default function PlayPage() {
               })}
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">難度：{DIFF_ZH[difficulty]}</span>
+              <span className="text-xs text-slate-500">
+                難度：{DIFF_ZH[difficulty]}
+                {difficulty === "hard" && <span className="text-amber-400">（答題考句子）</span>}
+              </span>
               <button
                 onClick={confirmMulligan}
                 className="rounded bg-amber-500 hover:bg-amber-400 px-5 py-2 text-sm font-bold text-black"
