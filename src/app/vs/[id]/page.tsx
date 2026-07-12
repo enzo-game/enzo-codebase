@@ -206,8 +206,8 @@ export default function BattlePage() {
         className="hs-table relative overflow-hidden bg-cover bg-center"
         style={{ backgroundImage: `url(${BOARD_BG})` }}
         onClick={(e) => {
-          // 已選定攻擊者，卻點在空白戰場（沒有落在任何隨從／英雄上）＝放棄這次攻擊。
-          if (e.target === e.currentTarget && selecting?.mode === "attack") setSelecting(null);
+          // 已選定攻擊者或法術目標，卻點在空白戰場（沒有落在任何隨從／英雄上）＝取消這次選擇。
+          if (e.target === e.currentTarget && selecting) setSelecting(null);
         }}
       >
         <div className="hs-table-shade absolute inset-0" aria-hidden />
@@ -228,7 +228,7 @@ export default function BattlePage() {
         {selecting ? (
           <div className="hs-target-callout">
             {selecting.mode === "spell"
-              ? `選擇「${selecting.card.nameZh}」的目標`
+              ? spellHint(selecting.card, view)
               : attackHint(view, selecting.attackerKey)}
           </div>
         ) : null}
@@ -348,6 +348,36 @@ function attackHint(view: SeatView, attackerKey: string): string {
     return `「${name}」出擊：沒有嘲諷擋路，可以打對手的隨從，或直接打對手英雄——點你要打的目標。${cancel}`;
   }
   return `「${name}」出擊：對手場上沒有隨從，直接打對手英雄吧——點對手英雄。${cancel}`;
+}
+
+// 選了要指定目標的法術時的具體提示：能打誰、為什麼、怎麼取消。
+function spellHint(card: Card, view: SeatView): string {
+  const name = card.nameZh;
+  const cancel = `（點空白處可取消）`;
+  const kind = spellTargetKind(card);
+  const stealthed = view.opp.board.filter((m) => m.stealth).length;
+  switch (kind) {
+    case "any":
+      return `「${name}」：可以打對手英雄，或任何一個未潛行的隨從（不分敵我）${
+        stealthed > 0 ? "——對手有潛行隨從不能選" : ""
+      }。${cancel}`;
+    case "anyMinion":
+      return `「${name}」：可以指定任何一個未潛行的隨從（不分敵我，但不能打英雄）${
+        stealthed > 0 ? "——對手有潛行隨從不能選" : ""
+      }。${cancel}`;
+    case "enemyMinion":
+      if (view.opp.board.filter((m) => !m.stealth).length === 0) {
+        return `「${name}」：需要指定一個敵方隨從，但對手場上沒有可選目標（潛行隨從不算）。${cancel}`;
+      }
+      return `「${name}」：只能指定對手的隨從${stealthed > 0 ? "（潛行的不能選）" : ""}。${cancel}`;
+    case "friendMinion":
+      if (view.you.board.length === 0) {
+        return `「${name}」：需要指定一個我方隨從，但你場上還沒有隨從。${cancel}`;
+      }
+      return `「${name}」：只能指定我方自己的隨從。${cancel}`;
+    default:
+      return `選擇「${name}」的目標`;
+  }
 }
 
 function targetHighlight(view: SeatView, selecting: Selecting) {
