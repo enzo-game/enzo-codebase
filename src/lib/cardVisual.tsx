@@ -67,6 +67,86 @@ export function HandCard({ card, dim, blockedReason, onClick }: {
   );
 }
 
+// ───────────────────────── 卡片詳情（點手牌先看效果，按「出牌」才進答題）─────────────────────────
+// 比照 /play（PR #80）的「輕點看效果／出牌」機制，供 /vs 共用同一套反悔流程。
+export function CardInspectModal({ card, playable, blockReason, onClose, onPlay }: {
+  card: Card; playable: boolean; blockReason?: string; onClose: () => void; onPlay: () => void;
+}) {
+  const art = CARD_ART[card.id];
+  const learningText = CARD_LEARNING[card.id];
+  return (
+    <div
+      className="fixed inset-0 bg-black/70 backdrop-blur-[2px] flex items-center justify-center p-4 z-[60]"
+      onClick={onClose}
+    >
+      <div
+        className={`w-full max-w-sm rounded-2xl bg-slate-900 border-2 ${RARITY_COLOR[card.rarity]} ${RARITY_GLOW[card.rarity]} p-5 shadow-[0_0_60px_rgba(0,0,0,0.6)]`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <div>
+            <h3 className={`${notoSerifTC.className} text-xl font-bold text-amber-100`}>{card.nameZh}</h3>
+            <p className="text-[11px] tracking-[0.15em] text-amber-200/70">
+              {THEME_ZH[card.theme]} · {card.type === "minion" ? "隨從" : "法術"} · {RARITY_ZH[card.rarity]}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="關閉卡片詳情"
+            className="shrink-0 rounded border border-slate-600 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 hover:text-slate-100"
+          >
+            ✕ 關閉
+          </button>
+        </div>
+        {art && (
+          <div className="relative rounded-xl overflow-hidden mb-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={art} alt={card.nameZh} className="w-full h-44 object-cover" />
+            <span className="hs-art-frame" aria-hidden />
+          </div>
+        )}
+        <div className="mb-3 flex flex-wrap gap-2 text-xs">
+          <span className="rounded bg-sky-950/60 border border-sky-500/40 px-2 py-1 text-sky-200">法力 {card.cost}</span>
+          {card.type === "minion" && (
+            <>
+              <span className="rounded bg-amber-950/60 border border-amber-500/40 px-2 py-1 text-amber-200">攻擊 {card.attack ?? 0}</span>
+              <span className="rounded bg-rose-950/60 border border-rose-500/40 px-2 py-1 text-rose-200">生命 {card.health ?? 0}</span>
+            </>
+          )}
+        </div>
+        {card.effectText !== "—" && (
+          <p className="rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm leading-relaxed text-slate-100 mb-2">
+            <span className="font-semibold text-slate-300">效果：</span>{card.effectText}
+          </p>
+        )}
+        <p className="rounded-lg border border-amber-500/30 bg-amber-950/25 px-3 py-2 text-sm leading-relaxed text-amber-100/90 mb-2">
+          <span className="font-semibold text-amber-200">★ 答對加成：</span>{card.bonusText}
+        </p>
+        {learningText && (
+          <p className="rounded-lg border border-emerald-500/25 bg-emerald-950/20 px-3 py-2 text-xs leading-relaxed text-emerald-100/90">
+            <span className="font-semibold text-emerald-200">學習小註：</span>{learningText}
+          </p>
+        )}
+        <div className="mt-4 flex items-center justify-end gap-3">
+          {!playable && blockReason && <span className="text-xs text-slate-400">{blockReason}</span>}
+          <button onClick={onClose} className="rounded px-4 py-2 text-sm text-slate-300 hover:text-slate-100">
+            關閉
+          </button>
+          <button
+            onClick={onPlay}
+            disabled={!playable}
+            className={`rounded px-5 py-2 text-sm font-semibold ${
+              playable ? "bg-amber-500 text-slate-950 hover:bg-amber-400" : "bg-slate-800 text-slate-500 cursor-not-allowed"
+            }`}
+          >
+            出牌 ▶
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ───────────────────────── 戰場隨從 ─────────────────────────
 export function MinionToken({ minion, targetable, ready, selected, onClick }: {
   minion: Minion; targetable?: boolean; ready?: boolean; selected?: boolean; onClick?: () => void;

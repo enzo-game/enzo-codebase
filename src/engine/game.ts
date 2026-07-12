@@ -199,9 +199,20 @@ export function attackTargets(defBoard: Minion[]): { heroAllowed: boolean; keys:
 export function drawCards(ng: Game, side: Side, n: number): number {
   let drawn = 0;
   for (let i = 0; i < n; i++) {
-    const deck = side === "player" ? ng.pDeck : ng.eDeck;
     const hand = side === "player" ? ng.pHand : ng.eHand;
-    if (deck.length === 0 || hand.length >= HAND_MAX) break;
+    if (hand.length >= HAND_MAX) break; // 手牌已滿，不再抽（不棄牌、不懲罰）
+    // 牌庫抽空 → 立刻重新洗一副全新牌庫，確保永遠有牌可抽（無疲勞機制）
+    if ((side === "player" ? ng.pDeck : ng.eDeck).length === 0) {
+      const refill = buildDeck();
+      if (side === "player") ng.pDeck = refill;
+      else ng.eDeck = refill;
+      ng.log = pushLog(
+        ng.log,
+        `${side === "player" ? "織者" : "山林試煉"}的牌庫已用盡，重新洗牌`,
+        side === "player" ? "info" : "sys",
+      );
+    }
+    const deck = side === "player" ? ng.pDeck : ng.eDeck;
     const [top, ...rest] = deck;
     if (side === "player") {
       ng.pDeck = rest;
