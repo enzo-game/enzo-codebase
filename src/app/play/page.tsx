@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Noto_Serif_TC } from "next/font/google";
 import { useEffect, useRef, useState } from "react";
-import { CARD_LEARNING, Card, RARITY_COLOR, Theme } from "@/data/cards";
+import { CARD_LEARNING, CARDS, TOKEN_SAPLING, Card, RARITY_COLOR, Theme } from "@/data/cards";
 // 卡面美術改由單一資料來源 src/data/cardArt.ts 提供（與 /vs 線上盤面共用，避免兩份漂移）。
 import { CARD_ART, HERO_ART, CARDBACK, BOARD_BG, THEME_ZH, RARITY_ZH, RARITY_GLOW } from "@/data/cardArt";
 // 寶石 StatGem/GemDefs 也改由單一來源 src/lib/statGem.tsx 提供（與 /vs 共用）。
@@ -37,6 +37,11 @@ import {
 import { useCombat } from "./useCombat";
 
 // 卡名用襯線字（比照 /journey 的標題字），像收藏卡的名條
+// 以卡片 id 反查完整卡片資料（出牌動畫在缺圖時改用名稱＋效果文字呈現）
+const CARD_BY_ID: Record<string, Card> = Object.fromEntries(
+  [...CARDS, TOKEN_SAPLING].map((c) => [c.id, c]),
+);
+
 const notoSerifTC = Noto_Serif_TC({ weight: ["700"], subsets: ["latin"], display: "swap" });
 
 const DIFF_ZH: Record<Difficulty, string> = { easy: "簡單", normal: "普通", hard: "困難" };
@@ -262,6 +267,8 @@ export default function PlayPage() {
   const [revealed, setRevealed] = useState<number | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [pending, setPending] = useState<{ card: Card; isCorrect: boolean } | null>(null);
+  // 卡片詳情：任何時候都可彈出放大看效果／加成／學習小註（不影響出牌）
+  const [inspect, setInspect] = useState<Card | null>(null);
   // 規則說明：header 的「規則」可隨時開啟的詳細條列
   const [showRules, setShowRules] = useState(false);
   // 新手引導：第一次進來的互動分步教學（localStorage 記過就不再自動彈）
@@ -474,6 +481,44 @@ export default function PlayPage() {
     void play(playCardFlow(game, card, isCorrect, target));
   }
 
+  /** 一張卡目前能不能出，以及不能出的原因（詳情視窗的「出牌」鈕與手牌標示共用邏輯） */
+  function cardPlayInfo(card: Card): { playable: boolean; reason: string } {
+    const canAct = game.phase === "player" && !game.winner && !pending && !quiz && !locked && !mulliganPhase;
+    const affordable = card.cost <= game.pMana;
+    const roomOrTarget =
+      card.type === "minion" ? game.pBoard.length < BOARD_MAX : hasValidTarget(game, spellTargetKind(card));
+    const playable = canAct && affordable && roomOrTarget;
+    let reason = "";
+    if (!playable) {
+      if (!canAct) reason = game.phase !== "player" ? "非我方回合" : "現在不能出牌";
+      else if (!affordable) reason = "法力不足";
+      else if (card.type === "minion") reason = "戰場已滿";
+      else reason = "無可指定目標";
+    }
+    return { playable, reason };
+  }
+
+  /** 詳情視窗按「出牌」：關掉詳情，走原本的出牌流程（進答題考驗） */
+  function playFromInspect() {
+    if (!inspect) return;
+    const card = inspect;
+    setInspect(null);
+    tryPlay(card);
+  }
+
+  /** 反悔：答題前關掉考驗，卡片放回手牌（尚未消耗法力，等同沒出）。答題揭曉後不可反悔，避免偷看答案。 */
+  function cancelQuiz() {
+    if (!quiz || revealed !== null) return;
+    setQuiz(null);
+    setRevealed(null);
+  }
+
+  /** 反悔：法術已答題但還沒指定目標時，取消選目標，卡片放回手牌（尚未消耗法力）。 */
+  function cancelPending() {
+    if (!pending) return;
+    setPending(null);
+  }
+
   const pendingKind: TargetKind = pending ? spellTargetKind(pending.card) : "none";
   const atkLegal = attackTargets(game.eBoard);
 
@@ -582,14 +627,26 @@ export default function PlayPage() {
           {banner.text}
         </div>
       )}
-      {castCard && CARD_ART[castCard.cardId] && (
+      {castCard && (
         <div className="combat-cast" aria-hidden>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={CARD_ART[castCard.cardId]}
-            alt=""
-            className={castCard.isCorrect ? "ring-2 ring-amber-300 rounded-xl" : "rounded-xl"}
-          />
+          {CARD_ART[castCard.cardId] ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={CARD_ART[castCard.cardId]}
+              alt=""
+              className={castCard.isCorrect ? "ring-2 ring-amber-300 rounded-xl" : "rounded-xl"}
+            />
+          ) : (
+            // 缺圖卡（法術等）：也要有「打出」動畫，用名稱＋效果文字撐起一張牌，不再無聲消失
+            <div className={`combat-cast-fallback ${castCard.isCorrect ? "is-correct" : ""}`}>
+              <span className="combat-cast-name">{CARD_BY_ID[castCard.cardId]?.nameZh ?? "出牌"}</span>
+              {CARD_BY_ID[castCard.cardId]?.effectText &&
+                CARD_BY_ID[castCard.cardId].effectText !== "—" && (
+                  <span className="combat-cast-effect">{CARD_BY_ID[castCard.cardId].effectText}</span>
+                )}
+              {castCard.isCorrect && <span className="combat-cast-bonus">★ 答對加成</span>}
+            </div>
+          )}
         </div>
       )}
       {spellFx && <div className={`spell-veil spell-${spellFx.vfx}`} aria-hidden />}
@@ -758,13 +815,21 @@ export default function PlayPage() {
             <div className="hs-target-callout">
               {selected && !pending && atkLegal.mustTaunt && "敵方有嘲諷隨從，必須先攻擊嘲諷者。"}
               {pending && (
-                <>
-                  選擇「{pending.card.nameZh}」的目標
-                  {pendingKind === "any" && "（任一隨從或敵方英雄）"}
-                  {pendingKind === "anyMinion" && "（任一隨從）"}
-                  {pendingKind === "enemyMinion" && "（一個敵方隨從，潛行者不可指定）"}
-                  {pendingKind === "friendMinion" && "（一個友方隨從）"}
-                </>
+                <span className="inline-flex flex-wrap items-center justify-center gap-2">
+                  <span>
+                    選擇「{pending.card.nameZh}」的目標
+                    {pendingKind === "any" && "（任一隨從或敵方英雄）"}
+                    {pendingKind === "anyMinion" && "（任一隨從）"}
+                    {pendingKind === "enemyMinion" && "（一個敵方隨從，潛行者不可指定）"}
+                    {pendingKind === "friendMinion" && "（一個友方隨從）"}
+                  </span>
+                  <button
+                    onClick={cancelPending}
+                    className="shrink-0 rounded border border-slate-500 px-2 py-0.5 text-[11px] text-slate-200 hover:bg-slate-700"
+                  >
+                    ✕ 取消
+                  </button>
+                </span>
               )}
             </div>
           ) : null}
@@ -968,13 +1033,13 @@ export default function PlayPage() {
               const art = CARD_ART[c.id];
               const learningText = CARD_LEARNING[c.id];
               return (
+                // 輕點卡片＝彈出詳情看效果（再從詳情裡按「出牌」才真的打出）；不能出的卡也照樣能點開看
                 <button
                   key={`${c.id}-${i}`}
-                  onClick={() => tryPlay(c)}
-                  disabled={!playable}
-                  aria-label={`${c.nameZh}。學習小註：${learningText}`}
-                  className={`hs-card hs-hand-card ${RARITY_GLOW[c.rarity]} w-[132px] md:w-[164px] xl:w-[178px] aspect-[5/7] shrink-0 text-left border-2 ${RARITY_COLOR[c.rarity]}
-                    ${playable ? "hs-card-playable cursor-pointer" : reason ? "hs-card-blocked cursor-not-allowed" : "opacity-45"}`}
+                  onClick={() => setInspect(c)}
+                  aria-label={`${c.nameZh}，輕點看效果與出牌`}
+                  className={`hs-card hs-hand-card ${RARITY_GLOW[c.rarity]} w-[132px] md:w-[164px] xl:w-[178px] aspect-[5/7] shrink-0 text-left border-2 ${RARITY_COLOR[c.rarity]} cursor-pointer
+                    ${playable ? "hs-card-playable" : reason ? "hs-card-blocked" : "opacity-60"}`}
                 >
                   {reason && (
                     <span className="hs-card-reason" aria-hidden>
@@ -1297,12 +1362,105 @@ export default function PlayPage() {
       )}
 
       {/* 答題考驗：戰場流程的一部分（半透明背板保留戰場、琥珀框；非跳出式視窗） */}
+      {/* 卡片詳情：放大看效果／答對加成／學習小註（輕點手牌開啟，可直接出牌或關閉） */}
+      {inspect && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-[2px] flex items-center justify-center p-4 z-[60]"
+          onClick={() => setInspect(null)}
+        >
+          <div
+            className={`w-full max-w-sm rounded-2xl bg-slate-900 border-2 ${RARITY_COLOR[inspect.rarity]} ${RARITY_GLOW[inspect.rarity]} p-5 shadow-[0_0_60px_rgba(0,0,0,0.6)]`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-start justify-between gap-2">
+              <div>
+                <h3 className={`${notoSerifTC.className} text-xl font-bold text-amber-100`}>{inspect.nameZh}</h3>
+                <p className="text-[11px] tracking-[0.15em] text-amber-200/70">
+                  {THEME_ZH[inspect.theme]} · {inspect.type === "minion" ? "隨從" : "法術"} · {RARITY_ZH[inspect.rarity]}
+                </p>
+              </div>
+              <button
+                onClick={() => setInspect(null)}
+                aria-label="關閉卡片詳情"
+                className="shrink-0 rounded border border-slate-600 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 hover:text-slate-100"
+              >
+                ✕ 關閉
+              </button>
+            </div>
+            {CARD_ART[inspect.id] && (
+              <div className="relative rounded-xl overflow-hidden mb-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={CARD_ART[inspect.id]} alt={inspect.nameZh} className="w-full h-44 object-cover" />
+                <span className="hs-art-frame" aria-hidden />
+              </div>
+            )}
+            <div className="mb-3 flex flex-wrap gap-2 text-xs">
+              <span className="rounded bg-sky-950/60 border border-sky-500/40 px-2 py-1 text-sky-200">法力 {inspect.cost}</span>
+              {inspect.type === "minion" && (
+                <>
+                  <span className="rounded bg-amber-950/60 border border-amber-500/40 px-2 py-1 text-amber-200">攻擊 {inspect.attack ?? 0}</span>
+                  <span className="rounded bg-rose-950/60 border border-rose-500/40 px-2 py-1 text-rose-200">生命 {inspect.health ?? 0}</span>
+                </>
+              )}
+            </div>
+            {inspect.effectText !== "—" && (
+              <p className="rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm leading-relaxed text-slate-100 mb-2">
+                <span className="font-semibold text-slate-300">效果：</span>{inspect.effectText}
+              </p>
+            )}
+            <p className="rounded-lg border border-amber-500/30 bg-amber-950/25 px-3 py-2 text-sm leading-relaxed text-amber-100/90 mb-2">
+              <span className="font-semibold text-amber-200">★ 答對加成：</span>{inspect.bonusText}
+            </p>
+            <p className="rounded-lg border border-emerald-500/25 bg-emerald-950/20 px-3 py-2 text-xs leading-relaxed text-emerald-100/90">
+              <span className="font-semibold text-emerald-200">學習小註：</span>{CARD_LEARNING[inspect.id]}
+            </p>
+            {(() => {
+              const info = cardPlayInfo(inspect);
+              return (
+                <div className="mt-4 flex items-center justify-end gap-3">
+                  {!info.playable && info.reason && (
+                    <span className="text-xs text-slate-400">{info.reason}</span>
+                  )}
+                  <button
+                    onClick={() => setInspect(null)}
+                    className="rounded px-4 py-2 text-sm text-slate-300 hover:text-slate-100"
+                  >
+                    關閉
+                  </button>
+                  <button
+                    onClick={playFromInspect}
+                    disabled={!info.playable}
+                    className={`rounded px-5 py-2 text-sm font-semibold ${
+                      info.playable
+                        ? "bg-amber-500 text-slate-950 hover:bg-amber-400"
+                        : "bg-slate-800 text-slate-500 cursor-not-allowed"
+                    }`}
+                  >
+                    出牌 ▶
+                  </button>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       {quiz && (
         <div className="combat-quiz-scrim fixed inset-0 bg-black/45 backdrop-blur-[3px] flex items-center justify-center p-4 z-50">
           <div className="combat-quiz-panel w-full max-w-md rounded-2xl bg-slate-900/95 border border-amber-400/30 p-5 shadow-[0_0_60px_rgba(0,0,0,0.6)]">
-            <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-amber-200/70">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden />
-              出牌考驗 · 答對觸發加成
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-amber-200/70">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden />
+                出牌考驗 · 答對觸發加成
+              </div>
+              {revealed === null && (
+                <button
+                  onClick={cancelQuiz}
+                  className="shrink-0 rounded border border-slate-600 px-2 py-1 text-[11px] text-slate-300 hover:bg-slate-800 hover:text-slate-100"
+                >
+                  ✕ 取消（放回手牌）
+                </button>
+              )}
             </div>
             {CARD_ART[quiz.card.id] && (
               <div className="relative rounded-xl overflow-hidden mb-3">
