@@ -242,6 +242,25 @@ export default function Home() {
           </span>
         </Link>
 
+        {/* 句子練習入口 */}
+        <Link
+          href="/sentences"
+          className="anim-logo mt-3 flex items-center justify-between gap-4 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/30 via-slate-900/40 to-sky-950/30 px-6 py-4 transition hover:border-emerald-400/70 hover:from-emerald-900/40"
+        >
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-base font-semibold text-emerald-100/90">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinejoin="round" className="h-[1.15em] w-[1.15em] shrink-0" aria-hidden>
+                <path d="M4 5h16M4 11h11M4 17h14" strokeLinecap="round" />
+              </svg>
+              <span>句子練習 · 中文組回太魯閣語</span>
+            </div>
+            <div className="mt-0.5 text-xs text-slate-400">4 個難度 · 2000+ 句真實例句 · 打散詞卡重組，答完看逐字對照</div>
+          </div>
+          <span className="shrink-0 rounded-full border border-emerald-400/50 px-4 py-1.5 text-sm text-emerald-100/90">
+            開始練習 →
+          </span>
+        </Link>
+
         {/* 三特色 */}
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           <FeatureCard
