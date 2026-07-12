@@ -79,6 +79,10 @@ export const CARD_ART: Record<string, string> = {
   "leg-n08": "/images/cards/n08-night-rest.jpg",
   "leg-n09": "/images/cards/n09-creek-supply.jpg",
   "leg-n10": "/images/cards/n10-headwind-pass.jpg",
+  // ORDER-077 補件（3）
+  "leg-n12": "/images/cards/n12-waterfall.jpg",
+  "leg-n13": "/images/cards/n13-winter-night.jpg",
+  "leg-n14": "/images/cards/n14-earthquake.jpg",
   // ORDER-078 Batch 3 · 自然力／地景擴充（18）
   "leg-n15": "/images/cards/n15-snowfall.jpg",
   "leg-n16": "/images/cards/n16-dew.jpg",
@@ -107,6 +111,12 @@ export const CARD_ART: Record<string, string> = {
   "leg-a07": "/images/cards/a07-leopard.jpg",
   "leg-a08": "/images/cards/a08-sambar.jpg",
   "leg-a09": "/images/cards/a09-bear.jpg",
+  // ORDER-077 補件（5）
+  "leg-a10": "/images/cards/a10-owl.jpg",
+  "leg-a11": "/images/cards/a11-turtle.jpg",
+  "leg-a12": "/images/cards/a12-frog.jpg",
+  "leg-a13": "/images/cards/a13-serow.jpg",
+  "leg-a14": "/images/cards/a14-stream-fish.jpg",
   // ORDER-078 Batch 1 · 山林動物擴充（24）
   "leg-a15": "/images/cards/a15-wildcat.jpg",
   "leg-a16": "/images/cards/a16-macaque.jpg",
@@ -140,6 +150,11 @@ export const CARD_ART: Record<string, string> = {
   "leg-p06": "/images/cards/p06-after-wind-road.jpg",
   "leg-p07": "/images/cards/p07-stone-marker.jpg",
   "leg-p08": "/images/cards/p08-night-fire.jpg",
+  // ORDER-077 補件（4）
+  "leg-p10": "/images/cards/p10-bamboo.jpg",
+  "leg-p11": "/images/cards/p11-leaf-path.jpg",
+  "leg-p12": "/images/cards/p12-fern-path.jpg",
+  "leg-p13": "/images/cards/p13-bloom.jpg",
   // ORDER-078 Batch 2 · 植物擴充（16）
   "leg-p14": "/images/cards/p14-sugarcane.jpg",
   "leg-p15": "/images/cards/p15-corn.jpg",
