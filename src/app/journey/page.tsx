@@ -33,7 +33,12 @@ type EffectId =
   | "reduceStress"
   | "weaveMark"
   | "braceWind"
-  | "shelterBrace";
+  | "shelterBrace"
+  // ORDER-071（模式 A v3）：進階技法卡效果
+  | "chainWeave"
+  | "ancestorPath"
+  | "stockFood"
+  | "rallyPush";
 
 // ORDER-050（P2 第二關）：環境危害（ENVIRONMENT_HAZARD，來自 mode-survival-expansion-chapters-v2-full.json 第一章）
 // clearThreshold＝節點 obstacle 點數；ongoingPenalty＝未清除時每次紮營（日末）持續扣的代價。
@@ -59,6 +64,9 @@ type JCard = {
   desc: string;
   costRes?: Partial<Record<Resource, number>>;
   quiz: boolean; // 是否觸發族語答題閘門
+  // ORDER-071（模式 A v3）：卡組成長
+  upgraded?: boolean; // 織紋強化後 true
+  source?: "start" | "pickup"; // pickup＝旅途撿取，不入 buildDeck 起手
 };
 
 type LogEntry = { key: string; text: string; tone: "good" | "bad" | "sys" | "info" };
@@ -87,12 +95,23 @@ type JGame = {
   correct: number;
   wrong: number;
   streak: number; // 連續答對題數（v2 核心循環重構）
+  // ORDER-071（模式 A v3）：織能引擎 + 進階技法卡狀態
+  weave: number; // 織能池 0..WEAVE_MAX
+  weaveChain: number; // A1 接續織線：本日累積的手牌行動點折扣（日末歸零）
+  chainActive: boolean; // A1 是否已啟動（日末歸零）
+  freeNextAction: boolean; // A4 一鼓作氣：下一張 action 牌 cost 0（日末歸零）
+  campFoodDiscount: number; // A3 囤糧遠行：本關剩餘紮營糧耗 -N（下限 0，跨日保留）
+  freeQuizNext: boolean; // 織能 2 點：下一張出牌免答題直接全額（用完即消）
+  ancestorUnlocked: boolean; // 織能 5 點：本日暫解 A2 的 streak 門檻（日末歸零）
   wordLog: { vocabId: string; correct: boolean }[]; // v4（ORDER-033）：逐題紀錄，供結局回顧「這次學了什麼」
   journeyChoices: Record<string, "left" | "right">; // ORDER-057：分支節點的選擇（nodeId → 往左/往右），供後續節點跨節點呼應與勝利畫面「你走過的路」
   trialedNodes: string[]; // v7（ORDER-042）：已做過「族語試煉」的節點 id（每節點限一次）
   fastDebt: number | null; // ORDER-048（P1）：事件節點「快速通過」的延遲反噬——記下兩節點後的 idx，走到時壓力+2
   milletPlanted: number; // ORDER-055（小米接力）：本局紮營時沿路種下的小米數（僅第二關會種；入 localStorage 銀行）
 };
+
+// ORDER-071（模式 A v3）：織能池上限（⚖️ 平衡旋鈕，見 mode-a-v3-advanced-cards-and-weave.md §四）
+const WEAVE_MAX = 6;
 
 type EventCard = {
   name: string;
@@ -510,6 +529,20 @@ const CARD_POOL_L2: Omit<JCard, "key">[] = [
   { name: "架設臨時遮蔽", vocabId: "10-18", cost: 2, type: "coop", effect: "shelterBrace", quiz: true, costRes: { wood: 1 }, desc: "清除環境危害：答對 -2 且壓力 -1、答錯 -1（耗木材1）。" },
 ];
 
+// ORDER-071（模式 A v3）：進階技法卡池——只靠「清障後 3 選 1 撿卡」或「補給強化」進場，
+// source:"pickup"，不入 buildDeck 起手牌庫（維持 v2 難度曲線）。
+// TODO(language ORDER-071)：vocabId 為暫用既有已驗證詞，待 enzo-language-truku 依語意確認/替換；卡名/desc 待 enzo-culture 審。
+const CARD_POOL_ADVANCED: Omit<JCard, "key">[] = [
+  { name: "接續織線", vocabId: "34-05", cost: 1, type: "coop", effect: "chainWeave", quiz: true, source: "pickup",
+    desc: "本日之後每答對 1 題，手牌行動點 -1（可疊，最低 0）。" }, // TODO(language ORDER-071)
+  { name: "祖先的路", vocabId: "25-10", cost: 2, type: "action", effect: "ancestorPath", quiz: true, source: "pickup",
+    desc: "清除阻礙：答對 -3、答錯 -1。僅在連對 ≥2 時可出（或花 5 織能暫解）。" }, // TODO(language ORDER-071)
+  { name: "囤糧遠行", vocabId: "21-01", cost: 1, type: "supply", effect: "stockFood", quiz: false, source: "pickup",
+    desc: "糧食 +2，且本關剩餘每次紮營糧耗 -1。" }, // TODO(language ORDER-071)
+  { name: "一鼓作氣", vocabId: "28-03", cost: 2, type: "watch", effect: "rallyPush", quiz: true, source: "pickup",
+    desc: "壓力 -2（答對再 -1）；下一張行動牌免行動點。" }, // TODO(language ORDER-071)
+];
+
 function buildDeck(levelId: LevelId): JCard[] {
   const counts: Record<EffectId, number> = {
     scout: 3,
@@ -521,6 +554,11 @@ function buildDeck(levelId: LevelId): JCard[] {
     weaveMark: 2,
     braceWind: 3,
     shelterBrace: 2,
+    // ORDER-071：進階技法卡不進起始牌庫（靠撿卡/強化取得），起手數量 0
+    chainWeave: 0,
+    ancestorPath: 0,
+    stockFood: 0,
+    rallyPush: 0,
   };
   const deck: JCard[] = [];
   // 第二關沒有吊橋節點，「搭橋」抽掉不佔牌庫；改混入危害清除牌（頂風前行／架設臨時遮蔽）
@@ -804,6 +842,14 @@ function newGame(levelId: LevelId): JGame {
     correct: 0,
     wrong: 0,
     streak: 0,
+    // ORDER-071（模式 A v3）：織能引擎 + 進階技法卡狀態
+    weave: 0,
+    weaveChain: 0,
+    chainActive: false,
+    freeNextAction: false,
+    campFoodDiscount: 0,
+    freeQuizNext: false,
+    ancestorUnlocked: false,
     wordLog: [],
     journeyChoices: {},
     trialedNodes: [],
@@ -1025,7 +1071,7 @@ function hardClear(g: JGame, correct: boolean, vocabId: string): JGame {
   ng.wordLog = [...ng.wordLog, { vocabId, correct }];
   if (correct) {
     ng.correct += 1;
-    ng.streak += 1;
+    gainCorrect(ng); // ORDER-071：streak/weave/A1 折扣統一入口
   } else {
     ng.wrong += 1;
     ng.streak = 0;
@@ -1067,7 +1113,7 @@ function resolveEventChoice(g: JGame, choice: "fast" | "careful", correct?: bool
     if (vocabId) ng.wordLog = [...ng.wordLog, { vocabId, correct: !!correct }];
     if (correct) {
       ng.correct += 1;
-      ng.streak += 1;
+      gainCorrect(ng); // ORDER-071：streak/weave/A1 折扣統一入口
       ng.res.food += 1;
       ng.log = pushLog(ng.log, `✓ 答對｜「${n2.name}」謹慎探勘：耗木材1・繩索1，沿途採得糧食 +1。`, "good");
     } else {
@@ -1090,7 +1136,7 @@ function resolveSupplyChoice(g: JGame, resource: Resource, correct: boolean, voc
   ng.wordLog = [...ng.wordLog, { vocabId, correct }];
   if (correct) {
     ng.correct += 1;
-    ng.streak += 1;
+    gainCorrect(ng); // ORDER-071：streak/weave/A1 折扣統一入口
     ng.res[resource] += 3;
     if (Math.random() < 0.3) {
       const resources: Resource[] = ["food", "wood", "stone", "rope"];
@@ -1133,7 +1179,7 @@ function resolveBranchChoice(g: JGame, choice: "left" | "right", correct?: boole
     if (vocabId) ng.wordLog = [...ng.wordLog, { vocabId, correct: !!correct }];
     if (correct) {
       ng.correct += 1;
-      ng.streak += 1;
+      gainCorrect(ng); // ORDER-071：streak/weave/A1 折扣統一入口
       ng.res.food += 2;
       ng.log = pushLog(ng.log, `✓ 答對｜往左·沿溪邊：水線還低，一路撿到漂流的枯枝與野菜，糧食 +2。`, "good");
     } else {
@@ -1218,7 +1264,10 @@ function resolveBridgeListen(g: JGame, results: { vocabId: string; correct: bool
 // ───────────────────────── 出牌結算 ─────────────────────────
 
 function apCost(g: JGame, card: JCard): number {
-  return Math.max(0, card.cost - g.coopDiscount);
+  // A4 一鼓作氣：下一張行動牌免行動點
+  if (g.freeNextAction && card.type === "action") return 0;
+  // A1 接續織線：weaveChain 對所有手牌再折抵
+  return Math.max(0, card.cost - g.coopDiscount - g.weaveChain);
 }
 
 function canAfford(g: JGame, card: JCard): boolean {
@@ -1230,6 +1279,59 @@ function canAfford(g: JGame, card: JCard): boolean {
     }
   }
   return true;
+}
+
+// ORDER-071（模式 A v3）：出牌可行性（含 A2「祖先的路」連對門檻）。UI disable 與 playCard 守門都改用它。
+function canPlay(g: JGame, card: JCard): boolean {
+  if (!canAfford(g, card)) return false;
+  if (card.effect === "ancestorPath" && g.streak < 2 && !g.ancestorUnlocked) return false;
+  return true;
+}
+
+// ORDER-071（模式 A v3）：答對統一入口——收斂散落的 streak 累加，順帶累積織能與 A1 接續織線折扣。
+// 注意：此函式「不」動 ng.correct（各呼叫點自行維持既有的 ng.correct += 1，避免雙重計數）。
+function gainCorrect(ng: JGame): JGame {
+  ng.streak += 1;
+  ng.weave = Math.min(WEAVE_MAX, ng.weave + 1);
+  if (ng.chainActive) ng.weaveChain += 1; // A1：啟動後每答對一題再累積 1 手牌折扣
+  return ng;
+}
+
+// ORDER-071（模式 A v3）：織能主動消費（不重置 streak）。UI 三顆按鈕呼叫，餘額不足回原狀態。
+function spendWeaveFree(g: JGame): JGame {
+  // 2 點：下一張出牌免答題直接全額
+  if (g.status !== "playing" || g.weave < 2) return g;
+  return {
+    ...g,
+    weave: g.weave - 2,
+    freeQuizNext: true,
+    log: pushLog(g.log, `消費織能 2：下一張牌免答題，直接全額結算。`, "good"),
+  };
+}
+function spendWeavePush(g: JGame): JGame {
+  // 3 點：當前節點 obstacle -1（不需出牌、不需答題）
+  if (g.status !== "playing" || g.weave < 3) return g;
+  const nodes = g.nodes.map((n) => ({ ...n }));
+  const node = nodes[g.idx];
+  if (!node || node.cleared || node.obstacle <= 0) return g;
+  node.obstacle -= 1;
+  if (node.obstacle === 0) node.cleared = true;
+  return {
+    ...g,
+    weave: g.weave - 3,
+    nodes,
+    log: pushLog(g.log, `消費織能 3：織線化為推進力，「${node.name}」阻礙 -1（剩 ${node.obstacle}）。`, "good"),
+  };
+}
+function spendWeaveUnlock(g: JGame): JGame {
+  // 5 點：本日暫解 A2「連對 ≥2」門檻
+  if (g.status !== "playing" || g.weave < 5) return g;
+  return {
+    ...g,
+    weave: g.weave - 5,
+    ancestorUnlocked: true,
+    log: pushLog(g.log, `消費織能 5：祖徑開啟，本日「祖先的路」不受連對門檻限制。`, "good"),
+  };
 }
 
 // 連擊獎勵（v2）：每連對 3 題，順風而行，補 1 行動點。共用給卡牌與 v3 答題閘門動作。
@@ -1325,12 +1427,21 @@ function resolveRockClear(g: JGame, results: { vocabId: string; correct: boolean
 }
 
 function playCard(g: JGame, card: JCard, correct: boolean): JGame {
-  if (!canAfford(g, card)) return g;
+  if (!canPlay(g, card)) return g;
   let ng: JGame = { ...g, res: { ...g.res }, nodes: g.nodes.map((n) => ({ ...n })) };
+
+  // ORDER-071（織能 2 點免答題）：此牌需答題且已預付 freeQuizNext → 視同答對全額並消費（不記入答題統計/連擊）
+  const freeQuiz = card.quiz && g.freeQuizNext;
+  if (freeQuiz) {
+    correct = true;
+    ng.freeQuizNext = false;
+  }
 
   // 扣行動點與資源
   ng.ap -= apCost(g, card);
   if (g.coopDiscount > 0) ng.coopDiscount = 0;
+  // A4 一鼓作氣：消費「下一張行動牌免行動點」
+  if (card.type === "action" && g.freeNextAction) ng.freeNextAction = false;
   if (card.costRes) {
     for (const [r, v] of Object.entries(card.costRes)) {
       ng.res[r as Resource] -= v ?? 0;
@@ -1340,13 +1451,18 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
   ng.hand = ng.hand.filter((c) => c.key !== card.key);
   ng.discard = [...ng.discard, card];
   if (card.quiz) {
-    ng.wordLog = [...ng.wordLog, { vocabId: card.vocabId, correct }];
-    if (correct) {
-      ng.correct += 1;
-      ng.streak += 1;
+    if (freeQuiz) {
+      // 織能免答：視同答對全額，但不記入答題統計、不動連擊/織能（沒有實際作答）
+      ng.log = pushLog(ng.log, `▶｜織能免答：這張牌不必答題，直接以全額結算。`, "good");
     } else {
-      ng.wrong += 1;
-      ng.streak = 0;
+      ng.wordLog = [...ng.wordLog, { vocabId: card.vocabId, correct }];
+      if (correct) {
+        ng.correct += 1;
+        gainCorrect(ng); // ORDER-071：streak/weave/A1 折扣統一入口
+      } else {
+        ng.wrong += 1;
+        ng.streak = 0;
+      }
     }
   }
   // ORDER-079（連擊一致化）：不需答題的卡（整理物資）不再無聲重置連擊——
@@ -1467,6 +1583,37 @@ function playCard(g: JGame, card: JCard, correct: boolean): JGame {
       }
       break;
     }
+    // ───── ORDER-071（模式 A v3）：進階技法卡效果 ─────
+    case "chainWeave": { // A1 接續織線
+      ng.chainActive = true; // 本日內：之後每答對一題 weaveChain += 1（見 gainCorrect）
+      if (correct) ng.weaveChain += 1; // 打出這張若答對，立即先給 1 折
+      ng.log = pushLog(ng.log, `${tag}｜接續織線：織線接上了，本日之後每答對一題，手牌行動點再 -1。`, correct ? "good" : "info");
+      break;
+    }
+    case "ancestorPath": { // A2 祖先的路（門檻已在 canPlay 擋，這裡只結算）
+      const amt = correct ? 3 : wrongAmt(3);
+      if (node && (node.type === "obstacle" || node.type === "bridge" || node.type === "hazard") && !node.cleared) {
+        node.obstacle = Math.max(0, node.obstacle - amt);
+        if (node.obstacle === 0) node.cleared = true;
+        ng.log = pushLog(ng.log, `${tag}｜祖先的路：循著祖先走過的路開道，阻礙 -${amt}（剩 ${node.obstacle}）。`, correct ? "good" : "info");
+      } else {
+        ng.log = pushLog(ng.log, `${tag}｜祖先的路：此處無阻礙可開。`, "bad");
+      }
+      break;
+    }
+    case "stockFood": { // A3 囤糧遠行（quiz:false，不進答對入口）
+      ng.res.food += 2;
+      ng.campFoodDiscount += 1; // 見 camp() 紮營糧耗結算
+      ng.log = pushLog(ng.log, `▶｜囤糧遠行：糧食 +2（${ng.res.food}），行程打點好，之後紮營更省糧。`, "good");
+      break;
+    }
+    case "rallyPush": { // A4 一鼓作氣
+      const amt = correct ? 3 : 2; // 壓力 -2，答對再 -1
+      ng.pressure = Math.max(0, ng.pressure - amt);
+      ng.freeNextAction = true; // 下一張 action 牌免行動點（apCost 已處理）
+      ng.log = pushLog(ng.log, `${tag}｜一鼓作氣：穩住隊伍，壓力 -${amt}，下一步一鼓作氣（免行動點）。`, correct ? "good" : "info");
+      break;
+    }
   }
 
   return settle(applyStreakBonus(ng));
@@ -1479,7 +1626,9 @@ function camp(g: JGame): JGame {
   const ng: JGame = { ...g, res: { ...g.res }, nodes: g.nodes.map((n) => ({ ...n })) };
 
   // 消耗糧食：壓力分級（v2）——緊張／危急時消耗加倍，逼玩家加快腳步
-  const foodCost = pressureTier(g) === "calm" ? 1 : 2;
+  // ORDER-071（A3 囤糧遠行）：本關剩餘每次紮營糧耗 -campFoodDiscount（下限 0）
+  const baseFoodCost = pressureTier(g) === "calm" ? 1 : 2;
+  const foodCost = Math.max(0, baseFoodCost - g.campFoodDiscount);
   ng.res.food -= foodCost;
   if (ng.res.food < 0) {
     ng.res.food = 0;
@@ -1523,6 +1672,11 @@ function camp(g: JGame): JGame {
   ng.day += 1;
   ng.ap = ng.maxAp;
   ng.coopDiscount = 0;
+  // ORDER-071（模式 A v3）：日末重置「本日」織能狀態（weave 與 campFoodDiscount 跨日保留）
+  ng.weaveChain = 0;
+  ng.chainActive = false;
+  ng.freeNextAction = false;
+  ng.ancestorUnlocked = false;
 
   // 翻新事件（事件池依關卡設定：第二關加入風雨主題事件）
   const pool = levelCfg(ng).events;
@@ -2240,8 +2394,9 @@ export default function JourneyPage() {
   }
 
   function tryPlay(card: JCard) {
-    if (!canAfford(game, card)) return;
-    if (card.quiz) {
+    if (!canPlay(game, card)) return;
+    // ORDER-071：織能 2 點免答題——需答題的卡若已預付 freeQuizNext，跳過答題彈窗直接全額結算
+    if (card.quiz && !game.freeQuizNext) {
       setRevealed(null);
       setPending(card);
     } else {
@@ -2777,6 +2932,56 @@ export default function JourneyPage() {
           </div>
         </section>
 
+        {/* ORDER-071（模式 A v3）：織能面板——六格燈 + 三顆消費按鈕（UI 最小版，art 之後精修）。 */}
+        {game.status === "playing" && (
+          <section className="jny-panel jny-rise rounded-xl px-3 py-2 mb-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[11px]">
+            <span className="inline-flex items-center gap-1 font-semibold text-sky-200">
+              織能
+              <span className="tracking-widest text-sky-300" aria-label={`織能 ${game.weave} / ${WEAVE_MAX}`}>
+                {"●".repeat(game.weave)}
+                {"○".repeat(Math.max(0, WEAVE_MAX - game.weave))}
+              </span>
+              <span className="text-sky-200/70">{game.weave}/{WEAVE_MAX}</span>
+            </span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                disabled={game.weave < 2}
+                onClick={() => { sfxCorrect(); setGame((g) => spendWeaveFree(g)); }}
+                title="下一張出牌免答題，直接全額結算"
+                className="rounded-md border border-sky-500/40 px-2 py-1 text-sky-100 disabled:opacity-35 enabled:hover:bg-sky-500/15"
+              >
+                免題全額 · 2
+              </button>
+              <button
+                type="button"
+                disabled={game.weave < 3}
+                onClick={() => { sfxCorrect(); setGame((g) => spendWeavePush(g)); }}
+                title="當前節點阻礙 -1（不需出牌、不需答題）"
+                className="rounded-md border border-sky-500/40 px-2 py-1 text-sky-100 disabled:opacity-35 enabled:hover:bg-sky-500/15"
+              >
+                織能推進 · 3
+              </button>
+              <button
+                type="button"
+                disabled={game.weave < 5}
+                onClick={() => { sfxCorrect(); setGame((g) => spendWeaveUnlock(g)); }}
+                title="本日暫解「祖先的路」連對 ≥2 門檻"
+                className="rounded-md border border-sky-500/40 px-2 py-1 text-sky-100 disabled:opacity-35 enabled:hover:bg-sky-500/15"
+              >
+                開啟祖徑 · 5
+              </button>
+            </div>
+            <div className="ml-auto flex flex-wrap items-center gap-2 text-[10px] text-sky-200/70">
+              {game.chainActive && <span title="接續織線已啟動">織線 -{game.weaveChain}</span>}
+              {game.freeNextAction && <span title="下一張行動牌免行動點">一鼓作氣</span>}
+              {game.campFoodDiscount > 0 && <span title="紮營糧耗折抵">糧耗 -{game.campFoodDiscount}</span>}
+              {game.freeQuizNext && <span title="下一張牌免答題">免題預備</span>}
+              {game.ancestorUnlocked && <span title="本日祖徑已開">祖徑開</span>}
+            </div>
+          </section>
+        )}
+
         {/* 頂部數值列（v2：壓力分級變色，危急時脈動警示） */}
         <section className="jny-hud-board jny-rise grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
           <StatBar
@@ -2946,7 +3151,7 @@ export default function JourneyPage() {
           <img src={FRAME_DIVIDER} alt="" className="mb-3 h-2 w-40 object-contain object-left opacity-80" />
           <div className="jny-hand-scroll flex flex-wrap gap-3 pt-2">
             {game.hand.map((c) => {
-              const playable = canAfford(game, c);
+              const playable = canPlay(game, c);
               const eff = apCost(game, c);
               const art = CARD_ART[c.effect];
               return (
