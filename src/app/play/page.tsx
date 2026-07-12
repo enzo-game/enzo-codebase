@@ -1057,6 +1057,9 @@ export default function PlayPage() {
                       ★
                     </span>
                   )}
+                  {ready && selected !== e.key && !spellTarget && (
+                    <span className="hs-attack-badge" aria-hidden>可攻擊</span>
+                  )}
                   <StatGem kind="atk" value={e.attack} size="sm" className="hs-gem-atk" />
                   <StatGem
                     kind="hp"
@@ -1442,7 +1445,7 @@ export default function PlayPage() {
                 <span>
                   <span className="font-semibold text-amber-100">隨從與攻擊</span>：隨從有攻擊／生命。
                   <span className="text-rose-300 font-semibold">當回合剛打出的隨從不能立刻攻擊，要等下一回合</span>（除非牌上有「衝鋒」）。
-                  輪到你時，先點自己已可攻擊的隨從（會發光），再點敵方隨從或英雄發動攻擊。
+                  輪到你時，先點自己已可攻擊的隨從（<span className="text-emerald-300 font-semibold">會發綠光並標示「可攻擊」</span>），再點敵方隨從或英雄發動攻擊。
                 </span>
               </li>
               <li className="flex gap-3">

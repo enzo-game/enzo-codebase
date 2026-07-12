@@ -790,6 +790,27 @@ body {
 .hs-can-attack {
   cursor: pointer;
 }
+/* 可攻擊的隨從：除了綠色呼吸暈，再明白標一個「可攻擊」小標籤 */
+.hs-attack-badge {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 12;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.96);
+  color: #04120c;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 15px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.55),
+    0 0 8px rgba(52, 211, 153, 0.6);
+}
 /* 攻擊指示箭頭：選定攻擊者 → 從隨從指向滑鼠的發光箭頭 */
 .attack-arrow {
   position: fixed;
