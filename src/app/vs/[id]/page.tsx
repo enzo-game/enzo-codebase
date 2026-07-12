@@ -14,6 +14,9 @@ import { spellTargetKind } from "@/engine/game";
 import type { SeatView, ClientTarget } from "@/engine/match";
 import { ensureAnonSession, subscribeMatch, fetchView, sendAction } from "@/lib/vs";
 import { supabaseConfigured } from "@/lib/supabase";
+import AmbientAudio from "@/components/AmbientAudio";
+import BattleMusic from "@/components/BattleMusic";
+import { sfxPlayCard, sfxCorrect, sfxWrong, sfxSummon, sfxAttack, sfxArrive, sfxLose } from "@/lib/sfx";
 import {
   GemDefs,
   HandCard,
@@ -41,6 +44,7 @@ export default function BattlePage() {
   const [connected, setConnected] = useState(true);
   const [nowTs, setNowTs] = useState(() => Date.now());
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const viewRef = useRef<SeatView | null>(null); // 最新視角（給 act 內做前後 diff 觸發音效）
 
   const refresh = useCallback(async () => {
     try {
@@ -49,6 +53,10 @@ export default function BattlePage() {
       setErr(msg(e));
     }
   }, [matchId]);
+
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
 
   useEffect(() => {
     if (!supabaseConfigured) return;
@@ -91,8 +99,23 @@ export default function BattlePage() {
       if (busy) return;
       setBusy(true);
       setErr("");
+      const prev = viewRef.current;
       try {
-        setView(await sendAction(matchId, action));
+        const next = await sendAction(matchId, action);
+        // 依動作與前後 diff 播音效
+        if (action.type === "attack") {
+          sfxAttack();
+        } else if (action.type === "answer" && prev) {
+          if (next.you.correct > prev.you.correct) sfxCorrect();
+          else if (next.you.wrong > prev.you.wrong) sfxWrong();
+          if (next.you.board.length > prev.you.board.length) sfxSummon();
+          else sfxPlayCard();
+        }
+        if (next.phase === "over" && prev?.phase !== "over") {
+          if (next.outcome === "win") sfxArrive();
+          else sfxLose();
+        }
+        setView(next);
         setSelecting(null);
       } catch (e) {
         setErr(msg(e));
@@ -157,6 +180,8 @@ export default function BattlePage() {
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col">
+      <AmbientAudio />
+      <BattleMusic />
       <GemDefs />
       {/* 頂部列 */}
       <div className="px-4 py-2.5 flex items-center justify-between border-b border-neutral-800/80">
@@ -279,9 +304,9 @@ export default function BattlePage() {
         <button
           onClick={() => act({ type: "endTurn" })}
           disabled={!myTurn || Boolean(quiz)}
-          className="absolute bottom-3 right-4 z-30 rounded-xl bg-emerald-600 enabled:hover:bg-emerald-500 px-5 py-2.5 text-sm font-semibold shadow-lg transition disabled:opacity-40"
+          className="absolute top-1/2 right-3 -translate-y-1/2 z-30 rounded-xl bg-emerald-600 enabled:hover:bg-emerald-500 px-4 py-3 text-sm font-semibold shadow-lg transition disabled:opacity-40"
         >
-          結束回合
+          結束<br />回合
         </button>
       </div>
 
