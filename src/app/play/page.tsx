@@ -24,6 +24,7 @@ import {
   attackTargets,
   hasValidTarget,
   makeQuiz,
+  makeSentenceQuiz,
   mulligan,
   newGame,
   pushLog,
@@ -192,8 +193,7 @@ function IconCross({ className = "w-4 h-4" }: IconProps) {
 // BOARD_BG / CARDBACK / HERO_ART 已移至 src/data/cardArt.ts（與 /vs 共用），見檔頭 import。
 
 
-function playVocabAudio(id: string) {
-  const url = audioUrl(id);
+function playAudioUrl(url: string | null | undefined) {
   if (!url) return;
   try {
     const a = new Audio(url);
@@ -444,7 +444,7 @@ export default function PlayPage() {
     }
     setSelected(null);
     setRevealed(null);
-    setQuiz(makeQuiz(card));
+    setQuiz(difficulty === "hard" ? makeSentenceQuiz(card) : makeQuiz(card));
   }
 
   function answer(idx: number) {
@@ -454,8 +454,9 @@ export default function PlayPage() {
     else sfxWrong();
     setRevealed(idx);
     // 揭曉後自動播一次正解發音（視聽同步），結算改由玩家自己按「繼續 ▶」
-    const vocabId = quiz.card.vocabId;
-    setTimeout(() => playVocabAudio(vocabId), 400);
+    // 句子題（quiz.audioUrl）沿用 /sentences 的例句音檔；單字題沿用卡片 vocabId 查詞庫發音。
+    const audio = quiz.audioUrl ?? audioUrl(quiz.card.vocabId);
+    setTimeout(() => playAudioUrl(audio), 400);
   }
 
   /** 「繼續 ▶」：關閉答題視窗並結算出牌（需要目標的法術先進入選目標模式） */
@@ -1451,7 +1452,7 @@ export default function PlayPage() {
             <div className="mb-2 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-amber-200/70">
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden />
-                出牌考驗 · 答對觸發加成
+                出牌考驗 · 答對觸發加成{quiz.kind === "sentence" ? "（困難 · 句子題）" : ""}
               </div>
               {revealed === null && (
                 <button

@@ -2,6 +2,7 @@
 // P0：從 src/app/play/page.tsx 抽出，供前端 UI 與（未來）Supabase Edge Function 共用。
 import { CARDS, Card, TOKEN_SAPLING, Theme } from "@/data/cards";
 import { vocab, distractors } from "@/data/truku";
+import { randomSentence, sentenceDistractors } from "@/data/truku-sentences";
 import {
   Anchor,
   CombatEvent,
@@ -762,6 +763,23 @@ export function makeQuiz(card: Card): QuizState {
     answerIdx: options.indexOf(v.word),
     word: v.word,
     chinese: v.chinese,
+    kind: "word",
+  };
+}
+
+/** 困難模式：整句四選一（非拆詞卡重組，戰鬥節奏不被拖慢）。詞庫來源同 /sentences（2024 句真實例句）。 */
+export function makeSentenceQuiz(card: Card): QuizState {
+  const s = randomSentence();
+  const options = shuffle([s.truku, ...sentenceDistractors(s, 3).map((d) => d.truku)]);
+  return {
+    card,
+    prompt: `「${s.chinese}」的太魯閣語是？`,
+    options,
+    answerIdx: options.indexOf(s.truku),
+    word: s.truku,
+    chinese: s.chinese,
+    kind: "sentence",
+    audioUrl: s.audioUrl,
   };
 }
 

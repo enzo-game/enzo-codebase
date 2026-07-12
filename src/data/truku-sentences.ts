@@ -68,3 +68,32 @@ export function pickSentences(n: number, level: number | null, excludeIds: Set<n
   const base = pool.length >= n ? pool : SENTENCES.filter((s) => level == null || s.level === level);
   return shuffle(base).slice(0, n);
 }
+
+/** 隨機取一句（供戰鬥「困難」模式出句子題用）。 */
+export function randomSentence(): SentenceEntry {
+  return SENTENCES[Math.floor(Math.random() * SENTENCES.length)];
+}
+
+/** 取 n 句干擾句（同難度優先，避免用句長就能猜答案；同難度不夠才放寬到全部）。
+ *  依「族語句文字」去重（不只 id）——語料庫裡不同 id 偶爾共用同一句族語例句，
+ *  文字相同的話就算選到也跟正解長得一模一樣，選項會等於作弊／無法作答。 */
+export function sentenceDistractors(correct: SentenceEntry, n: number): SentenceEntry[] {
+  const seenTruku = new Set([correct.truku]);
+  function takeUnique(candidates: SentenceEntry[], need: number): SentenceEntry[] {
+    const picked: SentenceEntry[] = [];
+    for (const s of shuffle(candidates)) {
+      if (picked.length >= need) break;
+      if (seenTruku.has(s.truku)) continue;
+      seenTruku.add(s.truku);
+      picked.push(s);
+    }
+    return picked;
+  }
+  const sameLevel = SENTENCES.filter((s) => s.id !== correct.id && s.level === correct.level);
+  const picked = takeUnique(sameLevel, n);
+  if (picked.length < n) {
+    const rest = SENTENCES.filter((s) => s.id !== correct.id);
+    picked.push(...takeUnique(rest, n - picked.length));
+  }
+  return picked;
+}
