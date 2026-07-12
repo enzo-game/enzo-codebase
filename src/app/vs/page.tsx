@@ -283,8 +283,13 @@ export default function VsPage() {
         )}
 
         <div className="mt-10 flex items-center justify-center gap-5">
-          <Link href="/vs/leaderboard" className="text-sm text-amber-300/80 hover:text-amber-200 underline">
-            🏆 天梯
+          <Link href="/vs/leaderboard" className="inline-flex items-center gap-1.5 text-sm text-amber-300/80 hover:text-amber-200 underline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinejoin="round" className="h-[1.15em] w-[1.15em]" aria-hidden>
+              <path d="M2 20h20" strokeLinecap="round" />
+              <path d="M4 20 L10 7 L13 12 L16.5 5 L21 20 Z" />
+              <path d="M16.5 5 V1.5 M16.5 2 L19 3 L16.5 4" strokeLinecap="round" />
+            </svg>
+            天梯
           </Link>
           <Link href="/play" className="text-sm text-neutral-500 hover:text-neutral-300 underline">
             ← 單機對 AI

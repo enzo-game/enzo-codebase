@@ -139,6 +139,28 @@ function FeatureCard({
   );
 }
 
+// 入口列小圖示（ORDER-039：全站禁 emoji，改用 inline SVG 線稿）
+function GlobeIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className={className} aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" strokeLinecap="round" />
+      <path d="M12 3c2.8 2.6 2.8 15.4 0 18M12 3c-2.8 2.6-2.8 15.4 0 18" />
+    </svg>
+  );
+}
+
+// 山巔登頂旗（呼應 /vs/leaderboard 的天梯主題）
+function SummitIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M2 20h20" strokeLinecap="round" />
+      <path d="M4 20 L10 7 L13 12 L16.5 5 L21 20 Z" />
+      <path d="M16.5 5 V1.5 M16.5 2 L19 3 L16.5 4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function Home() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
@@ -214,8 +236,14 @@ export default function Home() {
           className="anim-logo mt-5 flex items-center justify-between gap-4 rounded-2xl border border-fuchsia-500/40 bg-gradient-to-r from-fuchsia-950/30 via-slate-900/40 to-sky-950/30 px-6 py-4 transition hover:border-fuchsia-400/70 hover:from-fuchsia-900/40"
         >
           <div className="min-w-0">
-            <div className="text-base font-semibold text-fuchsia-100/90">🌐 線上對戰 · 跟真人連線</div>
-            <div className="mt-0.5 text-xs text-slate-400">好友房房號連線 · 回合計時 · 斷線重連 · 🏆 天梯排行</div>
+            <div className="flex items-center gap-2 text-base font-semibold text-fuchsia-100/90">
+              <GlobeIcon className="h-[1.15em] w-[1.15em] shrink-0" />
+              <span>線上對戰 · 跟真人連線</span>
+            </div>
+            <div className="mt-0.5 text-xs text-slate-400">
+              好友房房號連線 · 回合計時 · 斷線重連 ·{" "}
+              <SummitIcon className="inline-block h-[1.15em] w-[1.15em] align-[-0.2em] text-amber-300/90" /> 天梯排行
+            </div>
           </div>
           <span className="shrink-0 rounded-full border border-fuchsia-400/50 px-4 py-1.5 text-sm text-fuchsia-100/90">
             連線對戰 →
