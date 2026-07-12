@@ -222,6 +222,26 @@ export default function Home() {
           </span>
         </Link>
 
+        {/* 卡牌圖鑑入口 */}
+        <Link
+          href="/collection"
+          className="anim-logo mt-3 flex items-center justify-between gap-4 rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-950/30 via-slate-900/40 to-emerald-950/30 px-6 py-4 transition hover:border-amber-400/70 hover:from-amber-900/40"
+        >
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-base font-semibold text-amber-100/90">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinejoin="round" className="h-[1.15em] w-[1.15em] shrink-0" aria-hidden>
+                <rect x="8.5" y="3" width="11" height="15" rx="2" />
+                <path d="M5 7v11a3 3 0 0 0 3 3h8" strokeLinecap="round" />
+              </svg>
+              <span>卡牌圖鑑 · 瀏覽全部卡牌</span>
+            </div>
+            <div className="mt-0.5 text-xs text-slate-400">依費用曲線排列 · 費用／類型／稀有度／主題／關鍵字篩選 · 每張綁定族語詞與學習小註</div>
+          </div>
+          <span className="shrink-0 rounded-full border border-amber-400/50 px-4 py-1.5 text-sm text-amber-100/90">
+            翻閱卡冊 →
+          </span>
+        </Link>
+
         {/* 三特色 */}
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           <FeatureCard
