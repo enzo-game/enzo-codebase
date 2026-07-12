@@ -2,7 +2,7 @@
 // 更新狀態＝改這個檔。頁面 src/app/status/page.tsx 依此渲染。
 // 對應純文字版：enzo-team-principal/STATUS.md
 
-export const LAST_UPDATED = "2026-07-11";
+export const LAST_UPDATED = "2026-07-12";
 export const PROD_URL = "https://enzo-codebase.vercel.app";
 
 export type Stage = "done" | "wip" | "blocked" | "na";
@@ -114,7 +114,15 @@ export type AutoOrderRow = { order: string; name: string; status: Stage; blocker
 
 // AUTO-ORDERS-START （由 scripts/gen-fleet-status.mjs 自動生成，勿手改此區塊）
 export const autoOrders: AutoOrderRow[] = [
-  { order: "ORDER-071", name: "模式 A 核心循環 v3：卡組成長 + 織能引擎（解「玩法太簡單」）", status: "wip", blocker: "進行中", next: "Themis/Hermes/Calypso/Mnemosyne" },
+  { order: "ORDER-080", name: "wire first-play coach marks + differentiated daily events", status: "done", blocker: "已上線｜2026-07-12｜PR#58", next: "—" },
+  { order: "ORDER-079", name: "fun overhaul — RockClear minigame, real AP economy, no printed answers", status: "done", blocker: "已上線｜2026-07-11｜PR#57", next: "—" },
+  { order: "ORDER-078", name: "compact mana + attack-aim arrow", status: "done", blocker: "已上線｜2026-07-11", next: "—" },
+  { order: "ORDER-076", name: "themed fallback for cards without art", status: "done", blocker: "已上線｜2026-07-11", next: "—" },
+  { order: "ORDER-075", name: "align battlefield layout to reference mockup", status: "done", blocker: "已上線｜2026-07-11", next: "—" },
+  { order: "ORDER-074", name: "remove stray hand-rail scrollbar", status: "done", blocker: "已上線｜2026-07-11", next: "—" },
+  { order: "ORDER-073", name: "stop summoned minion overlapping the hand", status: "done", blocker: "已上線｜2026-07-11", next: "—" },
+  { order: "ORDER-072", name: "subtler hand hover + low-contrast theme placeholder", status: "done", blocker: "已上線｜2026-07-11", next: "—" },
+  { order: "ORDER-071", name: "模式 A 核心循環 v3：卡組成長 + 織能引擎（解「玩法太簡單」）", status: "done", blocker: "已上線｜2026-07-11", next: "—" },
   { order: "ORDER-070", name: "inline quiz, hand hover-zoom, mobile fix, handoff", status: "done", blocker: "已上線｜2026-07-11｜PR#51", next: "—" },
   { order: "ORDER-069", name: "multiple AI opponents with themed decks", status: "done", blocker: "已上線｜2026-07-11", next: "—" },
   { order: "ORDER-068", name: "crisper card-play 咔嗒 snap sound", status: "done", blocker: "已上線｜2026-07-11", next: "—" },
@@ -123,7 +131,7 @@ export const autoOrders: AutoOrderRow[] = [
   { order: "ORDER-065", name: "battle music + combat juice", status: "done", blocker: "已上線｜2026-07-11｜PR#50", next: "—" },
   { order: "ORDER-064", name: "AI difficulty tiers easy/normal/hard", status: "done", blocker: "已上線｜2026-07-11｜PR#49", next: "—" },
   { order: "ORDER-063", name: "+6 low-risk cards, no culture-review needed", status: "done", blocker: "已上線｜2026-07-11｜PR#48", next: "—" },
-  { order: "ORDER-060", name: "online friend-room matchmaking scaffold", status: "wip", blocker: "P0/P1 已上線；P2 線上對戰待接 Supabase", next: "Hermes" },
+  { order: "ORDER-060", name: "線上對戰 entry banner on the landing page", status: "wip", blocker: "P0/P1 已上線；P2 線上對戰待接 Supabase", next: "Hermes" },
   { order: "ORDER-059", name: "add 2 low-risk legend-safe cards 退水河床 / 樹根護徑", status: "done", blocker: "已上線｜2026-07-10", next: "—" },
   { order: "ORDER-058", name: "Hearthstone-style board + 8 legend cards + learning notes", status: "done", blocker: "已上線｜2026-07-10", next: "—" },
   { order: "ORDER-057", name: "branching narrative + WordMatch per-level quiz type", status: "done", blocker: "已上線｜2026-07-10", next: "—" },
