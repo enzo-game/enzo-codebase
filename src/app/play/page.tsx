@@ -721,6 +721,15 @@ export default function PlayPage() {
             </span>
           </div>
 
+          {/* 敵方牌組：縮小成小徽章，放在法力條下方的空白區 */}
+          <div className="hs-deck-badge hs-deck-badge-enemy" aria-label={`敵方牌庫剩 ${game.eDeck.length} 張`}>
+            <span className="hs-deck-badge-icon" aria-hidden>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={CARDBACK} alt="" />
+            </span>
+            <span>{game.eDeck.length}</span>
+          </div>
+
           {/* 系統（敵方）英雄 */}
           <button
             ref={registerEl("heroEnemy")}
