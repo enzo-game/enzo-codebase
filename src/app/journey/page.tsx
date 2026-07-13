@@ -3340,9 +3340,11 @@ export default function JourneyPage() {
                       <span className="hs-art-frame rounded-lg" aria-hidden />
                     </div>
                   )}
-                  <div className="hs-name-banner -mx-2 flex items-center justify-between px-2 py-0.5">
-                    <span className={`${notoSerifTC.className} text-sm font-bold`}>{c.name}</span>
-                    <span className="text-[9px] tracking-[0.15em] text-amber-200/70">{cardTypeLabel(c.type)}</span>
+                  <div className="hs-name-banner -mx-2 flex items-center justify-between gap-1 px-2 py-0.5">
+                    {/* 卡名固定單行＋過長截斷（min-w-0 flex-1 truncate）：牌名長短不一時不會換成兩行，
+                        整排卡片高度才不會參差；完整名稱留在 title 供 hover/長按查看。類型標籤 shrink-0 不被擠掉。 */}
+                    <span title={c.name} className={`${notoSerifTC.className} min-w-0 flex-1 truncate text-sm font-bold`}>{c.name}</span>
+                    <span className="shrink-0 text-[9px] tracking-[0.15em] text-amber-200/70">{cardTypeLabel(c.type)}</span>
                   </div>
                   {/* ORDER-079（殺橡皮圖章）：需答題的卡不再把族語詞印在牌面上——原本牌面寫著
                       btunux、打出後題目問「石頭」，答案就印在牌上，答題淪為橡皮圖章。
@@ -3856,9 +3858,11 @@ export default function JourneyPage() {
                     <IconTarget className="w-6 h-6 text-amber-300/50" />
                     <span className="hs-art-frame rounded-lg" aria-hidden />
                   </div>
-                  <div className="hs-name-banner -mx-2 flex items-center justify-between px-2 py-0.5">
-                    <span className={`${notoSerifTC.className} text-sm font-bold`}>{c.name}</span>
-                    <span className="text-[9px] tracking-[0.15em] text-amber-200/70">{cardTypeLabel(c.type)}</span>
+                  <div className="hs-name-banner -mx-2 flex items-center justify-between gap-1 px-2 py-0.5">
+                    {/* 卡名固定單行＋過長截斷（min-w-0 flex-1 truncate）：牌名長短不一時不會換成兩行，
+                        整排卡片高度才不會參差；完整名稱留在 title 供 hover/長按查看。類型標籤 shrink-0 不被擠掉。 */}
+                    <span title={c.name} className={`${notoSerifTC.className} min-w-0 flex-1 truncate text-sm font-bold`}>{c.name}</span>
+                    <span className="shrink-0 text-[9px] tracking-[0.15em] text-amber-200/70">{cardTypeLabel(c.type)}</span>
                   </div>
                   <div className="text-[10px] text-amber-100/60 mt-1.5 leading-snug">{c.desc}</div>
                   {c.quiz && <div className="text-[10px] text-sky-300/70 mt-1">★ 需答族語題</div>}
