@@ -148,8 +148,12 @@ export function CardInspectModal({ card, playable, blockReason, onClose, onPlay 
 }
 
 // ───────────────────────── 戰場隨從 ─────────────────────────
-export function MinionToken({ minion, targetable, ready, selected, onClick }: {
-  minion: Minion; targetable?: boolean; ready?: boolean; selected?: boolean; onClick?: () => void;
+/** 出牌/攻擊造成的即時反饋：浮動數字（傷害/回復）。由呼叫端依「前後 view diff」算出，非 undefined 時渲染一次。 */
+export type FloatFx = { text: string; heal?: boolean };
+
+export function MinionToken({ minion, targetable, ready, selected, entering, hit, float, onClick }: {
+  minion: Minion; targetable?: boolean; ready?: boolean; selected?: boolean;
+  entering?: boolean; hit?: boolean; float?: FloatFx; onClick?: () => void;
 }) {
   const art = CARD_ART[minion.card.id];
   const kw = [minion.taunt ? "嘲諷" : "", minion.stealth ? "潛行" : ""].filter(Boolean).join("·");
@@ -158,12 +162,14 @@ export function MinionToken({ minion, targetable, ready, selected, onClick }: {
       onClick={onClick}
       disabled={!targetable && !ready}
       title={`${minion.card.nameZh}${kw ? `（${kw}）` : ""}`}
-      className={`hs-token hs-token-enter w-[72px] md:w-[84px] aspect-[4/5] border-2 ${RARITY_COLOR[minion.card.rarity]}
+      className={`hs-token w-[72px] md:w-[84px] aspect-[4/5] border-2 ${RARITY_COLOR[minion.card.rarity]}
         ${minion.taunt ? "hs-token-taunt" : ""}
         ${minion.stealth ? "opacity-70 ring-1 ring-slate-400" : ""}
         ${targetable ? "hs-attack-target cursor-crosshair" : ""}
         ${ready ? "ring-2 ring-emerald-400/70 cursor-pointer" : ""}
-        ${selected ? "ring-2 ring-emerald-300 -translate-y-1" : ""}`}
+        ${selected ? "ring-2 ring-emerald-300 -translate-y-1" : ""}
+        ${entering ? "hs-token-enter" : ""}
+        ${hit ? "hs-token-hit hs-impact" : ""}`}
     >
       <span className="absolute inset-0 rounded-[8px] overflow-hidden">
         {art ? (
@@ -179,20 +185,21 @@ export function MinionToken({ minion, targetable, ready, selected, onClick }: {
       <StatGem kind="hp" value={minion.health} size="sm" tone={minion.health < minion.maxHealth ? "text-rose-200" : "text-white"} className="hs-gem-hp" />
       {minion.taunt ? <span className="absolute -top-2 inset-x-0 text-center text-[9px] text-amber-300">嘲諷</span> : null}
       {minion.stealth ? <span className="absolute top-0.5 right-0.5 text-[9px] text-sky-300">潛</span> : null}
+      {float ? <span className={`dmg-float ${float.heal ? "dmg-float-heal" : ""}`} aria-hidden>{float.text}</span> : null}
     </button>
   );
 }
 
 // ───────────────────────── 英雄肖像 ─────────────────────────
-export function HeroPortrait({ variant, name, hp, maxHp, sub, targetable, thinking, onClick }: {
+export function HeroPortrait({ variant, name, hp, maxHp, sub, targetable, thinking, hit, float, onClick }: {
   variant: "opp" | "you"; name: string; hp: number; maxHp: number; sub: string;
-  targetable?: boolean; thinking?: boolean; onClick?: () => void;
+  targetable?: boolean; thinking?: boolean; hit?: boolean; float?: FloatFx; onClick?: () => void;
 }) {
   return (
     <button
       onClick={targetable ? onClick : undefined}
       disabled={!targetable}
-      className={`hs-portrait hs-portrait-${variant === "opp" ? "enemy" : "player"} relative transition ${targetable ? "hs-hero-targetable hs-attack-target cursor-crosshair" : ""}`}
+      className={`hs-portrait hs-portrait-${variant === "opp" ? "enemy" : "player"} relative transition ${targetable ? "hs-hero-targetable hs-attack-target cursor-crosshair" : ""} ${hit ? "hs-hero-shake hs-impact" : ""}`}
     >
       <span className="hs-portrait-art">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -204,6 +211,7 @@ export function HeroPortrait({ variant, name, hp, maxHp, sub, targetable, thinki
         <span className="hs-hp-label">生命 HP</span>
         <span className="hs-hp-value">{hp}/{maxHp}</span>
       </span>
+      {float ? <span className={`dmg-float ${float.heal ? "dmg-float-heal" : ""}`} aria-hidden>{float.text}</span> : null}
     </button>
   );
 }
