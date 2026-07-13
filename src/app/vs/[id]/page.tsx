@@ -208,7 +208,11 @@ export default function BattlePage() {
 
   function onMyMinionClick(m: Minion) {
     if (!myTurn || quiz) return;
-    if (!m.canAttack || m.attack <= 0) return;
+    if (!m.canAttack || m.attack <= 0) {
+      // 點自己的隨從卻不能選成攻擊者（可能誤觸）：明講原因，不要悄悄沒反應——玩家會以為畫面壞了。
+      setErr(attackBlockedReason(m));
+      return;
+    }
     setSelecting((s) =>
       s && s.mode === "attack" && s.attackerKey === m.key ? null : { mode: "attack", attackerKey: m.key },
     );
@@ -484,6 +488,15 @@ function computeFx(prev: SeatView | null, next: SeatView): FxDiff {
   diffHero("opp", prev.opp.hp, next.opp.hp);
 
   return { enterKeys, hitKeys, floats };
+}
+
+/** 點了自己場上不能選成攻擊者的隨從（誤觸）時，講清楚為什麼——不要悄悄沒反應。
+ *  attacksUsed>0＝這回合已經打過；否則是剛登場、還沒解除召喚失調（沒有衝鋒/突襲）。 */
+function attackBlockedReason(m: Minion): string {
+  const name = m.card.nameZh;
+  if (m.attack <= 0) return `「${name}」攻擊力 0，這隻沒辦法出擊。`;
+  if ((m.attacksUsed ?? 0) > 0) return `「${name}」這回合已經攻擊過了，不能再選它出擊。`;
+  return `「${name}」剛登場，還在適應（沒有衝鋒/突襲），這回合還不能出擊。`;
 }
 
 // ───────────────────────── 目標高亮 ─────────────────────────

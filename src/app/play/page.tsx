@@ -193,6 +193,15 @@ function IconCross({ className = "w-4 h-4" }: IconProps) {
 // BOARD_BG / CARDBACK / HERO_ART 已移至 src/data/cardArt.ts（與 /vs 共用），見檔頭 import。
 
 
+/** 點了自己場上不能選成攻擊者的隨從（誤觸）時，講清楚為什麼——不要悄悄沒反應。
+ *  attacksUsed>0＝這回合已經打過；否則是剛登場、還沒解除召喚失調（沒有衝鋒/突襲）。 */
+function attackBlockedReason(m: Minion): string {
+  const name = m.card.nameZh;
+  if (m.attack <= 0) return `「${name}」攻擊力 0，這隻沒辦法出擊。`;
+  if ((m.attacksUsed ?? 0) > 0) return `「${name}」這回合已經攻擊過了，不能再選它出擊。`;
+  return `「${name}」剛登場，還在適應（沒有衝鋒/突襲），這回合還不能出擊。`;
+}
+
 function playAudioUrl(url: string | null | undefined) {
   if (!url) return;
   try {
@@ -532,7 +541,12 @@ export default function PlayPage() {
       return;
     }
     const m = game.pBoard.find((x) => x.key === key);
-    if (!m || !m.canAttack || m.attack <= 0) return;
+    if (!m) return;
+    if (!m.canAttack || m.attack <= 0) {
+      // 點自己場上不能選成攻擊者的隨從（可能誤觸）：講清楚為什麼，不要悄悄沒反應。
+      setGame((g) => ({ ...g, log: pushLog(g.log, attackBlockedReason(m), "info") }));
+      return;
+    }
     setSelected((s) => (s === key ? null : key));
   }
 
