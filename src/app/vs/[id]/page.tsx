@@ -351,7 +351,9 @@ export default function BattlePage() {
           }}
         />
       )}
-      {quiz ? <QuizModal quiz={quiz} disabled={busy} onAnswer={(idx) => act({ type: "answer", optionIdx: idx })} /> : null}
+      {quiz ? (
+        <QuizModal quiz={quiz} disabled={busy} secondsLeft={secondsLeft} onAnswer={(idx) => act({ type: "answer", optionIdx: idx })} />
+      ) : null}
       {view.phase === "over" ? <OverOverlay win={view.outcome === "win"} onExit={() => router.push("/vs")} /> : null}
     </main>
   );
@@ -465,7 +467,19 @@ function TurnBadge({ view, secondsLeft }: { view: SeatView; secondsLeft: number 
   );
 }
 
-function QuizModal({ quiz, disabled, onAnswer }: { quiz: NonNullable<SeatView["quiz"]>; disabled: boolean; onAnswer: (i: number) => void }) {
+// 答題視窗是全螢幕遮罩，會蓋住頂部的回合倒數——但伺服器的逾時判定在背景照跑，
+// 玩家正在想答案時完全看不到剩多少秒，可能答到一半就被判逾時。倒數必須帶進來一起顯示。
+function QuizModal({
+  quiz,
+  disabled,
+  secondsLeft,
+  onAnswer,
+}: {
+  quiz: NonNullable<SeatView["quiz"]>;
+  disabled: boolean;
+  secondsLeft: number | null;
+  onAnswer: (i: number) => void;
+}) {
   const art = CARD_ART[quiz.cardId];
   return (
     <div className="fixed inset-0 bg-neutral-950/85 flex items-center justify-center z-50 px-6">
@@ -475,7 +489,17 @@ function QuizModal({ quiz, disabled, onAnswer }: { quiz: NonNullable<SeatView["q
             // eslint-disable-next-line @next/next/no-img-element
             <img src={art} alt="" className="w-12 h-12 rounded-lg object-cover border border-amber-500/40" />
           ) : null}
-          <p className="text-sm text-amber-200/80">出牌答題 · 答對觸發加成</p>
+          <p className="text-sm text-amber-200/80 flex-1">出牌答題 · 答對觸發加成</p>
+          {secondsLeft != null ? (
+            <span
+              className={`shrink-0 tabular-nums font-mono text-sm ${
+                secondsLeft <= 10 ? "text-rose-400 animate-pulse" : "text-neutral-400"
+              }`}
+              title="回合剩餘時間：答不完也會照樣逾時換手"
+            >
+              ⏳ {secondsLeft}s
+            </span>
+          ) : null}
         </div>
         <p className="text-lg font-semibold">{quiz.prompt}</p>
         <div className="grid grid-cols-1 gap-2">
