@@ -16,7 +16,7 @@ import { ensureAnonSession, subscribeMatch, fetchView, sendAction } from "@/lib/
 import { supabaseConfigured } from "@/lib/supabase";
 import AmbientAudio from "@/components/AmbientAudio";
 import BattleMusic from "@/components/BattleMusic";
-import { sfxPlayCard, sfxCorrect, sfxWrong, sfxSummon, sfxAttack, sfxArrive, sfxLose } from "@/lib/sfx";
+import { sfxPlayCard, sfxCorrect, sfxWrong, sfxSummon, sfxAttack, sfxHit, sfxArrive, sfxLose } from "@/lib/sfx";
 import {
   GemDefs,
   HandCard,
@@ -27,6 +27,7 @@ import {
   CardInspectModal,
   CARD_ART,
   BOARD_BG,
+  type FloatFx,
 } from "@/lib/cardVisual";
 
 const HERO_HP = 30;
@@ -45,20 +46,58 @@ export default function BattlePage() {
   const [inspect, setInspect] = useState<Card | null>(null);
   const [connected, setConnected] = useState(true);
   const [nowTs, setNowTs] = useState(() => Date.now());
+  const [fx, setFx] = useState<FxState>({ enter: EMPTY_SET, hit: EMPTY_SET, floats: EMPTY_FLOATS });
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const viewRef = useRef<SeatView | null>(null); // 最新視角（給 act 內做前後 diff 觸發音效）
+  const viewRef = useRef<SeatView | null>(null); // 最新視角（給 act/refresh 內做前後 diff 觸發音效/小動畫）
+  const busyRef = useRef(false); // act() 動作進行中時，refresh() 拉到的更新多半是同一動作的回音，跳過動畫避免重複播
+
+  // 依前後 view diff 出的小動畫（隨從登場、受擊震動＋閃光、浮動傷害/回復數字），過場後自動清掉。
+  const applyFx = useCallback((diff: FxDiff) => {
+    if (diff.enterKeys.length === 0 && diff.hitKeys.length === 0 && Object.keys(diff.floats).length === 0) return;
+    setFx((s) => ({
+      enter: new Set([...s.enter, ...diff.enterKeys]),
+      hit: new Set([...s.hit, ...diff.hitKeys]),
+      floats: { ...s.floats, ...diff.floats },
+    }));
+    const keys = [...new Set([...diff.enterKeys, ...diff.hitKeys, ...Object.keys(diff.floats)])];
+    setTimeout(() => {
+      setFx((s) => {
+        const enter = new Set(s.enter);
+        const hit = new Set(s.hit);
+        const floats = { ...s.floats };
+        for (const k of keys) {
+          enter.delete(k);
+          hit.delete(k);
+          delete floats[k];
+        }
+        return { enter, hit, floats };
+      });
+    }, 900);
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
-      setView(await fetchView(matchId));
+      const next = await fetchView(matchId);
+      // busy 時（自己的動作還在飛）跳過：act() 拿到回應後會做同一次 diff，這裡再做會重播一次。
+      if (!busyRef.current) {
+        const diff = computeFx(viewRef.current, next);
+        applyFx(diff);
+        if (diff.hitKeys.length > 0) sfxHit();
+        if (diff.enterKeys.length > 0) sfxSummon();
+      }
+      setView(next);
     } catch (e) {
       setErr(msg(e));
     }
-  }, [matchId]);
+  }, [matchId, applyFx]);
 
   useEffect(() => {
     viewRef.current = view;
   }, [view]);
+
+  useEffect(() => {
+    busyRef.current = busy;
+  }, [busy]);
 
   useEffect(() => {
     if (!supabaseConfigured) return;
@@ -104,6 +143,7 @@ export default function BattlePage() {
       const prev = viewRef.current;
       try {
         const next = await sendAction(matchId, action);
+        applyFx(computeFx(prev, next)); // 隨從登場／受擊震動／浮動傷害-回復數字
         // 依動作與前後 diff 播音效
         if (action.type === "attack") {
           sfxAttack();
@@ -125,7 +165,7 @@ export default function BattlePage() {
         setBusy(false);
       }
     },
-    [busy, matchId],
+    [busy, matchId, applyFx],
   );
 
   if (!supabaseConfigured) {
@@ -237,6 +277,8 @@ export default function BattlePage() {
           sub={`手牌 ${view.opp.handCount} · 牌庫 ${view.opp.deckCount}`}
           targetable={highlight.oppHero}
           thinking={view.oppThinking}
+          hit={fx.hit.has(heroFxKey("opp"))}
+          float={fx.floats[heroFxKey("opp")]}
           onClick={() => onTargetHero("opp")}
         />
 
@@ -258,6 +300,9 @@ export default function BattlePage() {
                   key={m.key}
                   minion={m}
                   targetable={highlight.oppMinions.has(m.key)}
+                  entering={fx.enter.has(m.key)}
+                  hit={fx.hit.has(m.key)}
+                  float={fx.floats[m.key]}
                   onClick={() => onTargetMinion("opp", m.key)}
                 />
               ))}
@@ -279,6 +324,9 @@ export default function BattlePage() {
                     ready={ready}
                     targetable={highlight.youMinions.has(m.key)}
                     selected={selecting?.mode === "attack" && selecting.attackerKey === m.key}
+                    entering={fx.enter.has(m.key)}
+                    hit={fx.hit.has(m.key)}
+                    float={fx.floats[m.key]}
                     onClick={() =>
                       selecting?.mode === "spell" ? onTargetMinion("you", m.key) : onMyMinionClick(m)
                     }
@@ -296,6 +344,8 @@ export default function BattlePage() {
           maxHp={HERO_HP}
           sub={`答對 ${view.you.correct} · 答錯 ${view.you.wrong}`}
           targetable={highlight.youHero}
+          hit={fx.hit.has(heroFxKey("you"))}
+          float={fx.floats[heroFxKey("you")]}
           onClick={() => onTargetHero("you")}
         />
         <ManaStrip variant="you" mana={view.you.mana} maxMana={view.you.maxMana} />
@@ -357,6 +407,57 @@ export default function BattlePage() {
       {view.phase === "over" ? <OverOverlay win={view.outcome === "win"} onExit={() => router.push("/vs")} /> : null}
     </main>
   );
+}
+
+// ───────────────────────── 小動畫（隨從登場／受擊／浮動數字）─────────────────────────
+// /play 用的是引擎產生的事件時間軸（CombatEvent/EventStep），/vs 是伺服器權威的脱敏
+// snapshot、沒有那條時間軸。改用「前後 view diff」（跟既有的音效判斷同一招）推出對應的
+// 小動畫——不只是自己出手時，對手回合透過輪詢/Realtime 拉到新 view 時也一樣會觸發，
+// 這樣「敵方回合」才會跟 /play 一樣有登場、受擊、浮動數字可看。
+type FxDiff = { enterKeys: string[]; hitKeys: string[]; floats: Record<string, FloatFx> };
+type FxState = { enter: Set<string>; hit: Set<string>; floats: Record<string, FloatFx> };
+const EMPTY_SET: Set<string> = new Set();
+const EMPTY_FLOATS: Record<string, FloatFx> = {};
+const heroFxKey = (who: "you" | "opp") => `hero:${who}`;
+
+function computeFx(prev: SeatView | null, next: SeatView): FxDiff {
+  const enterKeys: string[] = [];
+  const hitKeys: string[] = [];
+  const floats: Record<string, FloatFx> = {};
+  if (!prev) return { enterKeys, hitKeys, floats }; // 剛連上第一次拿到 view：不補播歷史動畫
+
+  const diffBoard = (prevBoard: Minion[], nextBoard: Minion[]) => {
+    const prevByKey = new Map(prevBoard.map((m) => [m.key, m]));
+    for (const m of nextBoard) {
+      const before = prevByKey.get(m.key);
+      if (!before) {
+        enterKeys.push(m.key); // 新出現的 key＝剛登場的隨從
+        continue;
+      }
+      if (m.health < before.health) {
+        hitKeys.push(m.key);
+        floats[m.key] = { text: `-${before.health - m.health}` };
+      } else if (m.health > before.health) {
+        floats[m.key] = { text: `+${m.health - before.health}`, heal: true };
+      }
+    }
+  };
+  diffBoard(prev.you.board, next.you.board);
+  diffBoard(prev.opp.board, next.opp.board);
+
+  const diffHero = (who: "you" | "opp", prevHp: number, nextHp: number) => {
+    const key = heroFxKey(who);
+    if (nextHp < prevHp) {
+      hitKeys.push(key);
+      floats[key] = { text: `-${prevHp - nextHp}` };
+    } else if (nextHp > prevHp) {
+      floats[key] = { text: `+${nextHp - prevHp}`, heal: true };
+    }
+  };
+  diffHero("you", prev.you.hp, next.you.hp);
+  diffHero("opp", prev.opp.hp, next.opp.hp);
+
+  return { enterKeys, hitKeys, floats };
 }
 
 // ───────────────────────── 目標高亮 ─────────────────────────
