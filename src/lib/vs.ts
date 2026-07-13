@@ -25,14 +25,28 @@ function client() {
   return supabase;
 }
 
+// 大廳一次 mount 就有好幾處各自呼叫 ensureAnonSession（進行中對局檢查、個人檔案、邀請連結
+// 自動加入…）。全新訪客（沒有既有 session）第一次進站時，這些呼叫幾乎同時發生：若各自獨立
+// 判斷「還沒有 session」就各自呼叫 signInAnonymously()，會建出好幾個不同的匿名帳號——最後
+// client 實際生效的那個，不見得是 join_match 當下記錄成 player_b 的那個，就會出現「你不在
+// 這局」。用同一個進行中的 promise 讓所有同時發生的呼叫都等同一次登入結果，不各自搶帳號。
+let anonSessionInFlight: Promise<string> | null = null;
+
 /** 確保有一個（匿名）session；回傳自己的 user id。需在 Supabase 開啟 Anonymous Sign-ins。 */
 export async function ensureAnonSession(): Promise<string> {
   const sb = client();
   const { data } = await sb.auth.getSession();
   if (data.session?.user) return data.session.user.id;
-  const { data: signed, error } = await sb.auth.signInAnonymously();
-  if (error) throw error;
-  return signed.user!.id;
+  if (!anonSessionInFlight) {
+    anonSessionInFlight = (async () => {
+      const { data: signed, error } = await sb.auth.signInAnonymously();
+      if (error) throw error;
+      return signed.user!.id;
+    })().finally(() => {
+      anonSessionInFlight = null; // 結束（成功或失敗）就清掉，下次真的需要能重新登入
+    });
+  }
+  return anonSessionInFlight;
 }
 
 /** 建立房間，回傳含 6 碼房號的 match。 */
