@@ -45,6 +45,7 @@ export default function BattlePage() {
   const [selecting, setSelecting] = useState<Selecting>(null);
   const [inspect, setInspect] = useState<Card | null>(null);
   const [connected, setConnected] = useState(true);
+  const [mulliganSel, setMulliganSel] = useState<Set<number>>(new Set());
   const [nowTs, setNowTs] = useState(() => Date.now());
   const [fx, setFx] = useState<FxState>({ enter: EMPTY_SET, hit: EMPTY_SET, floats: EMPTY_FLOATS });
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -231,6 +232,19 @@ export default function BattlePage() {
     }
   }
 
+  function toggleMulligan(i: number) {
+    setMulliganSel((s) => {
+      const next = new Set(s);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  }
+  function confirmMulligan() {
+    void act({ type: "mulligan", replaceIdx: [...mulliganSel] });
+    setMulliganSel(new Set());
+  }
+
   const highlight = targetHighlight(view, selecting, busy);
 
   return (
@@ -406,6 +420,16 @@ export default function BattlePage() {
       {quiz ? (
         <QuizModal quiz={quiz} disabled={busy} secondsLeft={secondsLeft} onAnswer={(idx) => act({ type: "answer", optionIdx: idx })} />
       ) : null}
+      {view.phase === "mulligan" ? (
+        <MulliganModal
+          view={view}
+          busy={busy}
+          secondsLeft={secondsLeft}
+          sel={mulliganSel}
+          onToggle={toggleMulligan}
+          onConfirm={confirmMulligan}
+        />
+      ) : null}
       {view.phase === "over" ? <OverOverlay win={view.outcome === "win"} onExit={() => router.push("/vs")} /> : null}
     </main>
   );
@@ -560,6 +584,14 @@ function TurnBadge({ view, secondsLeft }: { view: SeatView; secondsLeft: number 
         ⏳ {secondsLeft}s
       </span>
     ) : null;
+  if (view.phase === "mulligan") {
+    return (
+      <span className="text-sm">
+        <span className="text-sky-300">{view.mulliganPending ? "換牌階段" : "等待對手換牌…"}</span>
+        {clock}
+      </span>
+    );
+  }
   if (view.oppThinking) {
     return <span className="text-sm"><span className="text-amber-300 animate-pulse">對手出牌答題中…</span>{clock}</span>;
   }
@@ -570,6 +602,98 @@ function TurnBadge({ view, secondsLeft }: { view: SeatView; secondsLeft: number 
       </span>
       {clock}
     </span>
+  );
+}
+
+// 開局換牌：仿 /play 的介面（點卡標記要換的牌、換掉洗回牌庫重抽等量），但雙方各自獨立決定
+// （不像 /play 只有一方，這裡送出後若對手還沒決定，要顯示等待畫面，不能讓玩家以為卡住了）。
+function MulliganModal({
+  view,
+  busy,
+  secondsLeft,
+  sel,
+  onToggle,
+  onConfirm,
+}: {
+  view: SeatView;
+  busy: boolean;
+  secondsLeft: number | null;
+  sel: Set<number>;
+  onToggle: (i: number) => void;
+  onConfirm: () => void;
+}) {
+  const clock =
+    secondsLeft != null ? (
+      <span className={`tabular-nums font-mono text-xs ${secondsLeft <= 10 ? "text-rose-400 animate-pulse" : "text-neutral-400"}`}>
+        ⏳ {secondsLeft}s
+      </span>
+    ) : null;
+
+  if (!view.mulliganPending) {
+    return (
+      <div className="fixed inset-0 bg-neutral-950/85 flex items-center justify-center z-50 px-6">
+        <div className="w-full max-w-sm rounded-2xl border border-sky-600/40 bg-neutral-900 p-6 text-center space-y-3">
+          <p className="text-sky-200 animate-pulse">已送出換牌，等待對手決定…</p>
+          {clock}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-neutral-950/85 flex items-center justify-center z-50 px-4">
+      <div className="w-full max-w-xl rounded-2xl border border-amber-600/40 bg-neutral-900 p-5 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-amber-200/60">開局換牌</p>
+            <h3 className="text-lg font-bold text-amber-100">調整起手牌</h3>
+          </div>
+          {clock}
+        </div>
+        <p className="text-xs text-neutral-400">
+          點選想換掉的牌（洗回牌庫、重抽等量），或直接保留全部開始。雙方各自獨立決定，只有這一次機會。
+        </p>
+        <div className="flex flex-wrap justify-center gap-3">
+          {view.you.hand.map((c, i) => {
+            const marked = sel.has(i);
+            const art = CARD_ART[c.id];
+            return (
+              <button
+                key={`${c.id}-${i}`}
+                onClick={() => onToggle(i)}
+                disabled={busy}
+                className={`relative w-[88px] aspect-[5/7] rounded-lg overflow-hidden border-2 transition disabled:opacity-50 ${
+                  marked ? "border-rose-400 opacity-70" : "border-amber-400/40 hover:border-amber-300 hover:-translate-y-0.5"
+                }`}
+              >
+                {art ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={art} alt={c.nameZh} className="absolute inset-0 w-full h-full object-cover" />
+                ) : null}
+                <span className="absolute top-1 left-1 rounded bg-black/70 px-1 text-[10px] text-sky-200">{c.cost}</span>
+                <span className="absolute inset-x-0 bottom-0 truncate bg-black/70 py-0.5 text-center text-[10px]">
+                  {c.nameZh}
+                </span>
+                {marked && (
+                  <span className="absolute inset-0 grid place-items-center bg-rose-950/40 text-sm font-bold text-rose-200">
+                    換
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex justify-end">
+          <button
+            onClick={onConfirm}
+            disabled={busy}
+            className="rounded bg-amber-500 hover:bg-amber-400 disabled:opacity-50 px-5 py-2 text-sm font-bold text-black"
+          >
+            {sel.size > 0 ? `換掉 ${sel.size} 張並開始 ▶` : "保留全部開始 ▶"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

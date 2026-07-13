@@ -17,6 +17,7 @@ const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const { POST: actionPOST } = await import("../src/app/api/match/action/route.ts");
 const { GET: viewGET } = await import("../src/app/api/match/view/route.ts");
 const { GET: leaderboardGET } = await import("../src/app/api/leaderboard/route.ts");
+const { POST: registerPOST } = await import("../src/app/api/account/register/route.ts");
 const { spellTargetKind } = await import("../src/engine/game.ts");
 import type { SeatView, ClientTarget, MatchAction } from "../src/engine/match.ts";
 
@@ -134,13 +135,35 @@ async function main() {
   await svc.from("profiles").update({ display_name: "乙" }).eq("id", uidB);
   pass(`配對完成（房號 ${room}）`);
 
+  // 觸發伺服器發牌：先進換牌階段，不是直接開打
+  const seed0 = await view(tokenA, matchId);
+  must(seed0.phase === "mulligan", "發牌後應先進換牌階段");
+  must(seed0.you.hand.length === 4 && seed0.opp.handCount === 4, "起手手牌數不對");
+  must(seed0.mulliganPending, "A 一開始應還沒決定換牌");
+  assertNoLeak(seed0);
+  pass("伺服器發牌完成，雙方起手 4 張、脱敏正常，進入換牌階段");
+
+  // 換牌階段還沒結束前，正式對戰動作一律被拒
+  const tooEarly = await act(tokenA, matchId, { type: "endTurn" });
+  must(tooEarly.status === 400, "換牌未完成時的正式動作應 400");
+  pass("換牌未完成時擋掉正式對戰動作");
+
+  // 雙方各自獨立換牌：A 換掉第 1 張測真的洗牌重抽，B 保留全部
+  const mA = await act(tokenA, matchId, { type: "mulligan", replaceIdx: [0] });
+  must(mA.status === 200 && !!mA.view, "A 換牌應成功");
+  must(mA.view!.phase === "mulligan", "A 換完、B 還沒換，仍在換牌階段");
+  const dupA = await act(tokenA, matchId, { type: "mulligan", replaceIdx: [] });
+  must(dupA.status === 400, "A 重複換牌應被拒");
+  const mB = await act(tokenB, matchId, { type: "mulligan", replaceIdx: [] });
+  must(mB.status === 200 && !!mB.view, "B 換牌應成功");
+  must(mB.view!.phase === "playing", "雙方都換完後應轉入正式對戰");
+  pass("開局換牌：雙方各自獨立決定、重複換牌被拒、雙方完成後轉正式對戰");
+
   // 反作弊：非當前座位不能動、無 token 401
-  const seed = await view(tokenA, matchId); // 觸發伺服器發牌
+  const seed = await view(tokenA, matchId);
   must(seed.yourTurn, "A 應先手");
-  must(seed.you.hand.length === 4 && seed.opp.handCount === 4, "起手手牌數不對");
   must(seed.youName === "甲" && seed.oppName === "乙", "view 應帶雙方顯示名稱");
-  assertNoLeak(seed);
-  pass("伺服器發牌完成，A 先手、雙方起手 4 張、脱敏正常、帶名稱");
+  pass("換牌結束後 A 先手、帶名稱");
 
   const wrongTurn = await act(tokenB, matchId, { type: "endTurn" });
   must(wrongTurn.status === 400, "非當前座位動作應 400");
@@ -195,7 +218,6 @@ async function main() {
   // P4：勝負紀錄
   const winnerUid = finalA.outcome === "win" ? uidA : uidB;
   const loserUid = finalA.outcome === "win" ? uidB : uidA;
-  const winnerName = finalA.outcome === "win" ? "甲" : "乙";
   const { data: wp } = await svc.from("profiles").select("wins,losses").eq("id", winnerUid).maybeSingle();
   const { data: lp } = await svc.from("profiles").select("wins,losses").eq("id", loserUid).maybeSingle();
   must(((wp as { wins: number })?.wins ?? 0) >= 1, "勝方 wins 應 +1");
@@ -206,18 +228,32 @@ async function main() {
   must(finalA.oppName === "乙" && finalB.oppName === "甲", "對局內應顯示對手名稱");
   pass("對局內顯示雙方名稱");
 
-  // P4：天梯端點含勝方
+  // P4：天梯只顯示已申請序號（player_accounts）的玩家（ORDER-060 序號制度，2026-07-13 起）。
+  // 純匿名 profiles（甲/乙）不會出現在天梯——先幫勝方申請一個序號，再驗天梯正確含勝方戰績。
+  const winnerToken = finalA.outcome === "win" ? tokenA : tokenB;
+  const acctName = `e2e測試_${Date.now().toString(36)}`;
+  const reg = await registerPOST(
+    new Request("http://x/api/account/register", {
+      method: "POST",
+      headers: { authorization: `Bearer ${winnerToken}`, "content-type": "application/json" },
+      body: JSON.stringify({ displayName: acctName, pin: "1357" }),
+    }),
+  );
+  must(reg.status === 200, "勝方申請序號應成功");
+  pass(`勝方申請序號成功：${acctName}`);
+
   const lbRes = await leaderboardGET();
   const lbJson = (await lbRes.json()) as { leaderboard: { display_name: string; wins: number }[] };
   must(
-    Array.isArray(lbJson.leaderboard) &&
-      lbJson.leaderboard.some((r) => r.display_name === winnerName && r.wins >= 1),
-    "天梯應含勝方戰績",
+    Array.isArray(lbJson.leaderboard) && lbJson.leaderboard.some((r) => r.display_name === acctName && r.wins >= 1),
+    "天梯應含已申請序號之勝方戰績",
   );
-  pass("天梯 /api/leaderboard 含勝方戰績");
+  pass("天梯 /api/leaderboard 含已申請序號的勝方戰績");
 
-  // 收尾：刪對局 + 清掉測試用 profiles（避免污染正式天梯）
+  // 收尾：刪對局、清掉測試用序號＋profiles（避免污染正式天梯）
   await svc.from("matches").delete().eq("id", matchId);
+  const { data: acct } = await svc.from("player_accounts").select("id").eq("display_name", acctName).maybeSingle();
+  if (acct) await svc.from("player_accounts").delete().eq("id", (acct as { id: string }).id);
   await svc.from("profiles").delete().in("id", [uidA, uidB]);
   console.log("\n全鏈路 e2e 全數通過 ✓ —— 線上對戰後端＋權威層＋留存真的能打完一局。");
 }

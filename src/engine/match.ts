@@ -31,6 +31,7 @@ import {
   endOfTurnEffects,
   spellTargetKind,
   pushLog,
+  shuffle,
 } from "./game";
 
 export type Seat = "a" | "b";
@@ -55,7 +56,10 @@ export type MatchState = {
   meta: Record<Seat, Meta>;
   stats: Record<Seat, { correct: number; wrong: number }>;
   winner: Seat | null;
-  deadline: number | null; // 現在這一回合的截止（epoch ms）；null＝不計時（如純引擎測試）
+  deadline: number | null; // 現在這一回合（或換牌階段）的截止（epoch ms）；null＝不計時（如純引擎測試）
+  // 開局換牌：雙方各自是否已決定（含逾時自動保留）。兩者皆 true 才轉入正式對戰；
+  // null＝換牌階段已結束（正式對戰中，或此局不支援換牌的舊狀態）。
+  mulligan: Record<Seat, boolean> | null;
 };
 
 /** 客戶端相對目標：一律用「你 / 對手」，由伺服器翻成權威 side。 */
@@ -65,6 +69,7 @@ export type ClientTarget =
 
 export type MatchAction =
   | { type: "start" } // 冪等初始化（伺服器發牌）
+  | { type: "mulligan"; replaceIdx: number[] } // 開局換牌：把指定索引的起手牌洗回牌庫重抽
   | { type: "playCard"; cardId: string; target?: ClientTarget }
   | { type: "answer"; optionIdx: number }
   | { type: "attack"; attackerKey: string; target: ClientTarget }
@@ -77,9 +82,13 @@ export type ApplyResult =
 
 const TURN_SECONDS = 90;
 const TURN_MS = TURN_SECONDS * 1000;
+const MULLIGAN_SECONDS = 30;
+const MULLIGAN_MS = MULLIGAN_SECONDS * 1000;
 
 /** 依 now 算這回合截止；now=0（純引擎測試不帶時間）時回 null＝不計時。 */
 const deadlineFrom = (now: number): number | null => (now > 0 ? now + TURN_MS : null);
+/** 換牌階段截止（比一般回合短，避免一方遲不決定卡住對手太久）。 */
+const mulliganDeadlineFrom = (now: number): number | null => (now > 0 ? now + MULLIGAN_MS : null);
 
 const sideOf = (seat: Seat): Side => (seat === "a" ? "player" : "enemy");
 const other = (seat: Seat): Seat => (seat === "a" ? "b" : "a");
@@ -112,6 +121,7 @@ export function initMatch(now = 0): MatchState {
   };
   // 先手 A：第 1 回合 1 法力、不抽牌（tempo 優勢）。
   // 後手 B：maxMana 起始 0，其首回合 passTurn 後 →1 法力、抽 1 張（＝後手補 1 卡）。
+  // 開局先進換牌階段：雙方各自決定要不要換掉起手牌，都決定了（或逾時自動保留）才正式開打。
   return {
     game,
     current: "a",
@@ -120,6 +130,36 @@ export function initMatch(now = 0): MatchState {
     meta: { a: { maxMana: 1, mana: 1 }, b: { maxMana: 0, mana: 0 } },
     stats: { a: { correct: 0, wrong: 0 }, b: { correct: 0, wrong: 0 } },
     winner: null,
+    deadline: mulliganDeadlineFrom(now),
+    mulligan: { a: false, b: false },
+  };
+}
+
+// ───────────────────────── 開局換牌 ─────────────────────────
+
+/** 把某座位手牌中選定索引的牌洗回牌庫、重抽等量（雙座位版，game.ts 的 mulligan() 只認 player 側）。 */
+function mulliganFor(g: Game, seat: Seat, replaceIdx: number[]): Game {
+  if (replaceIdx.length === 0) return g;
+  const idxSet = new Set(replaceIdx);
+  const side = sideOf(seat);
+  if (side === "player") {
+    const returned = g.pHand.filter((_, i) => idxSet.has(i));
+    const ng: Game = { ...g, pHand: g.pHand.filter((_, i) => !idxSet.has(i)), pDeck: shuffle([...g.pDeck, ...returned]) };
+    drawCards(ng, "player", returned.length);
+    return ng;
+  }
+  const returned = g.eHand.filter((_, i) => idxSet.has(i));
+  const ng: Game = { ...g, eHand: g.eHand.filter((_, i) => !idxSet.has(i)), eDeck: shuffle([...g.eDeck, ...returned]) };
+  drawCards(ng, "enemy", returned.length);
+  return ng;
+}
+
+/** 雙方都決定完換牌（或逾時自動保留）：關閉換牌階段、開正式對戰的第一個回合截止。 */
+function finishMulliganPhase(s: MatchState, now: number): MatchState {
+  return {
+    ...s,
+    mulligan: null,
+    game: { ...s.game, log: pushLog(s.game.log, "換牌階段結束，對局正式開始。", "info") },
     deadline: deadlineFrom(now),
   };
 }
@@ -201,6 +241,18 @@ function passTurn(s: MatchState, now = 0): MatchState {
  *  由 Route Handler 在每次 view/action 前呼叫；回傳是否真的發生逾時。純函式、時間由外部注入。 */
 export function enforceDeadline(s: MatchState, now: number): { state: MatchState; timedOut: boolean } {
   if (s.winner || s.deadline == null || now < s.deadline) return { state: s, timedOut: false };
+
+  if (s.mulligan) {
+    // 換牌逾時：還沒決定的座位自動保留全部起手牌，直接進正式對戰，不卡對手。
+    const mulligan: Record<Seat, boolean> = { a: true, b: true };
+    const withLog: MatchState = {
+      ...s,
+      mulligan,
+      game: { ...s.game, log: pushLog(s.game.log, "⏰ 換牌逾時，雙方自動保留起手牌，對局開始。", "sys") },
+    };
+    return { state: finishMulliganPhase(withLog, now), timedOut: true };
+  }
+
   const lostName = s.current === "a" ? "織者" : "山林試煉";
   const withLog: MatchState = {
     ...s,
@@ -230,6 +282,22 @@ export function applyMatchAction(s: MatchState, seat: Seat, action: MatchAction,
     };
     return { ok: true, state: { ...s, game: g, winner: win } };
   }
+
+  // 開局換牌：雙方各自獨立決定，不看 current（跟回合誰輪到誰無關）
+  if (action.type === "mulligan") {
+    if (!s.mulligan) return { ok: false, error: "換牌階段已經結束" };
+    if (s.mulligan[seat]) return { ok: false, error: "你已經換過牌了" };
+    const hand = handOf(s.game, seat);
+    const replaceIdx = [...new Set(action.replaceIdx)];
+    if (replaceIdx.some((i) => !Number.isInteger(i) || i < 0 || i >= hand.length)) {
+      return { ok: false, error: "換牌索引不合法" };
+    }
+    const game = mulliganFor(s.game, seat, replaceIdx);
+    const mulligan: Record<Seat, boolean> = { ...s.mulligan, [seat]: true };
+    const next: MatchState = { ...s, game, mulligan };
+    return { ok: true, state: mulligan.a && mulligan.b ? finishMulliganPhase(next, now) : next };
+  }
+  if (s.mulligan) return { ok: false, error: "請先完成換牌" };
 
   // 作答：只驗 pending 歸屬，不看 current（pending.seat 一定是當前行動者）
   if (action.type === "answer") {
@@ -323,8 +391,11 @@ export type SeatView = {
   seat: Seat;
   yourTurn: boolean;
   turn: number;
-  phase: "playing" | "over";
+  phase: "mulligan" | "playing" | "over";
   outcome: "win" | "lose" | null;
+  // 換牌階段限定：我是否還沒決定（true＝該顯示換牌視窗）、對手是否已經決定（顯示「等待對手」）。
+  mulliganPending: boolean;
+  oppMulliganDone: boolean;
   you: {
     hp: number;
     mana: number;
@@ -373,10 +444,12 @@ export function viewFor(s: MatchState, seat: Seat): SeatView {
 
   return {
     seat,
-    yourTurn: s.current === seat && !s.pending,
+    yourTurn: !s.mulligan && s.current === seat && !s.pending,
     turn: s.turn,
-    phase: s.winner ? "over" : "playing",
+    phase: s.winner ? "over" : s.mulligan ? "mulligan" : "playing",
     outcome: s.winner ? (s.winner === seat ? "win" : "lose") : null,
+    mulliganPending: Boolean(s.mulligan && !s.mulligan[seat]),
+    oppMulliganDone: Boolean(s.mulligan && s.mulligan[oppSeat]),
     you: {
       hp: myHp,
       mana: s.meta[seat].mana,

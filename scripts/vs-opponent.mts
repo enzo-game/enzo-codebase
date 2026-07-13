@@ -85,6 +85,14 @@ for (let i = 0; i < 400; i++) {
   let v: SeatView;
   try { v = await view(token, matchId); } catch { await sleep(1500); continue; }
   if (v.phase === "over") { console.log(`對局結束，B ${v.outcome === "win" ? "勝" : "負"}。`); break; }
+  if (v.phase === "mulligan") {
+    if (v.mulliganPending) {
+      console.log("換牌階段：B 保留全部起手牌");
+      await act(token, matchId, { type: "mulligan", replaceIdx: [] });
+    }
+    await sleep(1000);
+    continue;
+  }
   if (v.yourTurn) { console.log(`第 ${v.turn} 回合：B 出手`); await takeTurn(token, matchId, v); }
   await sleep(1500);
 }

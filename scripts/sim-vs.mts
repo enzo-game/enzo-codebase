@@ -25,6 +25,19 @@ function must(cond: boolean, msg: string): void {
   if (!cond) throw new Error("斷言失敗：" + msg);
 }
 
+/** 雙方各自送出換牌決定（bot 換掉手上費用最高的 1 張，模擬真的會挑），把換牌階段走完。 */
+function botMulligan(state: MatchState, now = 0): MatchState {
+  let s = state;
+  for (const seat of ["a", "b"] as Seat[]) {
+    const hand = handOf(s, seat);
+    const worst = hand.reduce((best, c, i) => (c.cost > hand[best].cost ? i : best), 0);
+    const r = applyMatchAction(s, seat, { type: "mulligan", replaceIdx: hand.length > 0 ? [worst] : [] }, now);
+    must(r.ok, "換牌應成功：" + (r.ok ? "" : r.error));
+    s = (r as { ok: true; state: MatchState }).state;
+  }
+  return s;
+}
+
 /** bot 為一張法術挑客戶端目標；無合法目標時回傳 undefined（呼叫端負責略過必指定的牌）。 */
 function botSpellTarget(s: MatchState, seat: Seat, cardKind: string): ClientTarget | undefined {
   if (cardKind === "none") return undefined;
@@ -139,6 +152,8 @@ for (let i = 0; i < GAMES; i++) {
   let s = initMatch();
   assertNoLeak(s);
   assertInvariants(s);
+  s = botMulligan(s);
+  must(s.mulligan === null, "雙方換牌完應關閉換牌階段");
 
   let finished = false;
   for (let t = 0; t < MAX_TURNS && !finished; t++) {
@@ -160,9 +175,41 @@ for (let i = 0; i < GAMES; i++) {
   }
 }
 
+// ───────────────────────── 開局換牌（新）抽驗 ─────────────────────────
+{
+  const s0 = initMatch();
+  must(s0.mulligan !== null && !s0.mulligan.a && !s0.mulligan.b, "初始應在換牌階段、雙方都未決定");
+  must(viewFor(s0, "a").phase === "mulligan", "換牌階段的視角 phase 應是 mulligan");
+  must(viewFor(s0, "a").mulliganPending, "還沒決定時 mulliganPending 應為 true");
+  must(!viewFor(s0, "a").yourTurn, "換牌階段任何座位都不該是 yourTurn");
+  // 換牌階段沒結束前，正式對戰動作一律被拒
+  must(!applyMatchAction(s0, "a", { type: "endTurn" }).ok, "換牌未完成時 endTurn 應被拒");
+  // 換掉起手第 1 張，手牌內容應改變但張數不變
+  const before = s0.game.pHand.map((c) => c.id);
+  const r1 = applyMatchAction(s0, "a", { type: "mulligan", replaceIdx: [0] });
+  must(r1.ok, "換牌應成功");
+  const s1 = (r1 as { ok: true; state: MatchState }).state;
+  must(s1.game.pHand.length === before.length, "換牌後手牌張數應不變");
+  must(s1.mulligan!.a && !s1.mulligan!.b, "A 換完後只有 A 標記完成");
+  must(viewFor(s1, "b").oppMulliganDone, "B 視角應看到對手（A）已完成換牌");
+  must(!viewFor(s1, "a").oppMulliganDone, "A 視角：B 還沒換牌，oppMulliganDone 應為 false");
+  // A 已經換過，不能再換一次
+  must(!applyMatchAction(s1, "a", { type: "mulligan", replaceIdx: [] }).ok, "同一座位重複換牌應被拒");
+  // 索引越界應被拒
+  must(!applyMatchAction(s1, "b", { type: "mulligan", replaceIdx: [99] }).ok, "換牌索引越界應被拒");
+  // B 換完（保留全部＝空陣列）→ 雙方皆完成，換牌階段關閉、進入正式對戰
+  const r2 = applyMatchAction(s1, "b", { type: "mulligan", replaceIdx: [] });
+  must(r2.ok, "B 換牌應成功");
+  const s2 = (r2 as { ok: true; state: MatchState }).state;
+  must(s2.mulligan === null, "雙方換完後應關閉換牌階段");
+  must(viewFor(s2, "a").phase === "playing", "換牌結束後 phase 應變 playing");
+  must(viewFor(s2, "a").yourTurn, "換牌結束後先手 A 應輪到自己");
+  console.log("開局換牌：階段閘門/索引驗證/雙方完成後轉正式對戰 全數通過 ✓");
+}
+
 // ───────────────────────── 非法動作防線抽驗 ─────────────────────────
 {
-  const s = initMatch();
+  const s = botMulligan(initMatch());
   // 不是你的回合
   must(!applyMatchAction(s, "b", { type: "endTurn" }).ok, "非當前座位動作應被拒");
   // 打一張不存在的牌
@@ -174,16 +221,35 @@ for (let i = 0; i < GAMES; i++) {
   );
 }
 
+// ───────────────────────── 換牌逾時（P3 同招）抽驗 ─────────────────────────
+{
+  const T0 = 1_000_000;
+  const s0 = initMatch(T0);
+  must(s0.deadline === T0 + 30_000, "initMatch 應設換牌階段截止（比一般回合短）");
+  must(!enforceDeadline(s0, T0 + 1000).timedOut, "未到換牌截止不應逾時");
+  const mTo = enforceDeadline(s0, T0 + 30_000 + 1);
+  must(mTo.timedOut, "換牌過截止應逾時");
+  must(mTo.state.mulligan === null, "換牌逾時後應自動關閉換牌階段（雙方視同保留全部起手牌）");
+  must(mTo.state.game.pHand.length === s0.game.pHand.length, "換牌逾時保留起手牌，張數不變");
+  must(viewFor(mTo.state, "a").phase === "playing", "換牌逾時後 phase 應變 playing");
+  console.log("換牌逾時：自動保留起手牌、轉入正式對戰 全數通過 ✓");
+}
+
 // ───────────────────────── 回合逾時（P3）抽驗 ─────────────────────────
 {
   const T0 = 1_000_000;
-  let s = initMatch(T0);
-  must(s.deadline === T0 + 90_000, "initMatch 應設回合截止");
+  let s = botMulligan(initMatch(T0), T0);
+  must(s.deadline === T0 + 90_000, "雙方換牌完成後應設正式回合截止");
   // 未到截止 → 不逾時
   must(!enforceDeadline(s, T0 + 1000).timedOut, "未到截止不應逾時");
   // A 選了一張牌卡在待答，然後逾時 → 該回合作廢、換 B、pending 清掉、手牌沒少
+  // 只挑不用另外指定目標的牌（隨從／none／any 法術），避免抽到需要 enemyMinion/friendMinion
+  // 目標的法術卻沒帶 target 而被 validatePlay 拒絕（跟這裡要驗的逾時邏輯無關，是既有潛在
+  // flaky 點：buildDeck 洗牌吃隨機數，這段之前的換牌測試一多消耗隨機數就更容易抽到這種牌）。
   const handBefore = s.game.pHand.length;
-  const playable = s.game.pHand.find((c) => c.cost <= s.meta.a.mana)?.id;
+  const playable = s.game.pHand.find(
+    (c) => c.cost <= s.meta.a.mana && (c.type === "minion" || spellTargetKind(c) === "none" || spellTargetKind(c) === "any"),
+  )?.id;
   if (playable) {
     const r = applyMatchAction(s, "a", { type: "playCard", cardId: playable }, T0);
     must(r.ok, "playCard 應成功");
