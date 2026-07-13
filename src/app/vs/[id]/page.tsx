@@ -334,16 +334,24 @@ export default function BattlePage() {
 
 // ───────────────────────── 目標高亮 ─────────────────────────
 // 選了隨從要攻擊時的具體提示：能打誰、為什麼、怎麼取消。
+// 突襲（rushBound）：登場當回合不可打英雄，只能打隨從——這點必須跟嘲諷判斷一起考慮。
 function attackHint(view: SeatView, attackerKey: string): string {
   const attacker = view.you.board.find((m) => m.key === attackerKey);
   const name = attacker?.card.nameZh ?? "隨從";
   const cancel = `（再點一次「${name}」可取消）`;
+  const rushBound = Boolean(attacker?.rushBound);
   const taunts = view.opp.board.filter((m) => m.taunt && !m.stealth);
   if (taunts.length > 0) {
     const names = taunts.map((m) => `「${m.card.nameZh}」`).join("、");
     return `「${name}」出擊：對手有嘲諷（${names}），必須先打嘲諷的隨從，不能越過去打英雄。${cancel}`;
   }
   const oppMinions = view.opp.board.filter((m) => !m.stealth);
+  if (rushBound) {
+    if (oppMinions.length > 0) {
+      return `「${name}」出擊：突襲登場當回合不能打臉，只能打對手的隨從——點你要打的目標。${cancel}`;
+    }
+    return `「${name}」出擊：突襲登場當回合不能打臉，而對手場上又沒有隨從可打，這隻這回合打不了。${cancel}`;
+  }
   if (oppMinions.length > 0) {
     return `「${name}」出擊：沒有嘲諷擋路，可以打對手的隨從，或直接打對手英雄——點你要打的目標。${cancel}`;
   }
@@ -386,7 +394,10 @@ function targetHighlight(view: SeatView, selecting: Selecting) {
   if (selecting.mode === "attack") {
     const taunts = view.opp.board.filter((m) => m.taunt && !m.stealth);
     if (taunts.length > 0) return { ...none, oppMinions: new Set(taunts.map((m) => m.key)) };
-    return { ...none, oppHero: true, oppMinions: new Set(view.opp.board.filter((m) => !m.stealth).map((m) => m.key)) };
+    const attacker = view.you.board.find((m) => m.key === selecting.attackerKey);
+    const oppMinions = new Set(view.opp.board.filter((m) => !m.stealth).map((m) => m.key));
+    // 突襲：登場當回合不可打英雄，英雄頭像不亮起、不可點。
+    return { ...none, oppHero: !attacker?.rushBound, oppMinions };
   }
   const kind = spellTargetKind(selecting.card);
   const oppSel = view.opp.board.filter((m) => !m.stealth).map((m) => m.key);
