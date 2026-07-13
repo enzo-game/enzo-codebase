@@ -8,10 +8,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabaseConfigured } from "@/lib/supabase";
-import { fetchLeaderboard, myProfile, type Profile } from "@/lib/vs";
+import { fetchLeaderboard, myProfile, type LeaderboardRow as LeaderboardEntry } from "@/lib/vs";
 
 export default function LeaderboardPage() {
-  const [rows, setRows] = useState<Profile[] | null>(null);
+  const [rows, setRows] = useState<LeaderboardEntry[] | null>(null);
   const [myName, setMyName] = useState<string | null>(null);
   const [err, setErr] = useState("");
 
@@ -91,7 +91,7 @@ export default function LeaderboardPage() {
 const PLACE_LABEL: Record<1 | 2 | 3, string> = { 1: "冠軍", 2: "亞軍", 3: "季軍" };
 const PLACE_CLASS: Record<1 | 2 | 3, string> = { 1: "is-first", 2: "is-second", 3: "is-third" };
 
-function PodiumCard({ place, entry, isMe }: { place: 1 | 2 | 3; entry?: Profile; isMe: boolean }) {
+function PodiumCard({ place, entry, isMe }: { place: 1 | 2 | 3; entry?: LeaderboardEntry; isMe: boolean }) {
   if (!entry) return <div aria-hidden />;
   const delay = place === 1 ? 120 : place === 2 ? 40 : 200;
   return (
@@ -128,7 +128,7 @@ function PodiumCard({ place, entry, isMe }: { place: 1 | 2 | 3; entry?: Profile;
 
 /* ───────── 排行表（第 4 名起） ───────── */
 
-function RankingRow({ rank, entry, isMe, delay }: { rank: number; entry: Profile; isMe: boolean; delay: number }) {
+function RankingRow({ rank, entry, isMe, delay }: { rank: number; entry: LeaderboardEntry; isMe: boolean; delay: number }) {
   const total = entry.wins + entry.losses;
   const rate = total > 0 ? Math.round((entry.wins / total) * 100) : 0;
   return (

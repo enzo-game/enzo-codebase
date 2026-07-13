@@ -15,6 +15,8 @@ import {
   findMyActiveMatch,
   myProfile,
   setDisplayName,
+  registerAccount,
+  loginAccount,
   type Match,
   type Profile,
 } from "@/lib/vs";
@@ -36,6 +38,12 @@ export default function VsPage() {
   const [savedName, setSavedName] = useState(false);
   const [copied, setCopied] = useState(false);
   const [nowTs, setNowTs] = useState(() => Date.now());
+  // 序號帳號（跨裝置保留戰績）：申請或登入共用這組欄位，acctMode 切換兩種模式。
+  const [acctMode, setAcctMode] = useState<"register" | "login">("register");
+  const [acctName, setAcctName] = useState("");
+  const [acctPin, setAcctPin] = useState("");
+  const [acctBusy, setAcctBusy] = useState(false);
+  const [acctMsg, setAcctMsg] = useState("");
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   // 卸載時清掉 Realtime 訂閱
@@ -101,6 +109,28 @@ export default function VsPage() {
       setTimeout(() => setSavedName(false), 1500);
     } catch (e) {
       setErr(msg(e));
+    }
+  }
+
+  /** 申請新序號或用既有序號登入。成功後同步名稱欄位＋標記已擁有序號，天梯之後就會算進這個人。 */
+  async function submitAccount() {
+    setAcctMsg("");
+    setAcctBusy(true);
+    try {
+      const name =
+        acctMode === "register" ? await registerAccount(acctName, acctPin) : await loginAccount(acctName, acctPin);
+      setProfile((p) => (p ? { ...p, display_name: name, account_id: "pending" } : p));
+      setNameInput(name);
+      setAcctMsg(acctMode === "register" ? `序號申請成功：${name}` : `已登入序號：${name}`);
+      setAcctPin("");
+      // 重新讀一次真正的 account_id（上面用 "pending" 只是先讓 UI 立刻反映「已擁有序號」）。
+      myProfile()
+        .then((p) => p && setProfile(p))
+        .catch(() => {});
+    } catch (e) {
+      setAcctMsg(msg(e));
+    } finally {
+      setAcctBusy(false);
     }
   }
 
@@ -213,6 +243,59 @@ export default function VsPage() {
                 </p>
               ) : null}
             </div>
+
+            <div className="rounded-lg bg-neutral-900/40 border border-neutral-800/70 px-3 py-2.5 mb-1 space-y-2">
+              {profile?.account_id ? (
+                <p className="text-xs text-emerald-400">🔑 已擁有序號，戰績會跨裝置保留、算進天梯</p>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-neutral-500">
+                      序號（跨裝置保留戰績、上天梯，可略過）
+                    </p>
+                    <div className="flex gap-1 text-[11px]">
+                      <button
+                        onClick={() => setAcctMode("register")}
+                        className={`px-2 py-0.5 rounded ${acctMode === "register" ? "bg-neutral-700 text-neutral-100" : "text-neutral-500"}`}
+                      >
+                        申請
+                      </button>
+                      <button
+                        onClick={() => setAcctMode("login")}
+                        className={`px-2 py-0.5 rounded ${acctMode === "login" ? "bg-neutral-700 text-neutral-100" : "text-neutral-500"}`}
+                      >
+                        登入
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      value={acctName}
+                      onChange={(e) => setAcctName(e.target.value)}
+                      placeholder="顯示名稱"
+                      maxLength={20}
+                      className="flex-1 min-w-0 rounded bg-neutral-950 border border-neutral-700 px-2 py-1.5 text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                    <input
+                      value={acctPin}
+                      onChange={(e) => setAcctPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="PIN 4-6碼"
+                      inputMode="numeric"
+                      className="w-20 shrink-0 rounded bg-neutral-950 border border-neutral-700 px-2 py-1.5 text-xs text-center tracking-widest focus:outline-none focus:border-emerald-500"
+                    />
+                    <button
+                      onClick={submitAccount}
+                      disabled={acctBusy || !acctName.trim() || acctPin.length < 4}
+                      className="shrink-0 rounded bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 px-3 py-1.5 text-xs font-semibold transition"
+                    >
+                      {acctMode === "register" ? "申請" : "登入"}
+                    </button>
+                  </div>
+                  {acctMsg ? <p className="text-[11px] text-amber-300/90">{acctMsg}</p> : null}
+                </>
+              )}
+            </div>
+
             {resume ? (
               <button
                 onClick={() => enterBattle(resume)}
