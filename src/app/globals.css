@@ -2313,6 +2313,15 @@ body {
   background-image: url("/images/play/board-altar.jpg") !important;
 }
 
+/* ─────────── /vs 專屬：敵我兩排整體下移 ~48px，對齊 /play 隨從的垂直位置（2026-07-14，司令：「就是要像 /play」）
+ * /play 與 /vs 牌桌內部排版相同，但 /play 上方 header 較高把牌桌往下推 ~48px，導致 /vs 隨從偏上（「跑到上方」）。
+ * 只加大 /vs 戰鬥舞台的 margin-top，把敵我兩排一起往下移進牌桌中段的空白，讓隨從落在 /play 的 55%／38% 位置。
+ * 刻意「不」動牌桌整體高度（改牌桌 margin 會加總頁高、跟大螢幕自動縮放的 vh 補償打架、造成溢出捲動），
+ * 手牌維持貼牌桌底不動。隨從跟手牌的間距因此比 /play 略窄，但隨從高度對齊 /play、且大螢幕縮放不會爆版。 */
+.vs-page.play-page .hs-combat-lane {
+  margin-top: 76px;
+}
+
 /* 頂部敵方狀態列：英雄、手牌、牌庫與法力集中在上方。 */
 .play-page .hs-opponent-hand {
   top: 6px;

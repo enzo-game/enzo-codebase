@@ -335,7 +335,7 @@ export default function BattlePage() {
 
   return (
     <main
-      className="play-page min-h-screen bg-neutral-950 text-neutral-100 flex flex-col"
+      className="play-page vs-page min-h-screen bg-neutral-950 text-neutral-100 flex flex-col"
       style={uiZoom > 1 ? { minHeight: `calc(100vh / ${uiZoom})` } : undefined}
     >
       <AmbientAudio />
