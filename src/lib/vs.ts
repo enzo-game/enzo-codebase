@@ -84,6 +84,28 @@ export function subscribeMatch(
   return channel;
 }
 
+// ───────────────────────── 對局內即時聊天（好友房，broadcast）─────────────────────────
+// 好友房是「邀請特定朋友對戰」，所以是朋友對朋友聊天（非陌生人），風險低。
+// 用 Supabase Realtime broadcast：訊息只在兩個 client 之間即時廣播、不進資料庫（一次性、
+// 不留存、無需 migration/RLS）。self:false → 送出者不會收到自己的回音，所以「收到的訊息一律
+// 來自對手」，本端送出時自己在畫面上樂觀顯示即可。
+export type ChatMsg = { text: string; ts: number };
+
+/** 訂閱對局聊天頻道；收到對手訊息時呼叫 onMessage。回傳 channel 供送訊息與清理。 */
+export function subscribeChat(matchId: string, onMessage: (m: ChatMsg) => void): RealtimeChannel {
+  const sb = client();
+  const channel = sb
+    .channel(`chat:${matchId}`, { config: { broadcast: { self: false } } })
+    .on("broadcast", { event: "msg" }, ({ payload }) => onMessage(payload as ChatMsg))
+    .subscribe();
+  return channel;
+}
+
+/** 送一則聊天訊息（廣播給對手）。text 已在呼叫端裁切長度。 */
+export function sendChat(channel: RealtimeChannel, text: string): void {
+  channel.send({ type: "broadcast", event: "msg", payload: { text, ts: Date.now() } as ChatMsg });
+}
+
 /** 找出我目前「進行中」的對局（斷線重連 / 回大廳後復歸用）。RLS 只會回我參與的列。 */
 export async function findMyActiveMatch(): Promise<Match | null> {
   const uid = await ensureAnonSession();
