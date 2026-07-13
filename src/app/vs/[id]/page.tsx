@@ -384,25 +384,27 @@ function attackHint(view: SeatView, attackerKey: string): string {
 }
 
 // 選了要指定目標的法術時的具體提示：能打誰、為什麼、怎麼取消。
+// 引擎規則（match.ts validatePlay）：any/anyMinion 的潛行限制只擋「對手」的潛行隨從，
+// 我方潛行隨從一律可選——文字必須講對，不能寫成「雙方潛行都不能選」誤導玩家。
 function spellHint(card: Card, view: SeatView): string {
   const name = card.nameZh;
   const cancel = `（點空白處可取消）`;
   const kind = spellTargetKind(card);
-  const stealthed = view.opp.board.filter((m) => m.stealth).length;
+  const stealthNote = view.opp.board.some((m) => m.stealth) ? "（對手的潛行隨從不能選，我方隨從不受影響）" : "";
+  const noMinionAtAll = view.you.board.length === 0 && view.opp.board.filter((m) => !m.stealth).length === 0;
   switch (kind) {
     case "any":
-      return `「${name}」：可以打對手英雄，或任何一個未潛行的隨從（不分敵我）${
-        stealthed > 0 ? "——對手有潛行隨從不能選" : ""
-      }。${cancel}`;
+      return `「${name}」：可以打對手英雄，或指定任何一個隨從（不分敵我）${stealthNote}。${cancel}`;
     case "anyMinion":
-      return `「${name}」：可以指定任何一個未潛行的隨從（不分敵我，但不能打英雄）${
-        stealthed > 0 ? "——對手有潛行隨從不能選" : ""
-      }。${cancel}`;
+      if (noMinionAtAll) {
+        return `「${name}」：需要指定一個隨從（不能打英雄），但雙方場上都沒有可選目標。${cancel}`;
+      }
+      return `「${name}」：可以指定任何一個隨從（不分敵我，但不能打英雄）${stealthNote}。${cancel}`;
     case "enemyMinion":
       if (view.opp.board.filter((m) => !m.stealth).length === 0) {
         return `「${name}」：需要指定一個敵方隨從，但對手場上沒有可選目標（潛行隨從不算）。${cancel}`;
       }
-      return `「${name}」：只能指定對手的隨從${stealthed > 0 ? "（潛行的不能選）" : ""}。${cancel}`;
+      return `「${name}」：只能指定對手的隨從${view.opp.board.some((m) => m.stealth) ? "（潛行的不能選）" : ""}。${cancel}`;
     case "friendMinion":
       if (view.you.board.length === 0) {
         return `「${name}」：需要指定一個我方隨從，但你場上還沒有隨從。${cancel}`;
