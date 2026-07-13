@@ -2,6 +2,7 @@
 // 純展示元件（無 hooks）：寶石 StatGem、卡面 HandCard、隨從 MinionToken、英雄 HeroPortrait、
 // 法力條 ManaStrip、對手手牌背面 CardBackFan。樣式沿用 globals.css 的 hs-* 類。
 import { Noto_Serif_TC } from "next/font/google";
+import type { CSSProperties } from "react";
 import { CARD_LEARNING, RARITY_COLOR, type Card } from "@/data/cards";
 import type { Minion } from "@/engine/types";
 // 卡面美術資料改由 src/data/cardArt.ts 單一來源提供（與 /play 共用，避免兩份漂移）。
@@ -151,14 +152,18 @@ export function CardInspectModal({ card, playable, blockReason, onClose, onPlay 
 /** 出牌/攻擊造成的即時反饋：浮動數字（傷害/回復）。由呼叫端依「前後 view diff」算出，非 undefined 時渲染一次。 */
 export type FloatFx = { text: string; heal?: boolean };
 
-export function MinionToken({ minion, targetable, ready, selected, entering, hit, float, onClick }: {
+export function MinionToken({ minion, targetable, ready, selected, entering, hit, windup, float, onClick, elRef, style }: {
   minion: Minion; targetable?: boolean; ready?: boolean; selected?: boolean;
-  entering?: boolean; hit?: boolean; float?: FloatFx; onClick?: () => void;
+  entering?: boolean; hit?: boolean; windup?: boolean; float?: FloatFx; onClick?: () => void;
+  elRef?: (el: HTMLButtonElement | null) => void; style?: CSSProperties;
 }) {
   const art = CARD_ART[minion.card.id];
   const kw = [minion.taunt ? "嘲諷" : "", minion.stealth ? "潛行" : ""].filter(Boolean).join("·");
   return (
     <button
+      ref={elRef}
+      style={style}
+      data-mkey={minion.key}
       onClick={onClick}
       disabled={!targetable && !ready}
       title={`${minion.card.nameZh}${kw ? `（${kw}）` : ""}`}
@@ -169,6 +174,7 @@ export function MinionToken({ minion, targetable, ready, selected, entering, hit
         ${ready ? "ring-2 ring-emerald-400/70 cursor-pointer" : ""}
         ${selected ? "ring-2 ring-emerald-300 -translate-y-1" : ""}
         ${entering ? "hs-token-enter" : ""}
+        ${windup ? "hs-windup" : ""}
         ${hit ? "hs-token-hit hs-impact" : ""}`}
     >
       <span className="absolute inset-0 rounded-[8px] overflow-hidden">
@@ -191,12 +197,14 @@ export function MinionToken({ minion, targetable, ready, selected, entering, hit
 }
 
 // ───────────────────────── 英雄肖像 ─────────────────────────
-export function HeroPortrait({ variant, name, hp, maxHp, sub, targetable, thinking, hit, float, onClick }: {
+export function HeroPortrait({ variant, name, hp, maxHp, sub, targetable, thinking, hit, float, onClick, elRef }: {
   variant: "opp" | "you"; name: string; hp: number; maxHp: number; sub: string;
   targetable?: boolean; thinking?: boolean; hit?: boolean; float?: FloatFx; onClick?: () => void;
+  elRef?: (el: HTMLButtonElement | null) => void;
 }) {
   return (
     <button
+      ref={elRef}
       onClick={targetable ? onClick : undefined}
       disabled={!targetable}
       className={`hs-portrait hs-portrait-${variant === "opp" ? "enemy" : "player"} relative transition ${targetable ? "hs-hero-targetable hs-attack-target cursor-crosshair" : ""} ${hit ? "hs-hero-shake hs-impact" : ""}`}

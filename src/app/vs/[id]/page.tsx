@@ -48,9 +48,20 @@ export default function BattlePage() {
   const [mulliganSel, setMulliganSel] = useState<Set<number>>(new Set());
   const [nowTs, setNowTs] = useState(() => Date.now());
   const [fx, setFx] = useState<FxState>({ enter: EMPTY_SET, hit: EMPTY_SET, floats: EMPTY_FLOATS });
+  const [windupKey, setWindupKey] = useState<string | null>(null); // 攻擊出手前的短暫蓄力（跟 /play 同招）
+  const [lungeMap, setLungeMap] = useState<Record<string, string>>({}); // 攻擊者衝向目標的 transform
   const channelRef = useRef<RealtimeChannel | null>(null);
   const viewRef = useRef<SeatView | null>(null); // 最新視角（給 act/refresh 內做前後 diff 觸發音效/小動畫）
   const busyRef = useRef(false); // act() 動作進行中時，refresh() 拉到的更新多半是同一動作的回音，跳過動畫避免重複播
+  const attackingRef = useRef(false); // 蓄力／衝刺動畫播放中（busy 還沒設 true 之前）避免重複觸發
+  const elsRef = useRef<Map<string, HTMLElement>>(new Map()); // 隨從/英雄的 DOM 位置登記（算衝刺位移用，跟 /play useCombat 同招）
+  const registerEl = useCallback(
+    (anchor: string) => (el: HTMLElement | null) => {
+      if (el) elsRef.current.set(anchor, el);
+      else elsRef.current.delete(anchor);
+    },
+    [],
+  );
 
   // 依前後 view diff 出的小動畫（隨從登場、受擊震動＋閃光、浮動傷害/回復數字），過場後自動清掉。
   const applyFx = useCallback((diff: FxDiff) => {
@@ -169,6 +180,35 @@ export default function BattlePage() {
     [busy, matchId, applyFx],
   );
 
+  /** 攻擊出手：蓄力（windup）→ 衝向目標（lunge，依 DOM 位置算位移，跟 /play useCombat 同招）
+   *  →送出真正的動作 → 落回原位。/play 有完整事件時間軸可以精準編排每一步，/vs 沒有那條時間軸
+   *  （伺服器只回結算後的 view），這裡用「先播蓄力+衝刺、動畫尾聲才送出請求」的簡化版本近似同樣的
+   *  觀感，衝刺到位後卡片停留在目標位置直到伺服器回應（受擊震動/浮動傷害才接手），落幕才彈回原位。 */
+  const doAttack = useCallback(
+    async (attackerKey: string, target: ClientTarget, targetAnchor: string) => {
+      if (busy || attackingRef.current) return;
+      attackingRef.current = true;
+      const reduceMotion =
+        typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      try {
+        if (!reduceMotion) {
+          setWindupKey(attackerKey);
+          await sleep(150);
+          const a = elsRef.current.get(attackerKey)?.getBoundingClientRect();
+          const b = elsRef.current.get(targetAnchor)?.getBoundingClientRect();
+          if (a && b) setLungeMap({ [attackerKey]: lungeTransform(a, b) });
+          await sleep(190);
+        }
+        setWindupKey(null);
+        await act({ type: "attack", attackerKey, target });
+      } finally {
+        setLungeMap({});
+        attackingRef.current = false;
+      }
+    },
+    [busy, act],
+  );
+
   if (!supabaseConfigured) {
     return <Centered><p className="text-amber-300">後端尚未設定，無法連線對戰。</p></Centered>;
   }
@@ -221,7 +261,7 @@ export default function BattlePage() {
   function onTargetHero(who: "you" | "opp") {
     if (!selecting) return;
     if (selecting.mode === "attack" && who === "opp") {
-      void act({ type: "attack", attackerKey: selecting.attackerKey, target: { kind: "hero" } });
+      void doAttack(selecting.attackerKey, { kind: "hero" }, heroFxKey("opp"));
     } else if (selecting.mode === "spell" && who === "opp") {
       void act({ type: "playCard", cardId: selecting.card.id, target: { kind: "hero" } });
     }
@@ -230,7 +270,7 @@ export default function BattlePage() {
     if (!selecting) return;
     const target: ClientTarget = { kind: "minion", who, key };
     if (selecting.mode === "attack") {
-      if (who === "opp") void act({ type: "attack", attackerKey: selecting.attackerKey, target });
+      if (who === "opp") void doAttack(selecting.attackerKey, target, key);
     } else {
       void act({ type: "playCard", cardId: selecting.card.id, target });
     }
@@ -301,6 +341,7 @@ export default function BattlePage() {
           hit={fx.hit.has(heroFxKey("opp"))}
           float={fx.floats[heroFxKey("opp")]}
           onClick={() => onTargetHero("opp")}
+          elRef={registerEl(heroFxKey("opp"))}
         />
 
         {selecting ? (
@@ -310,6 +351,7 @@ export default function BattlePage() {
               : attackHint(view, selecting.attackerKey)}
           </div>
         ) : null}
+        {selecting?.mode === "attack" ? <AttackArrow fromKey={selecting.attackerKey} /> : null}
 
         <div className="hs-combat-lane relative">
           {/* 對手戰場 */}
@@ -325,6 +367,7 @@ export default function BattlePage() {
                   hit={fx.hit.has(m.key)}
                   float={fx.floats[m.key]}
                   onClick={() => onTargetMinion("opp", m.key)}
+                  elRef={registerEl(m.key)}
                 />
               ))}
             </div>
@@ -349,10 +392,13 @@ export default function BattlePage() {
                     selected={selecting?.mode === "attack" && selecting.attackerKey === m.key}
                     entering={fx.enter.has(m.key)}
                     hit={fx.hit.has(m.key)}
+                    windup={windupKey === m.key}
                     float={fx.floats[m.key]}
                     onClick={() =>
                       selecting?.mode === "spell" ? onTargetMinion("you", m.key) : onMyMinionClick(m)
                     }
+                    elRef={registerEl(m.key)}
+                    style={lungeMap[m.key] ? { transform: lungeMap[m.key], zIndex: 40 } : undefined}
                   />
                 );
               })}
@@ -370,6 +416,7 @@ export default function BattlePage() {
           hit={fx.hit.has(heroFxKey("you"))}
           float={fx.floats[heroFxKey("you")]}
           onClick={() => onTargetHero("you")}
+          elRef={registerEl(heroFxKey("you"))}
         />
         <ManaStrip variant="you" mana={view.you.mana} maxMana={view.you.maxMana} />
 
@@ -441,6 +488,17 @@ export default function BattlePage() {
       {view.phase === "over" ? <OverOverlay win={view.outcome === "win"} onExit={() => router.push("/vs")} /> : null}
     </main>
   );
+}
+
+// ───────────────────────── 攻擊蓄力＋衝刺（跟 /play 同款手感）─────────────────────────
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** 依攻擊者／目標的 DOM 位置算衝刺位移：移動 62% 距離＋放大，跟 /play useCombat 的
+ *  computeLunge 公式一致（同一套視覺語彙，只是這裡沒有事件時間軸，靠 rect 現算）。 */
+function lungeTransform(a: DOMRect, b: DOMRect): string {
+  const dx = b.left + b.width / 2 - (a.left + a.width / 2);
+  const dy = b.top + b.height / 2 - (a.top + a.height / 2);
+  return `translate(${(dx * 0.62).toFixed(0)}px, ${(dy * 0.62).toFixed(0)}px) scale(1.1)`;
 }
 
 // ───────────────────────── 小動畫（隨從登場／受擊／浮動數字）─────────────────────────
@@ -593,6 +651,42 @@ function targetHighlight(view: SeatView, selecting: Selecting, busy: boolean) {
 }
 
 // ───────────────────────── 子元件 ─────────────────────────
+// 攻擊指示箭頭：選定攻擊者後，從該隨從畫一條發光箭頭指向滑鼠，明確表示「正在選攻擊目標」
+// （跟 /play 的 AttackArrow 一模一樣的做法：直接 DOM query data-mkey，不透過 React ref 物件——
+// 在 render 期間讀 ref.current 會被 react-hooks/refs 規則擋下來，純 DOM API 呼叫則不會）。
+function AttackArrow({ fromKey }: { fromKey: string }) {
+  const [end, setEnd] = useState<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => setEnd({ x: e.clientX, y: e.clientY });
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
+  }, []);
+  const el = typeof document !== "undefined" ? document.querySelector<HTMLElement>(`[data-mkey="${fromKey}"]`) : null;
+  const r = el?.getBoundingClientRect();
+  if (!r || !end) return null;
+  const sx = r.left + r.width / 2;
+  const sy = r.top + r.height / 2;
+  const midX = (sx + end.x) / 2;
+  const midY = (sy + end.y) / 2 - 44;
+  return (
+    <svg className="attack-arrow" width="100%" height="100%" aria-hidden>
+      <defs>
+        <marker id="vs-atk-head" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto">
+          <path d="M0 0 L9 4.5 L0 9 L2.4 4.5 Z" fill="#fecaca" />
+        </marker>
+      </defs>
+      <path
+        d={`M ${sx} ${sy} Q ${midX} ${midY} ${end.x} ${end.y}`}
+        fill="none"
+        stroke="rgba(251, 113, 133, 0.92)"
+        strokeWidth="5"
+        strokeLinecap="round"
+        markerEnd="url(#vs-atk-head)"
+      />
+    </svg>
+  );
+}
+
 function TurnBadge({ view, secondsLeft }: { view: SeatView; secondsLeft: number | null }) {
   if (view.phase === "over") return <span className="text-sm font-semibold text-neutral-300">對局結束</span>;
   const clock =
