@@ -21,6 +21,9 @@ import {
 
 type View = "idle" | "creating" | "waiting" | "joining" | "connected" | "error";
 
+// 好友房沒人加入的話，1 分鐘後視為過期（伺服器在 join_match 懶執行檢查並直接刪除該房間）。
+const ROOM_EXPIRE_SECONDS = 60;
+
 export default function VsPage() {
   const router = useRouter();
   const [view, setView] = useState<View>("idle");
@@ -32,6 +35,7 @@ export default function VsPage() {
   const [nameInput, setNameInput] = useState("");
   const [savedName, setSavedName] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [nowTs, setNowTs] = useState(() => Date.now());
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   // 卸載時清掉 Realtime 訂閱
@@ -40,6 +44,19 @@ export default function VsPage() {
       channelRef.current?.unsubscribe();
     };
   }, []);
+
+  // 等待對手時每秒跳動一次，純用來在畫面上倒數「房間 1 分鐘沒人加入會失效」（懶算，不用伺服器推）。
+  useEffect(() => {
+    if (view !== "waiting") return;
+    const t = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [view]);
+
+  const roomSecondsLeft =
+    view === "waiting" && match
+      ? Math.max(0, ROOM_EXPIRE_SECONDS - Math.floor((nowTs - new Date(match.created_at).getTime()) / 1000))
+      : null;
+  const roomExpired = roomSecondsLeft === 0;
 
   // 進大廳先看有沒有一場還在進行的對局（回到對戰）＋ 讀我的檔案（戰績 / 名稱）
   useEffect(() => {
@@ -210,6 +227,9 @@ export default function VsPage() {
             >
               建立房間
             </button>
+            <p className="text-[11px] text-neutral-600 text-center -mt-1">
+              房間 {ROOM_EXPIRE_SECONDS} 秒內沒人加入會自動失效，記得建房後馬上把連結傳給對方
+            </p>
             <div className="flex items-center gap-2 pt-2">
               <input
                 value={code}
@@ -229,35 +249,54 @@ export default function VsPage() {
         ) : view === "creating" || view === "joining" ? (
           <p className="text-center text-neutral-400">{view === "creating" ? "建立房間中…" : "加入中…"}</p>
         ) : view === "waiting" ? (
-          <div className="text-center space-y-5">
-            <p className="text-sm text-neutral-400">把房號或邀請連結給對方，等他加入</p>
-            <div className="text-4xl font-mono tracking-[0.4em] bg-neutral-900 border border-neutral-700 rounded-xl py-6">
-              {match?.room_code}
+          roomExpired ? (
+            <div className="text-center space-y-4">
+              <p className="text-amber-300 font-semibold">房間已過期</p>
+              <p className="text-xs text-neutral-500 leading-relaxed">
+                超過 {ROOM_EXPIRE_SECONDS} 秒沒有對手加入，房號 {match?.room_code} 已經失效，
+                不能再用囉——重新建一個房間，再把新連結給對方。
+              </p>
+              <button
+                onClick={handleCreate}
+                className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 font-semibold transition"
+              >
+                重新建立房間
+              </button>
             </div>
-            {match ? (
-              <div className="space-y-2">
-                <p className="text-xs text-neutral-500">邀請連結（點對方裝置開啟會自動加入）</p>
-                <div className="flex items-center gap-2">
-                  <input
-                    readOnly
-                    value={inviteUrl(match.room_code)}
-                    onFocus={(e) => e.currentTarget.select()}
-                    className="flex-1 min-w-0 rounded-lg bg-neutral-900 border border-neutral-700 px-3 py-2 text-xs text-neutral-300 truncate focus:outline-none focus:border-emerald-500"
-                  />
-                  <button
-                    onClick={() => copyInvite(match.room_code)}
-                    className="shrink-0 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-2 text-xs font-semibold transition"
-                  >
-                    {copied ? "已複製" : "複製"}
-                  </button>
-                </div>
+          ) : (
+            <div className="text-center space-y-5">
+              <p className="text-sm text-neutral-400">把房號或邀請連結給對方，等他加入</p>
+              <div className="text-4xl font-mono tracking-[0.4em] bg-neutral-900 border border-neutral-700 rounded-xl py-6">
+                {match?.room_code}
               </div>
-            ) : null}
-            <p className="text-sm text-neutral-500 animate-pulse">等待對手接上…</p>
-            <button onClick={reset} className="text-sm text-neutral-500 hover:text-neutral-300 underline">
-              取消
-            </button>
-          </div>
+              {match ? (
+                <div className="space-y-2">
+                  <p className="text-xs text-neutral-500">邀請連結（點對方裝置開啟會自動加入）</p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      readOnly
+                      value={inviteUrl(match.room_code)}
+                      onFocus={(e) => e.currentTarget.select()}
+                      className="flex-1 min-w-0 rounded-lg bg-neutral-900 border border-neutral-700 px-3 py-2 text-xs text-neutral-300 truncate focus:outline-none focus:border-emerald-500"
+                    />
+                    <button
+                      onClick={() => copyInvite(match.room_code)}
+                      className="shrink-0 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-2 text-xs font-semibold transition"
+                    >
+                      {copied ? "已複製" : "複製"}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+              <p className="text-sm text-neutral-500 animate-pulse">等待對手接上…</p>
+              <p className={`text-xs tabular-nums font-mono ${(roomSecondsLeft ?? 0) <= 10 ? "text-rose-400 animate-pulse" : "text-neutral-600"}`}>
+                房間 {ROOM_EXPIRE_SECONDS} 秒內沒人加入會自動失效，剩 {roomSecondsLeft}s
+              </p>
+              <button onClick={reset} className="text-sm text-neutral-500 hover:text-neutral-300 underline">
+                取消
+              </button>
+            </div>
+          )
         ) : view === "connected" ? (
           <div className="text-center space-y-4">
             <div className="text-emerald-400 text-lg font-semibold">兩位玩家已連上</div>
@@ -320,6 +359,7 @@ function msg(e: unknown): string {
 
 function joinErr(e: unknown): string {
   const m = msg(e);
+  if (m.includes("room expired")) return `房間已過期（超過 ${ROOM_EXPIRE_SECONDS} 秒沒人加入），請對方重新建房`;
   if (m.includes("not joinable")) return "房號不存在、已滿，或那是你自己的房";
   return m;
 }
