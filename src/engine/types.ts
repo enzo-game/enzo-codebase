@@ -67,6 +67,10 @@ export type QuizState = {
   answerIdx: number;
   word: string;
   chinese: string;
+  /** "word"＝單字四選一（預設）；"sentence"＝困難模式的句子四選一。 */
+  kind?: "word" | "sentence";
+  /** 句子題的官方發音檔（word 題沿用舊路徑，從 card.vocabId 查 audioUrl()）。 */
+  audioUrl?: string | null;
 };
 
 export const HERO_HP = 30;

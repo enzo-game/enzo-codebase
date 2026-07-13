@@ -2,6 +2,7 @@
 // P0：從 src/app/play/page.tsx 抽出，供前端 UI 與（未來）Supabase Edge Function 共用。
 import { CARDS, Card, TOKEN_SAPLING, Theme } from "@/data/cards";
 import { vocab, distractors } from "@/data/truku";
+import { randomSentence, sentenceDistractors } from "@/data/truku-sentences";
 import {
   Anchor,
   CombatEvent,
@@ -199,9 +200,20 @@ export function attackTargets(defBoard: Minion[]): { heroAllowed: boolean; keys:
 export function drawCards(ng: Game, side: Side, n: number): number {
   let drawn = 0;
   for (let i = 0; i < n; i++) {
-    const deck = side === "player" ? ng.pDeck : ng.eDeck;
     const hand = side === "player" ? ng.pHand : ng.eHand;
-    if (deck.length === 0 || hand.length >= HAND_MAX) break;
+    if (hand.length >= HAND_MAX) break; // 手牌已滿，不再抽（不棄牌、不懲罰）
+    // 牌庫抽空 → 立刻重新洗一副全新牌庫，確保永遠有牌可抽（無疲勞機制）
+    if ((side === "player" ? ng.pDeck : ng.eDeck).length === 0) {
+      const refill = buildDeck();
+      if (side === "player") ng.pDeck = refill;
+      else ng.eDeck = refill;
+      ng.log = pushLog(
+        ng.log,
+        `${side === "player" ? "織者" : "山林試煉"}的牌庫已用盡，重新洗牌`,
+        side === "player" ? "info" : "sys",
+      );
+    }
+    const deck = side === "player" ? ng.pDeck : ng.eDeck;
     const [top, ...rest] = deck;
     if (side === "player") {
       ng.pDeck = rest;
@@ -741,16 +753,52 @@ export function mulligan(g: Game, replaceIdx: number[]): Game {
 
 // ───────────────────────── 答題（真實太魯閣語詞庫）─────────────────────────
 
+/** 單字題：隨機決定方向（中文找族語 / 族語找中文），同一張卡不會每次都長得一樣。 */
 export function makeQuiz(card: Card): QuizState {
   const v = vocab(card.vocabId);
-  const options = shuffle([v.word, ...distractors(card.vocabId, 3).map((d) => d.word)]);
+  const reverse = Math.random() < 0.5;
+  // 多要幾個干擾候選（詞庫偶爾有同義重複詞，去重後才 slice(0,3)，確保選項一定湊滿 4 個）。
+  const candidates = distractors(card.vocabId, 8);
+  const options = reverse
+    ? dedupeWithAnswer(v.chinese, candidates.map((d) => d.chinese), 3)
+    : dedupeWithAnswer(v.word, candidates.map((d) => d.word), 3);
   return {
     card,
-    prompt: `「${v.chinese}」的太魯閣族語是？`,
+    prompt: reverse ? `「${v.word}」的中文意思是？` : `「${v.chinese}」的太魯閣族語是？`,
     options,
-    answerIdx: options.indexOf(v.word),
+    answerIdx: options.indexOf(reverse ? v.chinese : v.word),
     word: v.word,
     chinese: v.chinese,
+    kind: "word",
+  };
+}
+
+/** 取正解＋最多 n 個文字不重複的干擾項並洗牌（詞庫偶爾有同義重複詞/句，重複會讓題目沒法作答）。 */
+function dedupeWithAnswer(answer: string, candidates: string[], n: number): string[] {
+  const seen = new Set([answer]);
+  const uniq: string[] = [];
+  for (const c of candidates) {
+    if (uniq.length >= n) break;
+    if (seen.has(c)) continue;
+    seen.add(c);
+    uniq.push(c);
+  }
+  return shuffle([answer, ...uniq]);
+}
+
+/** 困難模式：整句四選一（非拆詞卡重組，戰鬥節奏不被拖慢）。詞庫來源同 /sentences（2024 句真實例句）。 */
+export function makeSentenceQuiz(card: Card): QuizState {
+  const s = randomSentence();
+  const options = shuffle([s.truku, ...sentenceDistractors(s, 3).map((d) => d.truku)]);
+  return {
+    card,
+    prompt: `「${s.chinese}」的太魯閣語是？`,
+    options,
+    answerIdx: options.indexOf(s.truku),
+    word: s.truku,
+    chinese: s.chinese,
+    kind: "sentence",
+    audioUrl: s.audioUrl,
   };
 }
 

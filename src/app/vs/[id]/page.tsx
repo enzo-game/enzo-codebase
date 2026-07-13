@@ -24,6 +24,7 @@ import {
   HeroPortrait,
   ManaStrip,
   CardBackFan,
+  CardInspectModal,
   CARD_ART,
   BOARD_BG,
 } from "@/lib/cardVisual";
@@ -41,6 +42,7 @@ export default function BattlePage() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [selecting, setSelecting] = useState<Selecting>(null);
+  const [inspect, setInspect] = useState<Card | null>(null);
   const [connected, setConnected] = useState(true);
   const [nowTs, setNowTs] = useState(() => Date.now());
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -136,7 +138,18 @@ export default function BattlePage() {
   const myTurn = view.yourTurn && !busy;
   const quiz = view.quiz;
 
-  function onCardClick(card: Card) {
+  /** 一張卡目前能不能出，以及不能出的原因（詳情視窗的「出牌」鈕與手牌標示共用邏輯） */
+  function cardPlayInfo(card: Card): { playable: boolean; reason?: string } {
+    if (!myTurn || quiz) return { playable: false };
+    if (card.cost > view!.you.mana) return { playable: false, reason: "法力不足" };
+    if (card.type === "minion" && view!.you.board.length >= BOARD_MAX) {
+      return { playable: false, reason: "戰場已滿" };
+    }
+    return { playable: true };
+  }
+
+  /** 詳情視窗按「出牌」才真的送出動作／進入選目標（法術：進 selecting 模式；其餘：直接送出） */
+  function confirmPlay(card: Card) {
     if (!myTurn || quiz) return;
     if (card.type === "minion") {
       void act({ type: "playCard", cardId: card.id });
@@ -301,7 +314,7 @@ export default function BattlePage() {
                       : undefined;
               const dim = !myTurn || Boolean(quiz);
               return (
-                <HandCard key={`${c.id}-${i}`} card={c} dim={dim} blockedReason={blocked} onClick={() => onCardClick(c)} />
+                <HandCard key={`${c.id}-${i}`} card={c} dim={dim} blockedReason={blocked} onClick={() => setInspect(c)} />
               );
             })}
           </div>
@@ -326,6 +339,18 @@ export default function BattlePage() {
         </div>
       ) : null}
 
+      {inspect && (
+        <CardInspectModal
+          card={inspect}
+          playable={cardPlayInfo(inspect).playable}
+          blockReason={cardPlayInfo(inspect).reason}
+          onClose={() => setInspect(null)}
+          onPlay={() => {
+            setInspect(null);
+            confirmPlay(inspect);
+          }}
+        />
+      )}
       {quiz ? <QuizModal quiz={quiz} disabled={busy} onAnswer={(idx) => act({ type: "answer", optionIdx: idx })} /> : null}
       {view.phase === "over" ? <OverOverlay win={view.outcome === "win"} onExit={() => router.push("/vs")} /> : null}
     </main>
