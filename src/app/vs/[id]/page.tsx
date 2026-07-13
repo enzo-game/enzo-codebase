@@ -268,7 +268,10 @@ export default function BattlePage() {
             <div className="hs-board-row hs-board-row-player min-h-20 px-2 pt-2 pb-4 flex flex-wrap justify-center gap-x-3 gap-y-4">
               {view.you.board.length === 0 && <span className="hs-board-empty text-xs self-center px-2">尚無隨從，從手牌打出吧。</span>}
               {view.you.board.map((m) => {
-                const ready = myTurn && !quiz && m.canAttack && m.attack > 0;
+                // 正在選法術目標時，「可攻擊」跟「是否為合法法術目標」是兩回事：ready 必須
+                // 強制關掉，否則按鈕不會 disabled（MinionToken 的 disabled = !targetable && !ready），
+                // 即使這隻隨從不在 highlight.youMinions 裡也照樣點得下去，點了才被伺服器 400 拒絕。
+                const ready = myTurn && !quiz && m.canAttack && m.attack > 0 && selecting?.mode !== "spell";
                 return (
                   <MinionToken
                     key={m.key}
