@@ -110,7 +110,7 @@ function runDeathrattle(ng: Game, dyingSide: Side, card: Card): void {
   switch (card.deathrattle) {
     case "drawOwner1": {
       const n = drawCards(ng, dyingSide, 1);
-      if (n > 0) ng.log = pushLog(ng.log, `${card.nameZh} 亡語：${who}抽 ${n} 張牌`, my ? "info" : "sys");
+      ng.log = pushLog(ng.log, `${card.nameZh} 亡語：${who}${drawNote(n, 1)}`, my ? "info" : "sys");
       break;
     }
     case "summonSapling": {
@@ -227,6 +227,15 @@ export function drawCards(ng: Game, side: Side, n: number): number {
   return drawn;
 }
 
+/** 抽牌結果的戰報文字。drawCards 對「牌庫抽空」會自動重洗一副全新牌庫，所以實際抽到
+ *  張數 n 少於原本要抽的 requested，唯一原因是手牌已滿（HAND_MAX）——這裡把原因講清楚，
+ *  不要讓玩家覺得「我抽了，但桌上什麼都沒有」卻不知道為什麼。 */
+function drawNote(n: number, requested: number): string {
+  if (n >= requested) return `抽 ${n} 張牌`;
+  if (n === 0) return "手牌已滿，沒抽到牌";
+  return `抽 ${n} 張牌（手牌已滿，少抽了 ${requested - n} 張）`;
+}
+
 // ───────────────────────── 隨從入場（含戰吼）─────────────────────────
 
 export function playMinionFor(g: Game, side: Side, card: Card, isCorrect: boolean): Game {
@@ -257,7 +266,7 @@ export function playMinionFor(g: Game, side: Side, card: Card, isCorrect: boolea
   switch (card.effect) {
     case "draw1": {
       const n = drawCards(ng, side, isCorrect ? 2 : 1);
-      if (n > 0) ng.log = pushLog(ng.log, `${card.nameZh} 戰吼：${my ? "織者" : "山林試煉"}抽 ${n} 張牌`, my ? "info" : "sys");
+      ng.log = pushLog(ng.log, `${card.nameZh} 戰吼：${my ? "織者" : "山林試煉"}${drawNote(n, isCorrect ? 2 : 1)}`, my ? "info" : "sys");
       break;
     }
     case "summonSapling1": {
@@ -390,15 +399,16 @@ export function castSpell(g: Game, side: Side, card: Card, isCorrect: boolean, t
       note = "回復我方英雄 8 點";
       if (isCorrect) {
         const n = drawCards(ng, side, 1);
-        if (n > 0) note += "；抽 1 張牌";
+        note += `；${drawNote(n, 1)}`;
       }
       break;
     }
     case "draw1":
     case "draw2": {
       const base = card.effect === "draw1" ? 1 : 2;
-      const n = drawCards(ng, side, base + (isCorrect ? 1 : 0));
-      note = `抽 ${n} 張牌`;
+      const requested = base + (isCorrect ? 1 : 0);
+      const n = drawCards(ng, side, requested);
+      note = drawNote(n, requested);
       break;
     }
     case "allFriendStealth": {
@@ -464,7 +474,7 @@ export function castSpell(g: Game, side: Side, card: Card, isCorrect: boolean, t
       }
       if (isCorrect) {
         const n = drawCards(ng, side, 1);
-        if (n > 0) note += "；抽 1 張牌";
+        note += `；${drawNote(n, 1)}`;
       }
       break;
     }
