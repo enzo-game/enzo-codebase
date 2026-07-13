@@ -231,7 +231,7 @@ export default function BattlePage() {
     }
   }
 
-  const highlight = targetHighlight(view, selecting);
+  const highlight = targetHighlight(view, selecting, busy);
 
   return (
     <main className="play-page min-h-screen bg-neutral-950 text-neutral-100 flex flex-col">
@@ -316,7 +316,9 @@ export default function BattlePage() {
                 // 正在選法術目標時，「可攻擊」跟「是否為合法法術目標」是兩回事：ready 必須
                 // 強制關掉，否則按鈕不會 disabled（MinionToken 的 disabled = !targetable && !ready），
                 // 即使這隻隨從不在 highlight.youMinions 裡也照樣點得下去，點了才被伺服器 400 拒絕。
-                const ready = myTurn && !quiz && m.canAttack && m.attack > 0 && selecting?.mode !== "spell";
+                // busy（上一個動作還在飛）也要關掉，不然隨從還亮著可攻擊，點下去被 act() 的
+                // if (busy) return 悄悄吞掉、畫面完全沒反應——玩家會覺得「明明可以攻擊怎麼點不動」。
+                const ready = myTurn && !quiz && !busy && m.canAttack && m.attack > 0 && selecting?.mode !== "spell";
                 return (
                   <MinionToken
                     key={m.key}
@@ -518,9 +520,12 @@ function spellHint(card: Card, view: SeatView): string {
   }
 }
 
-function targetHighlight(view: SeatView, selecting: Selecting) {
+// busy＝上一個動作還在飛（伺服器還沒回應）。這段時間點目標會被 act() 的 if (busy) return
+// 悄悄吞掉、不會有任何錯誤提示，等同「畫面說可以點，點了卻沒反應」。與其讓玩家白點，
+// busy 時直接不亮任何目標，跟「現在真的不能點」的實際狀態一致。
+function targetHighlight(view: SeatView, selecting: Selecting, busy: boolean) {
   const none = { oppHero: false, youHero: false, oppMinions: new Set<string>(), youMinions: new Set<string>() };
-  if (!selecting) return none;
+  if (busy || !selecting) return none;
   if (selecting.mode === "attack") {
     const taunts = view.opp.board.filter((m) => m.taunt && !m.stealth);
     if (taunts.length > 0) return { ...none, oppMinions: new Set(taunts.map((m) => m.key)) };
