@@ -206,6 +206,22 @@ export default function BattlePage() {
     [busy, matchId, applyFx],
   );
 
+  // 結束回合快捷鍵：空白鍵（司令要求，每次點按鈕太麻煩）。只在「輪到你、非答題/換牌/結束、
+  // 沒開卡片詳情彈窗、上一個動作沒在飛」時才觸發；preventDefault 同時擋掉頁面捲動，也擋掉
+  // 「剛好有某顆按鈕獲得焦點、空白鍵會誤觸發它」的預設行為，確保空白鍵一律是「結束回合」。
+  const canEndTurn =
+    !!view && !busy && !inspect && view.phase === "playing" && view.yourTurn && !view.quiz;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== "Space" || e.repeat) return;
+      if (!canEndTurn) return;
+      e.preventDefault();
+      void act({ type: "endTurn" });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [canEndTurn, act]);
+
   /** 攻擊出手：蓄力（windup）→ 衝向目標（lunge，依 DOM 位置算位移，跟 /play useCombat 同招）
    *  →送出真正的動作 → 落回原位。/play 有完整事件時間軸可以精準編排每一步，/vs 沒有那條時間軸
    *  （伺服器只回結算後的 view），這裡用「先播蓄力+衝刺、動畫尾聲才送出請求」的簡化版本近似同樣的
@@ -472,13 +488,15 @@ export default function BattlePage() {
           </div>
         </section>
 
-        {/* 結束回合（浮在牌桌右下） */}
+        {/* 結束回合（浮在牌桌右下）。快捷鍵：空白鍵。 */}
         <button
           onClick={() => act({ type: "endTurn" })}
           disabled={!myTurn || Boolean(quiz)}
+          title="快捷鍵：空白鍵"
           className="absolute top-1/2 right-3 -translate-y-1/2 z-30 rounded-xl bg-emerald-600 enabled:hover:bg-emerald-500 px-4 py-3 text-sm font-semibold shadow-lg transition disabled:opacity-40"
         >
           結束<br />回合
+          <span className="mt-1 block text-[10px] font-normal text-emerald-100/70">空白鍵</span>
         </button>
       </div>
 
