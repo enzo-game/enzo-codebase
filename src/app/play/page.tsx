@@ -532,7 +532,7 @@ export default function PlayPage() {
       return;
     }
     const m = game.pBoard.find((x) => x.key === key);
-    if (!m || !m.canAttack) return;
+    if (!m || !m.canAttack || m.attack <= 0) return;
     setSelected((s) => (s === key ? null : key));
   }
 
@@ -907,7 +907,8 @@ export default function PlayPage() {
               </span>
             )}
             {game.pBoard.map((e) => {
-              const ready = e.canAttack && game.phase === "player" && !game.winner && !pending;
+              const ready = e.canAttack && e.attack > 0 && game.phase === "player" && !game.winner && !pending;
+              const zeroAttackHint = e.attack <= 0 ? "（攻擊力 0，無法出擊）" : "";
               const spellTarget = friendMinionTargetable;
               const art = CARD_ART[e.card.id];
               const kw = [e.taunt ? "嘲諷" : "", e.stealth ? "潛行" : "", e.bonus ? "加成" : ""]
@@ -920,7 +921,7 @@ export default function PlayPage() {
                   data-mkey={e.key}
                   style={lungeStyle(e.key)}
                   onClick={() => onPlayerMinion(e.key)}
-                  title={`${e.card.nameZh}${kw ? `（${kw}）` : ""}`}
+                  title={`${e.card.nameZh}${kw ? `（${kw}）` : ""}${zeroAttackHint}`}
                   className={`hs-token hs-token-enter w-[72px] md:w-[84px] aspect-[4/5] border-2 ${RARITY_COLOR[e.card.rarity]}
                     ${e.taunt ? "hs-token-taunt" : ""}
                     ${shakeMinions.has(e.key) ? "hs-token-hit" : ""}
