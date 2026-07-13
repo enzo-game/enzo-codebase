@@ -143,17 +143,18 @@ export async function sendAction(matchId: string, action: MatchAction): Promise<
 
 // ───────────────────────── P4：個人檔案 / 天梯 ─────────────────────────
 
-export type Profile = { display_name: string; wins: number; losses: number };
+export type Profile = { display_name: string; wins: number; losses: number; account_id: string | null };
 
-/** 讀我自己的檔案（RLS 只讓讀自己）。 */
+/** 讀我自己的檔案（RLS 只讓讀自己）。account_id 有值代表已申請/登入序號。 */
 export async function myProfile(): Promise<Profile | null> {
   const uid = await ensureAnonSession();
   const sb = client();
-  const { data } = await sb.from("profiles").select("display_name,wins,losses").eq("id", uid).maybeSingle();
+  const { data } = await sb.from("profiles").select("display_name,wins,losses,account_id").eq("id", uid).maybeSingle();
   return (data as Profile) ?? null;
 }
 
-/** 設定我的顯示名稱（RLS self-update）。 */
+/** 設定我的顯示名稱（RLS self-update）。純本機這次匿名身分用，跟序號帳號的名稱是分開的——
+ *  申請/登入序號會覆蓋這裡（見 registerAccount/loginAccount）。 */
 export async function setDisplayName(name: string): Promise<void> {
   const uid = await ensureAnonSession();
   const sb = client();
@@ -162,10 +163,40 @@ export async function setDisplayName(name: string): Promise<void> {
   if (error) throw error;
 }
 
-/** 天梯前 20（走 service-role 端點，跨玩家讀取）。 */
-export async function fetchLeaderboard(): Promise<Profile[]> {
+// ───────────────────────── 序號帳號：跨裝置保留戰績 ─────────────────────────
+
+/** 申請新序號（顯示名稱唯一 + 4–6 位 PIN），成功後這台裝置這次的身分即掛上此序號。 */
+export async function registerAccount(displayName: string, pin: string): Promise<string> {
+  const token = await accessToken();
+  const res = await fetch("/api/account/register", {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ displayName, pin }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error ?? "申請失敗");
+  return json.displayName as string;
+}
+
+/** 用既有名稱+PIN 登入，把這台裝置這次的身分接回同一個序號（戰績聚合、顯示名稱同步）。 */
+export async function loginAccount(displayName: string, pin: string): Promise<string> {
+  const token = await accessToken();
+  const res = await fetch("/api/account/login", {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ displayName, pin }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error ?? "登入失敗");
+  return json.displayName as string;
+}
+
+export type LeaderboardRow = { display_name: string; wins: number; losses: number };
+
+/** 天梯前 20（走 service-role 端點，跨玩家讀取；只含已申請序號的玩家，戰績按序號聚合）。 */
+export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
   const res = await fetch("/api/leaderboard", { cache: "no-store" });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error ?? "讀取失敗");
-  return json.leaderboard as Profile[];
+  return json.leaderboard as LeaderboardRow[];
 }
