@@ -256,6 +256,9 @@ export default function BattlePage() {
       <AmbientAudio />
       <BattleMusic />
       <GemDefs />
+      {/* play-shell：跟 /play 共用同一個寬度上限（min(100%,1560px)＋置中），避免超寬螢幕下
+          hs-table 沒有上限地被撐開、隨從卡片卻是固定大小，看起來像牌「飄」在一大片空桌上。 */}
+      <div className="play-shell mx-auto">
       {/* 頂部列 */}
       <div className="px-4 py-2.5 flex items-center justify-between border-b border-neutral-800/80">
         <Link href="/vs" className="text-xs text-neutral-500 hover:text-neutral-300 underline">← 大廳</Link>
@@ -402,6 +405,7 @@ export default function BattlePage() {
 
       {/* 戰報（牌桌下方一條） */}
       <BattleLog log={view.log} />
+      </div>
 
       {err ? (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-rose-900/90 border border-rose-600 text-rose-100 text-sm px-4 py-2 rounded-lg">
