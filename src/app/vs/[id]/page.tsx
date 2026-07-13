@@ -138,9 +138,11 @@ export default function BattlePage() {
   const myTurn = view.yourTurn && !busy;
   const quiz = view.quiz;
 
-  /** 一張卡目前能不能出，以及不能出的原因（詳情視窗的「出牌」鈕與手牌標示共用邏輯） */
+  /** 一張卡目前能不能出，以及不能出的原因（詳情視窗的「出牌」鈕與手牌標示共用這份邏輯，
+   *  兩處都呼叫這裡、不各自重算，避免理由文字兜不起來）。 */
   function cardPlayInfo(card: Card): { playable: boolean; reason?: string } {
-    if (!myTurn || quiz) return { playable: false };
+    if (quiz) return { playable: false, reason: "先答完手上這題" };
+    if (!myTurn) return { playable: false, reason: "還沒輪到你" };
     if (card.cost > view!.you.mana) return { playable: false, reason: "法力不足" };
     if (card.type === "minion" && view!.you.board.length >= BOARD_MAX) {
       return { playable: false, reason: "戰場已滿" };
@@ -304,15 +306,10 @@ export default function BattlePage() {
           <div className="hs-hand-rail">
             {view.you.hand.length === 0 && <span className="text-slate-600 text-xs">手牌已空，結束回合抽牌。</span>}
             {view.you.hand.map((c, i) => {
-              const blocked =
-                !myTurn || quiz
-                  ? undefined
-                  : c.cost > view.you.mana
-                    ? "法力不足"
-                    : c.type === "minion" && view.you.board.length >= BOARD_MAX
-                      ? "戰場已滿"
-                      : undefined;
               const dim = !myTurn || Boolean(quiz);
+              // 手牌整排在「不是你回合／答題中」時只靠變暗表示，不逐張印字（太吵）；
+              // 真的輪到你、單張出不起時才印具體理由。單一來源 cardPlayInfo，跟詳情視窗一致。
+              const blocked = dim ? undefined : cardPlayInfo(c).reason;
               return (
                 <HandCard key={`${c.id}-${i}`} card={c} dim={dim} blockedReason={blocked} onClick={() => setInspect(c)} />
               );
