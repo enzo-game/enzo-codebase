@@ -12,7 +12,7 @@ import type { Minion } from "@/engine/types";
 import { BOARD_MAX } from "@/engine/types";
 import { spellTargetKind } from "@/engine/game";
 import type { SeatView, ClientTarget } from "@/engine/match";
-import { ensureAnonSession, subscribeMatch, fetchView, sendAction } from "@/lib/vs";
+import { ensureAnonSession, subscribeMatch, fetchView, sendAction, subscribeChat, sendChat, type ChatMsg } from "@/lib/vs";
 import { supabaseConfigured } from "@/lib/supabase";
 import AmbientAudio from "@/components/AmbientAudio";
 import BattleMusic from "@/components/BattleMusic";
@@ -50,7 +50,16 @@ export default function BattlePage() {
   const [fx, setFx] = useState<FxState>({ enter: EMPTY_SET, hit: EMPTY_SET, floats: EMPTY_FLOATS });
   const [windupKey, setWindupKey] = useState<string | null>(null); // 攻擊出手前的短暫蓄力（跟 /play 同招）
   const [lungeMap, setLungeMap] = useState<Record<string, string>>({}); // 攻擊者衝向目標的 transform
+  // 對局內即時聊天（好友對戰）：左下浮動聊天窗，broadcast 即時、不留存。
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMsgs, setChatMsgs] = useState<Array<{ from: "you" | "opp"; text: string; id: number }>>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatUnread, setChatUnread] = useState(0);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const chatChannelRef = useRef<RealtimeChannel | null>(null);
+  const chatIdRef = useRef(0);
+  const chatOpenRef = useRef(false);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<SeatView | null>(null); // 最新視角（給 act/refresh 內做前後 diff 觸發音效/小動畫）
   const busyRef = useRef(false); // act() 動作進行中時，refresh() 拉到的更新多半是同一動作的回音，跳過動畫避免重複播
   const attackingRef = useRef(false); // 蓄力／衝刺動畫播放中（busy 還沒設 true 之前）避免重複觸發
@@ -136,6 +145,42 @@ export default function BattlePage() {
     };
   }, [matchId, refresh]);
 
+  // 對局內即時聊天：訂閱 broadcast 頻道，收到對手訊息就插進聊天列；聊天窗關著時累計未讀紅點。
+  useEffect(() => {
+    if (!supabaseConfigured) return;
+    const ch = subscribeChat(matchId, (m: ChatMsg) => {
+      setChatMsgs((list) => [...list.slice(-49), { from: "opp", text: m.text, id: ++chatIdRef.current }]);
+      if (!chatOpenRef.current) setChatUnread((n) => n + 1);
+    });
+    chatChannelRef.current = ch;
+    return () => {
+      ch.unsubscribe();
+      chatChannelRef.current = null;
+    };
+  }, [matchId]);
+
+  useEffect(() => {
+    chatOpenRef.current = chatOpen;
+  }, [chatOpen]);
+
+  const toggleChat = useCallback(() => {
+    setChatOpen((o) => !o);
+    setChatUnread(0); // 開窗＝清未讀；關窗時本來就沒累計，清了也無妨
+  }, []);
+
+  // 新訊息或開窗時捲到底
+  useEffect(() => {
+    if (chatOpen) chatEndRef.current?.scrollIntoView({ block: "end" });
+  }, [chatMsgs, chatOpen]);
+
+  const sendChatMsg = useCallback(() => {
+    const text = chatInput.trim().slice(0, 200);
+    if (!text || !chatChannelRef.current) return;
+    sendChat(chatChannelRef.current, text);
+    setChatMsgs((list) => [...list.slice(-49), { from: "you", text, id: ++chatIdRef.current }]);
+    setChatInput("");
+  }, [chatInput]);
+
   // 每秒跳動（用來導出倒數；setState 在 interval callback 內）
   useEffect(() => {
     const t = setInterval(() => setNowTs(Date.now()), 1000);
@@ -214,6 +259,9 @@ export default function BattlePage() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.code !== "Space" || e.repeat) return;
+      // 正在聊天輸入框（或任何文字輸入）打字時，空白鍵是打空格，不能拿去結束回合。
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
       if (!canEndTurn) return;
       e.preventDefault();
       void act({ type: "endTurn" });
@@ -509,6 +557,66 @@ export default function BattlePage() {
         </div>
       ) : null}
 
+      {/* 左下即時聊天（好友對戰）：一顆浮動按鈕，點開往上展開聊天窗。 */}
+      <div className="fixed left-3 bottom-24 z-40 flex flex-col items-start gap-2">
+        {chatOpen && (
+          <div className="w-64 rounded-xl border border-neutral-700/70 bg-neutral-950/90 backdrop-blur-sm shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-1.5 border-b border-neutral-800 bg-neutral-900/80">
+              <span className="text-xs font-semibold text-neutral-200">聊天</span>
+              <button onClick={() => setChatOpen(false)} className="text-neutral-500 hover:text-neutral-300 text-xs" aria-label="關閉聊天">✕</button>
+            </div>
+            <div className="max-h-48 min-h-[3rem] overflow-y-auto px-3 py-2 space-y-1.5 text-[12px] leading-snug">
+              {chatMsgs.length === 0 ? (
+                <p className="text-neutral-600">跟對手打聲招呼吧！</p>
+              ) : (
+                chatMsgs.map((m) => (
+                  <div key={m.id} className={m.from === "you" ? "text-right" : "text-left"}>
+                    <span
+                      className={`inline-block max-w-[85%] rounded-lg px-2 py-1 break-words ${
+                        m.from === "you" ? "bg-emerald-800/70 text-emerald-50" : "bg-neutral-800 text-neutral-100"
+                      }`}
+                    >
+                      {m.text}
+                    </span>
+                  </div>
+                ))
+              )}
+              <div ref={chatEndRef} />
+            </div>
+            <div className="flex items-center gap-1.5 border-t border-neutral-800 px-2 py-2">
+              <input
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); sendChatMsg(); } }}
+                maxLength={200}
+                placeholder="輸入訊息…"
+                className="flex-1 min-w-0 rounded-md bg-neutral-800 border border-neutral-700 px-2 py-1 text-[12px] text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-emerald-500/60"
+              />
+              <button
+                onClick={sendChatMsg}
+                disabled={!chatInput.trim()}
+                className="shrink-0 rounded-md bg-emerald-600 enabled:hover:bg-emerald-500 px-2.5 py-1 text-[12px] font-semibold disabled:opacity-40"
+              >
+                送出
+              </button>
+            </div>
+          </div>
+        )}
+        <button
+          onClick={toggleChat}
+          title="跟對手聊天"
+          className="relative flex items-center gap-1.5 rounded-full border border-neutral-700/70 bg-neutral-900/85 backdrop-blur-sm px-3 py-1.5 text-xs text-neutral-200 shadow-lg hover:bg-neutral-800"
+        >
+          <ChatIcon />
+          聊天
+          {chatUnread > 0 && !chatOpen && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[18px] rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white text-center">
+              {chatUnread > 9 ? "9+" : chatUnread}
+            </span>
+          )}
+        </button>
+      </div>
+
       {inspect && (
         <CardInspectModal
           card={inspect}
@@ -744,6 +852,14 @@ function AttackArrow({ fromKey }: { fromKey: string }) {
         strokeLinecap="round"
         markerEnd="url(#vs-atk-head)"
       />
+    </svg>
+  );
+}
+
+function ChatIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7a8.5 8.5 0 0 1-.9-3.8 8.38 8.38 0 0 1 8.5-8.5A8.38 8.38 0 0 1 21 11.5z" />
     </svg>
   );
 }
