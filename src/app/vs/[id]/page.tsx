@@ -142,6 +142,32 @@ export default function BattlePage() {
     return () => clearInterval(t);
   }, []);
 
+  // 大螢幕自動縮放（司令 2026-07-13）：卡牌/頭像是固定像素尺寸，螢幕越寬（iMac 27 = 2560px）
+  // 牌面就顯得越小越空。以 1560px 為設計基準寬，視窗更寬就把整頁等比放大（body zoom，效果
+  // 等同使用者自己調瀏覽器縮放）——背景仍然滿版鋪滿，只是所有元素跟著變大，換裝置不必手動調。
+  // 下限 1（窄螢幕不縮小，交給既有的 media query），上限 1.75（顧到 2560 寬 ≈ 1.64）。
+  // 注意：zoom 不會回頭縮小 vh 單位（100vh 在 zoom 裡會被放大成 100vh×z，版面直接爆高），
+  // 所以用到 vh 的地方要以 uiZoom 除回去（main / hs-table / hs-combat-lane 三處 inline 覆蓋）。
+  const [uiZoom, setUiZoom] = useState(1);
+  useEffect(() => {
+    const apply = () => {
+      const z = Math.min(Math.max(window.innerWidth / 1560, 1), 1.75);
+      if (z > 1.02) {
+        document.body.style.setProperty("zoom", z.toFixed(3));
+        setUiZoom(Number(z.toFixed(3)));
+      } else {
+        document.body.style.removeProperty("zoom");
+        setUiZoom(1);
+      }
+    };
+    apply();
+    window.addEventListener("resize", apply);
+    return () => {
+      window.removeEventListener("resize", apply);
+      document.body.style.removeProperty("zoom"); // 離開對戰頁就還原，不影響大廳/其他頁
+    };
+  }, []);
+
   const secondsLeft =
     view && view.phase !== "over" && view.deadlineMs != null
       ? Math.max(0, Math.ceil((view.deadlineMs - nowTs) / 1000))
@@ -196,7 +222,7 @@ export default function BattlePage() {
           await sleep(150);
           const a = elsRef.current.get(attackerKey)?.getBoundingClientRect();
           const b = elsRef.current.get(targetAnchor)?.getBoundingClientRect();
-          if (a && b) setLungeMap({ [attackerKey]: lungeTransform(a, b) });
+          if (a && b) setLungeMap({ [attackerKey]: lungeTransform(a, b, bodyZoom()) });
           await sleep(190);
         }
         setWindupKey(null);
@@ -292,7 +318,10 @@ export default function BattlePage() {
   const highlight = targetHighlight(view, selecting, busy);
 
   return (
-    <main className="play-page min-h-screen bg-neutral-950 text-neutral-100 flex flex-col">
+    <main
+      className="play-page min-h-screen bg-neutral-950 text-neutral-100 flex flex-col"
+      style={uiZoom > 1 ? { minHeight: `calc(100vh / ${uiZoom})` } : undefined}
+    >
       <AmbientAudio />
       <BattleMusic />
       <GemDefs />
@@ -317,7 +346,12 @@ export default function BattlePage() {
       {/* 爐石式牌桌 */}
       <div
         className="hs-table relative overflow-hidden bg-cover bg-center"
-        style={{ backgroundImage: `url(${BOARD_BG})` }}
+        style={{
+          backgroundImage: `url(${BOARD_BG})`,
+          // vh 補償：實際生效的規則是 .play-page .hs-table 的固定 height: calc(100vh - 96px)
+          // （globals.css 三層舞台區塊），zoom 下 100vh 會被放大 z 倍，用 inline height 除回去。
+          ...(uiZoom > 1 ? { height: `calc(100vh / ${uiZoom} - 96px)` } : null),
+        }}
         onClick={(e) => {
           // 已選定攻擊者或法術目標，卻點在空白戰場（沒有落在任何隨從／英雄上）＝取消這次選擇。
           if (e.target === e.currentTarget && selecting) setSelecting(null);
@@ -350,6 +384,7 @@ export default function BattlePage() {
         ) : null}
         {selecting?.mode === "attack" ? <AttackArrow fromKey={selecting.attackerKey} /> : null}
 
+        {/* hs-combat-lane 在 .play-page 下生效的是固定 260px（無 vh），不需要 zoom 補償 */}
         <div className="hs-combat-lane relative">
           {/* 對手戰場 */}
           <section>
@@ -489,11 +524,18 @@ export default function BattlePage() {
 // ───────────────────────── 攻擊蓄力＋衝刺（跟 /play 同款手感）─────────────────────────
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+/** 大螢幕自動縮放目前的 body zoom（沒設就是 1）。gBCR 回傳的是縮放後的視覺座標，
+ *  但 translate()/SVG 內的 px 會再被 zoom 放大一次——所以座標計算都要先除回 zoom。 */
+function bodyZoom(): number {
+  if (typeof document === "undefined") return 1;
+  return parseFloat(document.body.style.getPropertyValue("zoom") || "1") || 1;
+}
+
 /** 依攻擊者／目標的 DOM 位置算衝刺位移：移動 62% 距離＋放大，跟 /play useCombat 的
  *  computeLunge 公式一致（同一套視覺語彙，只是這裡沒有事件時間軸，靠 rect 現算）。 */
-function lungeTransform(a: DOMRect, b: DOMRect): string {
-  const dx = b.left + b.width / 2 - (a.left + a.width / 2);
-  const dy = b.top + b.height / 2 - (a.top + a.height / 2);
+function lungeTransform(a: DOMRect, b: DOMRect, zoom = 1): string {
+  const dx = (b.left + b.width / 2 - (a.left + a.width / 2)) / zoom;
+  const dy = (b.top + b.height / 2 - (a.top + a.height / 2)) / zoom;
   return `translate(${(dx * 0.62).toFixed(0)}px, ${(dy * 0.62).toFixed(0)}px) scale(1.1)`;
 }
 
@@ -660,10 +702,15 @@ function AttackArrow({ fromKey }: { fromKey: string }) {
   const el = typeof document !== "undefined" ? document.querySelector<HTMLElement>(`[data-mkey="${fromKey}"]`) : null;
   const r = el?.getBoundingClientRect();
   if (!r || !end) return null;
-  const sx = r.left + r.width / 2;
-  const sy = r.top + r.height / 2;
-  const midX = (sx + end.x) / 2;
-  const midY = (sy + end.y) / 2 - 44;
+  // gBCR 與滑鼠座標都是「縮放後」的視覺座標，SVG 畫布本身又會被 body zoom 再放大一次，
+  // 所以全部先除回 zoom 才不會在大螢幕上偏掉。
+  const z = bodyZoom();
+  const sx = (r.left + r.width / 2) / z;
+  const sy = (r.top + r.height / 2) / z;
+  const ex = end.x / z;
+  const ey = end.y / z;
+  const midX = (sx + ex) / 2;
+  const midY = (sy + ey) / 2 - 44;
   return (
     <svg className="attack-arrow" width="100%" height="100%" aria-hidden>
       <defs>
@@ -672,7 +719,7 @@ function AttackArrow({ fromKey }: { fromKey: string }) {
         </marker>
       </defs>
       <path
-        d={`M ${sx} ${sy} Q ${midX} ${midY} ${end.x} ${end.y}`}
+        d={`M ${sx} ${sy} Q ${midX} ${midY} ${ex} ${ey}`}
         fill="none"
         stroke="rgba(251, 113, 133, 0.92)"
         strokeWidth="5"
