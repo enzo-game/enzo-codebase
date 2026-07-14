@@ -18,6 +18,7 @@ export type Match = {
   winner: string | null;
   created_at: string;
   updated_at: string;
+  difficulty?: string | null; // 房主建房時選的共用難度（normal=單字題、hard=句子題）
 };
 
 function client() {
@@ -49,10 +50,10 @@ export async function ensureAnonSession(): Promise<string> {
   return anonSessionInFlight;
 }
 
-/** 建立房間，回傳含 6 碼房號的 match。 */
-export async function createRoom(): Promise<Match> {
+/** 建立房間，回傳含 6 碼房號的 match。difficulty＝房主選的共用難度（normal=單字題、hard=句子題）。 */
+export async function createRoom(difficulty: "normal" | "hard" = "normal"): Promise<Match> {
   const sb = client();
-  const { data, error } = await sb.rpc("create_match");
+  const { data, error } = await sb.rpc("create_match", { p_difficulty: difficulty });
   if (error) throw error;
   return data as Match;
 }

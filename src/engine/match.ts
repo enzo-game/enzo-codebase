@@ -12,6 +12,7 @@
 //  - viewFor() 產生單一座位的脱敏視角：對手手牌/牌庫只給「張數」；pending 答案不外流。
 import type { Card } from "@/data/cards";
 import {
+  Difficulty,
   Game,
   LogEntry,
   Minion,
@@ -24,6 +25,7 @@ import {
 import {
   buildDeck,
   makeQuiz,
+  makeSentenceQuiz,
   playMinionFor,
   castSpell,
   resolveAttack,
@@ -60,6 +62,9 @@ export type MatchState = {
   // 開局換牌：雙方各自是否已決定（含逾時自動保留）。兩者皆 true 才轉入正式對戰；
   // null＝換牌階段已結束（正式對戰中，或此局不支援換牌的舊狀態）。
   mulligan: Record<Seat, boolean> | null;
+  // 好友房共用難度（房主建房時選、整局兩人同題型）：normal/easy=單字題、hard=句子題。
+  // /vs 沒有 AI，故難度只影響出題題型（不影響對手強度）。舊狀態沒有這欄時視同 normal。
+  difficulty: Difficulty;
 };
 
 /** 客戶端相對目標：一律用「你 / 對手」，由伺服器翻成權威 side。 */
@@ -96,8 +101,9 @@ const other = (seat: Seat): Seat => (seat === "a" ? "b" : "a");
 // ───────────────────────── 初始化 ─────────────────────────
 
 /** 建立一局全新的權威狀態。座位 A 先手；座位 B 後手，多發 1 張補償先手優勢。
- *  now＝伺服器當前 epoch ms（用來設回合截止）；不帶（0）則不計時。 */
-export function initMatch(now = 0): MatchState {
+ *  now＝伺服器當前 epoch ms（用來設回合截止）；不帶（0）則不計時。
+ *  difficulty＝房主建房時選的共用難度（整局兩人同題型），只影響出題題型。 */
+export function initMatch(now = 0, difficulty: Difficulty = "normal"): MatchState {
   const a = buildDeck();
   const b = buildDeck();
   const game: Game = {
@@ -132,6 +138,7 @@ export function initMatch(now = 0): MatchState {
     winner: null,
     deadline: mulliganDeadlineFrom(now),
     mulligan: { a: false, b: false },
+    difficulty,
   };
 }
 
@@ -318,8 +325,8 @@ export function applyMatchAction(s: MatchState, seat: Seat, action: MatchAction,
       const target = toAuthTarget(seat, action.target);
       const bad = validatePlay(s, seat, card, target);
       if (bad) return { ok: false, error: bad };
-      // 出題，進入待答（此時尚未扣費、尚未移除手牌）
-      const quiz = makeQuiz(card);
+      // 出題，進入待答（此時尚未扣費、尚未移除手牌）。共用難度 hard＝句子題、其餘＝單字題。
+      const quiz = s.difficulty === "hard" ? makeSentenceQuiz(card) : makeQuiz(card);
       return { ok: true, state: { ...s, pending: { seat, cardId: card.id, target, quiz } } };
     }
 
@@ -423,6 +430,7 @@ export type SeatView = {
   // P4：雙方顯示名稱。引擎純函式不碰 DB，由 matchServer 讀 profiles 後注入（undefined＝不顯示）。
   youName?: string;
   oppName?: string;
+  difficulty: Difficulty; // 這局共用難度（房主選）；UI 顯示「困難：句子題」等
 };
 
 /** 把權威狀態脱敏成「某座位」看到的視角。這是唯一會下發到客戶端的東西。 */
@@ -450,6 +458,7 @@ export function viewFor(s: MatchState, seat: Seat): SeatView {
     outcome: s.winner ? (s.winner === seat ? "win" : "lose") : null,
     mulliganPending: Boolean(s.mulligan && !s.mulligan[seat]),
     oppMulliganDone: Boolean(s.mulligan && s.mulligan[oppSeat]),
+    difficulty: s.difficulty ?? "normal",
     you: {
       hp: myHp,
       mana: s.meta[seat].mana,
