@@ -11,8 +11,10 @@ import type { Card } from "@/data/cards";
 import type { Minion } from "@/engine/types";
 import { BOARD_MAX } from "@/engine/types";
 import { spellTargetKind } from "@/engine/game";
-import type { SeatView, ClientTarget } from "@/engine/match";
+import type { SeatView, ClientTarget, MatchState, MatchAction } from "@/engine/match";
+import { initMatch, applyMatchAction, viewFor } from "@/engine/match";
 import { ensureAnonSession, subscribeMatch, fetchView, sendAction, subscribeChat, sendChat, type ChatMsg } from "@/lib/vs";
+import { runPracticeBotTurn } from "@/lib/practiceBot";
 import { supabaseConfigured } from "@/lib/supabase";
 import AmbientAudio from "@/components/AmbientAudio";
 import BattleMusic from "@/components/BattleMusic";
@@ -34,10 +36,20 @@ const HERO_HP = 30;
 
 type Selecting = { mode: "spell"; card: Card } | { mode: "attack"; attackerKey: string } | null;
 
+/** 練習模式：把本地權威狀態轉成自己座位（a）的視角，並補上顯示名稱（你 / 練習對手）。 */
+function practiceView(s: MatchState): SeatView {
+  return { ...viewFor(s, "a"), youName: "你", oppName: "練習對手" };
+}
+
 export default function BattlePage() {
   const params = useParams<{ id: string }>();
   const matchId = params.id;
   const router = useRouter();
+
+  // 練習模式（matchId === "practice"）：整局在瀏覽器本地跑 match.ts 引擎＋簡單 bot，不連 Supabase、
+  // 不用湊人，讓司令隨時進來看/測所有 /vs 功能（板面/補牌/難度題型/攻擊動畫…）。聊天因無對手停用。
+  const isPractice = matchId === "practice";
+  const practiceRef = useRef<MatchState | null>(null);
 
   const [view, setView] = useState<SeatView | null>(null);
   const [err, setErr] = useState("");
@@ -121,6 +133,21 @@ export default function BattlePage() {
   }, [busy]);
 
   useEffect(() => {
+    // 練習模式：本地開一局（讀 localStorage 難度、不計時），直接顯示自己座位視角，不連 Supabase。
+    if (isPractice) {
+      let diff: "normal" | "hard" = "normal";
+      try {
+        const d = localStorage.getItem("enzo-vs-difficulty");
+        if (d === "hard") diff = "hard";
+      } catch {
+        // 讀不到就用預設
+      }
+      const st = initMatch(0, diff); // now=0＝不計時，練習不搞逾時壓力
+      practiceRef.current = st;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 練習模式一次性初始化本地視角
+      setView(practiceView(st));
+      return;
+    }
     if (!supabaseConfigured) return;
     let alive = true;
     (async () => {
@@ -143,11 +170,11 @@ export default function BattlePage() {
       clearInterval(poll);
       channelRef.current?.unsubscribe();
     };
-  }, [matchId, refresh]);
+  }, [matchId, refresh, isPractice]);
 
   // 對局內即時聊天：訂閱 broadcast 頻道，收到對手訊息就插進聊天列；聊天窗關著時累計未讀紅點。
   useEffect(() => {
-    if (!supabaseConfigured) return;
+    if (!supabaseConfigured || isPractice) return; // 練習模式無對手，不開聊天
     const ch = subscribeChat(matchId, (m: ChatMsg) => {
       setChatMsgs((list) => [...list.slice(-49), { from: "opp", text: m.text, id: ++chatIdRef.current }]);
       if (!chatOpenRef.current) setChatUnread((n) => n + 1);
@@ -157,7 +184,7 @@ export default function BattlePage() {
       ch.unsubscribe();
       chatChannelRef.current = null;
     };
-  }, [matchId]);
+  }, [matchId, isPractice]);
 
   useEffect(() => {
     chatOpenRef.current = chatOpen;
@@ -218,28 +245,56 @@ export default function BattlePage() {
       ? Math.max(0, Math.ceil((view.deadlineMs - nowTs) / 1000))
       : null;
 
+  // 依前後視角 diff 播小動畫＋音效（線上／練習共用）。
+  const playFxAndSfx = useCallback(
+    (prev: SeatView | null, next: SeatView, action: MatchAction) => {
+      applyFx(computeFx(prev, next)); // 隨從登場／受擊震動／浮動傷害-回復數字
+      if (action.type === "attack") {
+        sfxAttack();
+      } else if (action.type === "answer" && prev) {
+        if (next.you.correct > prev.you.correct) sfxCorrect();
+        else if (next.you.wrong > prev.you.wrong) sfxWrong();
+        if (next.you.board.length > prev.you.board.length) sfxSummon();
+        else sfxPlayCard();
+      }
+      if (next.phase === "over" && prev?.phase !== "over") {
+        if (next.outcome === "win") sfxArrive();
+        else sfxLose();
+      }
+    },
+    [applyFx],
+  );
+
   const act = useCallback(
-    async (action: Parameters<typeof sendAction>[1]) => {
+    async (action: MatchAction) => {
       if (busy) return;
       setBusy(true);
       setErr("");
       const prev = viewRef.current;
+      // 練習模式：本地套用 → 若換到對手回合就讓 bot 一次跑完 → 更新視角。全同步、不連伺服器。
+      if (isPractice) {
+        try {
+          const st = practiceRef.current;
+          if (!st) return;
+          const r = applyMatchAction(st, "a", action, 0);
+          if (!r.ok) {
+            setErr(r.error);
+            return;
+          }
+          const afterBot = runPracticeBotTurn(r.state); // 非對手回合會原樣回傳，不影響玩家出牌/答題
+          practiceRef.current = afterBot;
+          const next = practiceView(afterBot);
+          playFxAndSfx(prev, next, action);
+          setView(next);
+          setSelecting(null);
+        } finally {
+          setBusy(false);
+        }
+        return;
+      }
       try {
         const next = await sendAction(matchId, action);
-        applyFx(computeFx(prev, next)); // 隨從登場／受擊震動／浮動傷害-回復數字
-        // 依動作與前後 diff 播音效
-        if (action.type === "attack") {
-          sfxAttack();
-        } else if (action.type === "answer" && prev) {
-          if (next.you.correct > prev.you.correct) sfxCorrect();
-          else if (next.you.wrong > prev.you.wrong) sfxWrong();
-          if (next.you.board.length > prev.you.board.length) sfxSummon();
-          else sfxPlayCard();
-        }
-        if (next.phase === "over" && prev?.phase !== "over") {
-          if (next.outcome === "win") sfxArrive();
-          else sfxLose();
-        }
+        playFxAndSfx(prev, next, action);
         setView(next);
         setSelecting(null);
       } catch (e) {
@@ -248,7 +303,7 @@ export default function BattlePage() {
         setBusy(false);
       }
     },
-    [busy, matchId, applyFx],
+    [busy, matchId, isPractice, playFxAndSfx],
   );
 
   // 結束回合快捷鍵：空白鍵（司令要求，每次點按鈕太麻煩）。只在「輪到你、非答題/換牌/結束、
@@ -299,7 +354,7 @@ export default function BattlePage() {
     [busy, act],
   );
 
-  if (!supabaseConfigured) {
+  if (!supabaseConfigured && !isPractice) {
     return <Centered><p className="text-amber-300">後端尚未設定，無法連線對戰。</p></Centered>;
   }
   if (!view) {
@@ -565,7 +620,8 @@ export default function BattlePage() {
         </div>
       ) : null}
 
-      {/* 左下即時聊天（好友對戰）：一顆浮動按鈕，點開往上展開聊天窗。 */}
+      {/* 左下即時聊天（好友對戰）：一顆浮動按鈕，點開往上展開聊天窗。練習模式無對手，不顯示。 */}
+      {!isPractice && (
       <div className="fixed left-3 bottom-24 z-40 flex flex-col items-start gap-2">
         {chatOpen && (
           <div className="w-64 rounded-xl border border-neutral-700/70 bg-neutral-950/90 backdrop-blur-sm shadow-2xl overflow-hidden">
@@ -624,6 +680,7 @@ export default function BattlePage() {
           )}
         </button>
       </div>
+      )}
 
       {inspect && (
         <CardInspectModal
