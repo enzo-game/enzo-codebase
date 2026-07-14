@@ -458,9 +458,9 @@ export default function VsPage() {
             </svg>
             天梯
           </Link>
-          {/* 練習房：本地打機器人，不用連線、不用湊人，隨時進去看/測 /vs 功能。 */}
-          <Link href="/vs/practice" className="text-sm text-sky-400/80 hover:text-sky-300 underline">
-            練習房（打機器人）
+          {/* 練習房入口先隱藏（司令要求）；/vs/practice 路由仍可用，直接開網址即可測試。 */}
+          <Link href="/" className="text-sm text-neutral-400 hover:text-neutral-200 underline">
+            返回首頁
           </Link>
           <Link href="/play" className="text-sm text-neutral-500 hover:text-neutral-300 underline">
             ← 單機對 AI
