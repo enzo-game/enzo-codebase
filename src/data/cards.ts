@@ -4,6 +4,8 @@
 // 檔尾以 vocab() 逐一驗證，錯字在 build 期即失敗。
 
 import { vocab } from "@/data/truku";
+import GENERATED_CARDS from "@/data/cards.generated.json";
+import GENERATED_LEARNING from "@/data/cardLearning.generated.json";
 
 export type CardType = "minion" | "spell";
 export type Rarity = "common" | "rare" | "epic" | "legendary";
@@ -45,7 +47,8 @@ export interface Card {
   spellDamage?: number;
 }
 
-export const CARDS: Card[] = [
+// 手寫的核准卡（傳說走文化複核、含機制細節的卡）。批次生成的安全題材卡見 cards.generated.json。
+const BASE_CARDS: Card[] = [
   // ── 傳說系列（5 則核准傳說）──
   { id: "leg-l01", nameZh: "沿路小米", type: "minion", cost: 1, attack: 0, health: 3, rarity: "rare", theme: "legend", vocabId: "21-18", effect: "healHero1", deathrattle: "drawOwner1", effectText: "回合結束：回復我方英雄 1；亡語：抽 1 張牌", bonusText: "改為回復 2" },
   { id: "leg-l02", nameZh: "獵弓", type: "spell", cost: 2, rarity: "common", theme: "legend", vocabId: "16-01", effect: "dmgAny2", effectText: "造成 2 點傷害（任一目標）", bonusText: "改為 3 點" },
@@ -223,6 +226,9 @@ export const CARDS: Card[] = [
   { id: "leg-l33", nameZh: "裂開的聖石", type: "minion", cost: 2, attack: 1, health: 2, rarity: "rare", theme: "legend", vocabId: "12-05", effect: "draw1", effectText: "戰吼：抽 1 張牌", bonusText: "再抽 1 張" },
 ];
 
+// 完整卡池＝手寫核准卡 ＋ 批次生成的安全題材卡（scripts/gen-cards.mjs 產出）。
+export const CARDS: Card[] = [...BASE_CARDS, ...(GENERATED_CARDS as unknown as Card[])];
+
 // 幼樹 token（不入牌庫，僅由 Pusu Qhuni 戰吼召喚）
 export const TOKEN_SAPLING: Card = {
   id: "leg-token-sapling",
@@ -393,6 +399,8 @@ export const CARD_LEARNING: Record<string, string> = {
   "leg-l31": "渡海遷徙途中須橫渡黑潮與島鏈，這張牌以遠航的海象呈現路途之艱；答題詞取太魯閣語「海邊」。",
   "leg-l32": "泰雅族傳說中，聖石 Pinsbkan（或大霸尖山）裂開走出最初的祖先；這張牌只呈現雙峰岩體的地景，不畫人形；答題詞取太魯閣語「岩石」。",
   "leg-l33": "巨石裂開的瞬間走出了最初的人，這張牌以「裂開」呈現起源的一刻，不神聖化人物；答題詞取太魯閣語「石頭」。",
+  // 批次生成的安全題材卡學習小註（scripts/gen-cards.mjs 產出）。
+  ...(GENERATED_LEARNING as Record<string, string>),
 };
 
 export const RARITY_COLOR: Record<Rarity, string> = {
