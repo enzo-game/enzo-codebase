@@ -238,10 +238,11 @@ function drawNote(n: number, requested: number): string {
 
 // ───────────────────────── 隨從入場（含戰吼）─────────────────────────
 
-// 手牌一清空就補抽（司令 2026-07-14）：出牌出到手牌 0 張的當下馬上補 5 張，讓玩家不會沒牌可出、
-// 節奏更順（仍受法力限制，不是無限）。/vs 與 /play、雙方（含 AI）都吃這條——因為兩邊出牌都會
-// 走到 playMinionFor / castSpell，且都在呼叫前就把打出的牌從手牌移除，這裡看到的手牌已是出牌後狀態。
-const HAND_REFILL = 5;
+// 手牌一清空就補抽（司令 2026-07-14）：出牌出到手牌 0 張的當下馬上補 3 張，讓玩家不會沒牌可出、
+// 節奏更順（仍受法力限制，不是無限）。原本補 5 張太多、優勢過大，司令改成 3 張。/vs 與 /play、
+// 雙方（含 AI）都吃這條——因為兩邊出牌都會走到 playMinionFor / castSpell，且都在呼叫前就把打出的
+// 牌從手牌移除，這裡看到的手牌已是出牌後狀態。
+const HAND_REFILL = 3;
 function refillHandIfEmpty(ng: Game, side: Side): void {
   const hand = side === "player" ? ng.pHand : ng.eHand;
   if (hand.length > 0) return; // 手牌還有牌就不補（含這張出牌本身有抽牌效果、補回手牌的情況）
