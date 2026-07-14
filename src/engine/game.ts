@@ -729,10 +729,16 @@ export function startPlayerTurn(g: Game): Game {
 
 // ───────────────────────── 初始化 ─────────────────────────
 
-/** 牌組：普通＋稀有各 2 張、史詩＋傳說各 1 張，雙方同一份卡池 */
+/** 牌組：普通＋稀有各 2 張、史詩＋傳說各 1 張，雙方同一份卡池。
+ *  例外：嘲諷牌一律只放 1 張。原本嘲諷集中在普通(18)＋稀有(10)、又都放 2 張，導致嘲諷占
+ *  牌庫 ~21%、占隨從 ~38%，一直撞牆打不動；改成單張後嘲諷降到 ~13%，回到正常密度。 */
 export function buildDeck(): Card[] {
   return shuffle(
-    CARDS.flatMap((c) => (c.rarity === "common" || c.rarity === "rare" ? [c, c] : [c])),
+    CARDS.flatMap((c) => {
+      const isTaunt = c.keywords?.includes("taunt");
+      const double = (c.rarity === "common" || c.rarity === "rare") && !isTaunt;
+      return double ? [c, c] : [c];
+    }),
   );
 }
 

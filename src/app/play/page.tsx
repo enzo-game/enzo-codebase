@@ -831,6 +831,7 @@ export default function PlayPage() {
             <span className="hs-portrait-sub">手牌 {game.eHand.length} · 牌庫 {game.eDeck.length}</span>
             <span className="hs-portrait-hp">
               <span className="hs-hp-label">生命 HP</span>
+              <span className="hs-hp-bar-fill" aria-hidden style={{ width: `${Math.max(0, Math.min(100, Math.round((game.enemyHp / HERO_HP) * 100)))}%` }} />
               <span className="hs-hp-value">{game.enemyHp}/{HERO_HP}</span>
             </span>
           </button>
@@ -1013,6 +1014,7 @@ export default function PlayPage() {
             <span className="hs-portrait-sub">答題命中 {rate}%</span>
             <span className="hs-portrait-hp">
               <span className="hs-hp-label">生命 HP</span>
+              <span className="hs-hp-bar-fill" aria-hidden style={{ width: `${Math.max(0, Math.min(100, Math.round((game.playerHp / HERO_HP) * 100)))}%` }} />
               <span className="hs-hp-value">{game.playerHp}/{HERO_HP}</span>
             </span>
           </section>
