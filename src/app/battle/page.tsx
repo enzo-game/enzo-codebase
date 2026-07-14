@@ -116,7 +116,10 @@ export default function BattleChooser() {
           />
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 flex items-center justify-center gap-5">
+          <Link href="/strategy" className="text-sm text-amber-300/80 underline hover:text-amber-200">
+            打法攻略 · 怎麼贏
+          </Link>
           <Link href="/" className="text-sm text-slate-500 underline hover:text-slate-300">
             ← 回首頁
           </Link>
