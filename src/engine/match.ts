@@ -22,8 +22,10 @@ import {
   HERO_HP,
   BOARD_MAX,
 } from "./types";
+import { isPlayableDeck } from "@/lib/deck";
 import {
   buildDeck,
+  buildDeckFromIds,
   makeQuiz,
   makeSentenceQuiz,
   playMinionFor,
@@ -103,9 +105,15 @@ const other = (seat: Seat): Seat => (seat === "a" ? "b" : "a");
 /** 建立一局全新的權威狀態。座位 A 先手；座位 B 後手，多發 1 張補償先手優勢。
  *  now＝伺服器當前 epoch ms（用來設回合截止）；不帶（0）則不計時。
  *  difficulty＝房主建房時選的共用難度（整局兩人同題型），只影響出題題型。 */
-export function initMatch(now = 0, difficulty: Difficulty = "normal"): MatchState {
-  const a = buildDeck();
-  const b = buildDeck();
+export function initMatch(
+  now = 0,
+  difficulty: Difficulty = "normal",
+  deckA?: string[] | null,
+  deckB?: string[] | null,
+): MatchState {
+  // 有帶合法自組牌組（30 張、同名/傳說上限）就各自用它發牌；沒帶或不合法就回退整個卡池。
+  const a = isPlayableDeck(deckA) ? buildDeckFromIds(deckA) : buildDeck();
+  const b = isPlayableDeck(deckB) ? buildDeckFromIds(deckB) : buildDeck();
   const game: Game = {
     phase: "player",
     turn: 1,
