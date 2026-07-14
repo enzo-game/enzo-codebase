@@ -224,6 +224,12 @@ const BASE_CARDS: Card[] = [
   // 泰雅族·大霸尖山 Pinsbkan 石生祖先
   { id: "leg-l32", nameZh: "大霸雙峰", type: "minion", cost: 6, attack: 4, health: 9, rarity: "epic", theme: "legend", vocabId: "10-19", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
   { id: "leg-l33", nameZh: "裂開的聖石", type: "minion", cost: 2, attack: 1, health: 2, rarity: "rare", theme: "legend", vocabId: "12-05", effect: "draw1", effectText: "戰吼：抽 1 張牌", bonusText: "再抽 1 張" },
+  // ── 傳說系列（改編自有記載的傳說，來源見 CARD_LEARNING；守紅線：無百步蛇/Utux彩虹橋/Sisin/出草/祭儀直繪）──
+  { id: "leg-l34", nameZh: "飛魚報汛", type: "minion", cost: 3, attack: 3, health: 3, rarity: "rare", theme: "legend", vocabId: "07-24", keywords: ["rush"], effectText: "突襲", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-l35", nameZh: "拼板舟", type: "minion", cost: 4, attack: 3, health: 6, rarity: "rare", theme: "legend", vocabId: "11-31", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+0/+2", bonusStats: { atk: 0, hp: 2 } },
+  { id: "leg-l36", nameZh: "銜穀種的鳥", type: "minion", cost: 2, attack: 2, health: 2, rarity: "rare", theme: "legend", vocabId: "10-22", effect: "draw1", effectText: "戰吼：抽 1 張牌", bonusText: "再抽 1 張" },
+  { id: "leg-l37", nameZh: "避洪的玉山", type: "spell", cost: 3, rarity: "rare", theme: "legend", vocabId: "08-25", effect: "friendTaunt03", effectText: "一個友方隨從獲得嘲諷與 +0/+3", bonusText: "額外 +0/+2" },
+  { id: "leg-l38", nameZh: "楓紅的山", type: "minion", cost: 4, attack: 4, health: 5, rarity: "epic", theme: "legend", vocabId: "10-19", effectText: "—", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
 ];
 
 // 完整卡池＝手寫核准卡 ＋ 批次生成的安全題材卡（scripts/gen-cards.mjs 產出）。
@@ -399,6 +405,11 @@ export const CARD_LEARNING: Record<string, string> = {
   "leg-l31": "渡海遷徙途中須橫渡黑潮與島鏈，這張牌以遠航的海象呈現路途之艱；答題詞取太魯閣語「海邊」。",
   "leg-l32": "泰雅族傳說中，聖石 Pinsbkan（或大霸尖山）裂開走出最初的祖先；這張牌只呈現雙峰岩體的地景，不畫人形；答題詞取太魯閣語「岩石」。",
   "leg-l33": "巨石裂開的瞬間走出了最初的人，這張牌以「裂開」呈現起源的一刻，不神聖化人物；答題詞取太魯閣語「石頭」。",
+  "leg-l34": "達悟族飛魚傳說：飛魚隨黑潮而來，教導人捕飛魚的季節與分寸；牌面只呈現魚群渡海的自然景象，不涉祭儀。",
+  "leg-l35": "達悟族拼板舟：以木板一片片拼接、彩繪下水的大船，是渡海與捕飛魚的憑藉；牌面呈現船體工藝，不涉下水祭儀。",
+  "leg-l36": "台灣原住民多族流傳『動物自遠方帶回穀種』的小米起源傳說；牌面以鳥銜穀呈現作物的由來。",
+  "leg-l37": "鄒族與布農族的大洪水傳說中，人避居玉山高處，待洪水退去後重返家園；牌面只呈現高山避洪的地景。",
+  "leg-l38": "鄒族傳說以楓葉的飄落與再生比喻族人的繁衍生息；牌面只呈現楓紅的山林地景，不畫人形。",
   // 批次生成的安全題材卡學習小註（scripts/gen-cards.mjs 產出）。
   ...(GENERATED_LEARNING as Record<string, string>),
 };
