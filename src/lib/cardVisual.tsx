@@ -217,6 +217,7 @@ export function HeroPortrait({ variant, name, hp, maxHp, sub, targetable, thinki
       <span className="hs-portrait-sub">{sub}</span>
       <span className="hs-portrait-hp">
         <span className="hs-hp-label">生命 HP</span>
+        <span className="hs-hp-bar-fill" aria-hidden style={{ width: `${Math.max(0, Math.min(100, Math.round((hp / maxHp) * 100)))}%` }} />
         <span className="hs-hp-value">{hp}/{maxHp}</span>
       </span>
       {float ? <span className={`dmg-float ${float.heal ? "dmg-float-heal" : ""}`} aria-hidden>{float.text}</span> : null}

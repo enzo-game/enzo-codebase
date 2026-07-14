@@ -626,6 +626,11 @@ body {
   line-height: 1;
 }
 
+/* 血條填滿層預設不顯示；只有對戰盤面（.play-page）把血量做成拉長的血條時才用。 */
+.hs-hp-bar-fill {
+  display: none;
+}
+
 .hs-hero-targetable {
   border-color: rgba(251, 113, 133, 0.9);
   box-shadow:
@@ -1266,22 +1271,42 @@ body {
 .play-page .hs-hp-label {
   display: none;
 }
-/* 血量：頭像右下角的小紅徽章 */
+/* 血量：頭像下方一條拉長的血條，紅色填滿比例＝HP／最大，數字疊在條上（HP bar 那種感覺）。 */
 .play-page .hs-portrait-hp {
   position: absolute;
-  right: -7px;
-  bottom: -6px;
+  left: 50%;
+  right: auto;
+  bottom: -13px;
+  transform: translateX(-50%);
   min-width: 0;
-  width: auto;
-  height: auto;
-  padding: 1px 6px;
+  width: 82px;
+  height: 15px;
+  padding: 0;
   gap: 0;
-  border-width: 2px;
+  border-width: 1.5px;
   border-radius: 999px;
+  overflow: hidden;
+  background: rgba(28, 6, 12, 0.94);
   flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+.play-page .hs-portrait-hp .hs-hp-bar-fill {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, #fb7185, #b3123a);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  transition: width 0.35s ease;
+  z-index: 0;
 }
 .play-page .hs-portrait-hp .hs-hp-value {
-  font-size: 13px;
+  position: relative;
+  z-index: 1;
+  font-size: 11px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
 }
 /* 敵方英雄：左上角小圓 */
 .play-page .hs-portrait-enemy {
@@ -2413,10 +2438,11 @@ body {
 
 /* 玩家操作區：英雄置中、法力靠近英雄、手牌完整落在底部。 */
 /* 我方英雄：左下角小圓頭像 */
+/* 我方英雄：底部右側小圓（頭像左、法力右），避開中央出牌區與右下角音效鈕。 */
 .play-page .hs-portrait-player {
-  left: 18px;
-  right: auto;
-  bottom: 14px;
+  left: auto;
+  right: 84px;
+  bottom: 74px;
   top: auto;
   transform: none;
   width: 58px;
@@ -2435,24 +2461,40 @@ body {
   display: none;
 }
 
-/* 法力條：左下角，疊在我方英雄圓頭像上方 */
+/* 法力水晶：緊貼英雄頭像右側。 */
 .play-page .hs-resource-player {
-  left: 16px;
-  right: auto;
+  left: auto;
+  right: 18px;
   bottom: 82px;
 }
 
+/* 手牌回到底部中央（英雄移去右側後中央讓出來）；維持縮小、右緣收窄避開右下英雄。 */
 .play-page .hs-hand-zone {
-  bottom: 8px;
-  width: min(1040px, calc(100% - 340px));
+  bottom: 10px;
+  width: min(1000px, calc(100% - 360px));
 }
 
 .play-page .hs-hand-rail {
-  min-height: 214px;
+  min-height: 196px;
 }
 
+/* 手牌縮小（配合拿掉學習小註後卡面更精簡）；卡變小後放鬆疊層，不然會擠成一團。 */
 .play-page .hs-hand-card {
-  width: clamp(140px, 8vw, 156px) !important;
+  width: clamp(112px, 6.6vw, 128px) !important;
+  margin-inline: -16px;
+}
+
+.play-page .hs-hand-card:first-child {
+  margin-left: 0;
+}
+
+.play-page .hs-hand-card:last-child {
+  margin-right: 0;
+}
+
+/* 對戰盤面的手牌卡：拿掉「學｜…」學習小註（圖鑑 /collection 無 .play-page，照常保留）。 */
+.play-page .hs-card-learning {
+  display: none;
 }
 
 /* 主要操作靠近右下，但和玩家英雄、法力條保持獨立。 */
@@ -2475,20 +2517,21 @@ body {
   }
 
   .play-page .hs-portrait-player {
-    left: 18px;
-    right: auto;
-    bottom: 14px;
+    left: auto;
+    right: 76px;
+    bottom: 70px;
+    transform: none;
     width: 58px;
   }
 
   .play-page .hs-resource-player {
-    left: 16px;
-    right: auto;
-    bottom: 82px;
+    left: auto;
+    right: 16px;
+    bottom: 78px;
   }
 
   .play-page .hs-hand-zone {
-    width: calc(100% - 200px);
+    width: calc(100% - 180px);
   }
 }
 
