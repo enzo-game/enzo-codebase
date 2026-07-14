@@ -49,6 +49,11 @@ export function audioUrl(id: string): string | null {
   return vocab(id).audioUrl;
 }
 
+/** 從詞庫隨機抽一個詞（出牌答題用：題目不綁卡片，每次隨機出）。 */
+export function randomVocab(): TrukuEntry {
+  return VOCAB[Math.floor(Math.random() * VOCAB.length)];
+}
+
 /** 從詞庫隨機取 n 個干擾項（族語詞），排除正解本身。 */
 export function distractors(answerId: string, n: number): TrukuEntry[] {
   const answer = vocab(answerId);
