@@ -116,7 +116,10 @@ export default function BattleChooser() {
           />
         </div>
 
-        <div className="mt-8 flex items-center justify-center gap-5">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-5">
+          <Link href="/deck" className="text-sm text-sky-300/80 underline hover:text-sky-200">
+            牌組編輯器 · 自組 30 張
+          </Link>
           <Link href="/strategy" className="text-sm text-amber-300/80 underline hover:text-amber-200">
             打法攻略 · 怎麼贏
           </Link>

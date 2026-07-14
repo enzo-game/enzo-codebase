@@ -1,6 +1,6 @@
 // 對戰引擎核心邏輯 —— 純函式，無 React 依賴。
 // P0：從 src/app/play/page.tsx 抽出，供前端 UI 與（未來）Supabase Edge Function 共用。
-import { CARDS, Card, TOKEN_SAPLING, Theme } from "@/data/cards";
+import { CARDS, CARD_BY_ID, Card, TOKEN_SAPLING, Theme } from "@/data/cards";
 import { randomVocab, distractors } from "@/data/truku";
 import { randomSentence, sentenceDistractors } from "@/data/truku-sentences";
 import {
@@ -743,6 +743,16 @@ export function buildDeck(): Card[] {
   );
 }
 
+/** 自組牌組：把卡片 id 陣列（30 張）發成一副洗好的牌。未知 id 略過（呼叫端應先 validateDeck）。 */
+export function buildDeckFromIds(ids: string[]): Card[] {
+  const cards: Card[] = [];
+  for (const id of ids) {
+    const c = CARD_BY_ID.get(id);
+    if (c) cards.push(c);
+  }
+  return shuffle(cards);
+}
+
 /** 敵方牌組：可選主題偏向（該主題多一份，抽到機率提高 → 不同對手手感）。 */
 export function buildEnemyDeck(theme?: Theme): Card[] {
   const base = CARDS.flatMap((c) => (c.rarity === "common" || c.rarity === "rare" ? [c, c] : [c]));
@@ -751,8 +761,9 @@ export function buildEnemyDeck(theme?: Theme): Card[] {
   return shuffle(biased);
 }
 
-export function newGame(opponentTheme?: Theme): Game {
-  const p = buildDeck();
+export function newGame(opponentTheme?: Theme, playerDeckIds?: string[]): Game {
+  // 有帶自組牌組（30 張 id）就用它發牌；沒帶就照舊用整個卡池（相容既有行為）。
+  const p = playerDeckIds && playerDeckIds.length ? buildDeckFromIds(playerDeckIds) : buildDeck();
   const e = buildEnemyDeck(opponentTheme);
   return {
     phase: "player",
