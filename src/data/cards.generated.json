@@ -1463,5 +1463,1853 @@
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
+  },
+  {
+    "id": "gen-0085",
+    "nameZh": "梅花鹿",
+    "type": "minion",
+    "cost": 4,
+    "attack": 4,
+    "health": 4,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-06",
+    "effectText": "突襲",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "rush"
+    ]
+  },
+  {
+    "id": "gen-0086",
+    "nameZh": "麝香貓",
+    "type": "minion",
+    "cost": 3,
+    "attack": 4,
+    "health": 3,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-07",
+    "effectText": "潛行",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "stealth"
+    ]
+  },
+  {
+    "id": "gen-0087",
+    "nameZh": "食蟹獴",
+    "type": "minion",
+    "cost": 6,
+    "attack": 6,
+    "health": 6,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-08",
+    "effectText": "疾風",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "windfury"
+    ]
+  },
+  {
+    "id": "gen-0088",
+    "nameZh": "白面鼯鼠",
+    "type": "minion",
+    "cost": 2,
+    "attack": 3,
+    "health": 2,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-09",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0089",
+    "nameZh": "條紋松鼠",
+    "type": "minion",
+    "cost": 4,
+    "attack": 5,
+    "health": 4,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-10",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0090",
+    "nameZh": "白頭翁",
+    "type": "minion",
+    "cost": 7,
+    "attack": 7,
+    "health": 7,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-11",
+    "effectText": "衝鋒",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "charge"
+    ]
+  },
+  {
+    "id": "gen-0091",
+    "nameZh": "樹鵲",
+    "type": "minion",
+    "cost": 3,
+    "attack": 3,
+    "health": 3,
+    "rarity": "epic",
+    "theme": "animal",
+    "vocabId": "04-12",
+    "effectText": "突襲",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "rush"
+    ]
+  },
+  {
+    "id": "gen-0092",
+    "nameZh": "朱鸝",
+    "type": "minion",
+    "cost": 2,
+    "attack": 3,
+    "health": 2,
+    "rarity": "rare",
+    "theme": "animal",
+    "vocabId": "04-13",
+    "effectText": "潛行",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "stealth"
+    ]
+  },
+  {
+    "id": "gen-0093",
+    "nameZh": "青背山雀",
+    "type": "minion",
+    "cost": 1,
+    "attack": 1,
+    "health": 1,
+    "rarity": "rare",
+    "theme": "animal",
+    "vocabId": "04-14",
+    "effectText": "疾風",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "windfury"
+    ]
+  },
+  {
+    "id": "gen-0094",
+    "nameZh": "紫嘯鶇",
+    "type": "minion",
+    "cost": 3,
+    "attack": 4,
+    "health": 3,
+    "rarity": "rare",
+    "theme": "animal",
+    "vocabId": "04-15",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0095",
+    "nameZh": "鉛色水鶇",
+    "type": "minion",
+    "cost": 2,
+    "attack": 3,
+    "health": 2,
+    "rarity": "rare",
+    "theme": "animal",
+    "vocabId": "04-16",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0096",
+    "nameZh": "河烏",
+    "type": "minion",
+    "cost": 4,
+    "attack": 4,
+    "health": 4,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-17",
+    "effectText": "衝鋒",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "charge"
+    ]
+  },
+  {
+    "id": "gen-0097",
+    "nameZh": "小啄木",
+    "type": "minion",
+    "cost": 3,
+    "attack": 3,
+    "health": 3,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-18",
+    "effectText": "突襲",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "rush"
+    ]
+  },
+  {
+    "id": "gen-0098",
+    "nameZh": "灰喉山椒鳥",
+    "type": "minion",
+    "cost": 2,
+    "attack": 3,
+    "health": 2,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-19",
+    "effectText": "潛行",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "stealth"
+    ]
+  },
+  {
+    "id": "gen-0099",
+    "nameZh": "黑枕藍鶲",
+    "type": "minion",
+    "cost": 5,
+    "attack": 5,
+    "health": 5,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-20",
+    "effectText": "疾風",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "windfury"
+    ]
+  },
+  {
+    "id": "gen-0100",
+    "nameZh": "栗背林鴝",
+    "type": "minion",
+    "cost": 4,
+    "attack": 5,
+    "health": 4,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-21",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0101",
+    "nameZh": "火冠戴菊",
+    "type": "minion",
+    "cost": 3,
+    "attack": 4,
+    "health": 3,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-22",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0102",
+    "nameZh": "黃山雀",
+    "type": "minion",
+    "cost": 6,
+    "attack": 6,
+    "health": 6,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-23",
+    "effectText": "衝鋒",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "charge"
+    ]
+  },
+  {
+    "id": "gen-0103",
+    "nameZh": "攀木蜥蜴",
+    "type": "minion",
+    "cost": 2,
+    "attack": 2,
+    "health": 2,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-24",
+    "effectText": "突襲",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "rush"
+    ]
+  },
+  {
+    "id": "gen-0104",
+    "nameZh": "麗紋石龍子",
+    "type": "minion",
+    "cost": 4,
+    "attack": 5,
+    "health": 4,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-25",
+    "effectText": "潛行",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "stealth"
+    ]
+  },
+  {
+    "id": "gen-0105",
+    "nameZh": "台灣草蜥",
+    "type": "minion",
+    "cost": 7,
+    "attack": 7,
+    "health": 7,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "04-26",
+    "effectText": "疾風",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "windfury"
+    ]
+  },
+  {
+    "id": "gen-0106",
+    "nameZh": "台北樹蛙",
+    "type": "minion",
+    "cost": 3,
+    "attack": 4,
+    "health": 3,
+    "rarity": "epic",
+    "theme": "animal",
+    "vocabId": "05-01",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0107",
+    "nameZh": "梭德氏赤蛙",
+    "type": "minion",
+    "cost": 2,
+    "attack": 3,
+    "health": 2,
+    "rarity": "rare",
+    "theme": "animal",
+    "vocabId": "05-02",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0108",
+    "nameZh": "斯文豪氏赤蛙",
+    "type": "minion",
+    "cost": 1,
+    "attack": 1,
+    "health": 1,
+    "rarity": "rare",
+    "theme": "animal",
+    "vocabId": "05-03",
+    "effectText": "衝鋒",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "charge"
+    ]
+  },
+  {
+    "id": "gen-0109",
+    "nameZh": "中國樹蟾",
+    "type": "minion",
+    "cost": 3,
+    "attack": 3,
+    "health": 3,
+    "rarity": "rare",
+    "theme": "animal",
+    "vocabId": "05-04",
+    "effectText": "突襲",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "rush"
+    ]
+  },
+  {
+    "id": "gen-0110",
+    "nameZh": "台灣石賓",
+    "type": "minion",
+    "cost": 2,
+    "attack": 3,
+    "health": 2,
+    "rarity": "rare",
+    "theme": "animal",
+    "vocabId": "05-05",
+    "effectText": "潛行",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "stealth"
+    ]
+  },
+  {
+    "id": "gen-0111",
+    "nameZh": "爬岩鰍",
+    "type": "minion",
+    "cost": 4,
+    "attack": 4,
+    "health": 4,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "05-06",
+    "effectText": "疾風",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "windfury"
+    ]
+  },
+  {
+    "id": "gen-0112",
+    "nameZh": "明潭吻鰕虎",
+    "type": "minion",
+    "cost": 3,
+    "attack": 4,
+    "health": 3,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "05-07",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0113",
+    "nameZh": "澤蟹",
+    "type": "minion",
+    "cost": 2,
+    "attack": 3,
+    "health": 2,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "05-08",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0114",
+    "nameZh": "沼蝦",
+    "type": "minion",
+    "cost": 5,
+    "attack": 5,
+    "health": 5,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "05-09",
+    "effectText": "衝鋒",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "charge"
+    ]
+  },
+  {
+    "id": "gen-0115",
+    "nameZh": "青斑蝶",
+    "type": "minion",
+    "cost": 4,
+    "attack": 4,
+    "health": 4,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "05-10",
+    "effectText": "突襲",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "rush"
+    ]
+  },
+  {
+    "id": "gen-0116",
+    "nameZh": "大紫蛺蝶",
+    "type": "minion",
+    "cost": 3,
+    "attack": 4,
+    "health": 3,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "05-11",
+    "effectText": "潛行",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "stealth"
+    ]
+  },
+  {
+    "id": "gen-0117",
+    "nameZh": "台灣寬尾鳳蝶",
+    "type": "minion",
+    "cost": 6,
+    "attack": 6,
+    "health": 6,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "05-12",
+    "effectText": "疾風",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "windfury"
+    ]
+  },
+  {
+    "id": "gen-0118",
+    "nameZh": "黃裳鳳蝶",
+    "type": "minion",
+    "cost": 2,
+    "attack": 3,
+    "health": 2,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "05-13",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0119",
+    "nameZh": "台灣爺蟬",
+    "type": "minion",
+    "cost": 4,
+    "attack": 5,
+    "health": 4,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "05-14",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0120",
+    "nameZh": "熊蟬",
+    "type": "minion",
+    "cost": 7,
+    "attack": 7,
+    "health": 7,
+    "rarity": "common",
+    "theme": "animal",
+    "vocabId": "05-15",
+    "effectText": "衝鋒",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "charge"
+    ]
+  },
+  {
+    "id": "gen-0121",
+    "nameZh": "紡織娘",
+    "type": "minion",
+    "cost": 3,
+    "attack": 3,
+    "health": 3,
+    "rarity": "epic",
+    "theme": "animal",
+    "vocabId": "05-16",
+    "effectText": "突襲",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "rush"
+    ]
+  },
+  {
+    "id": "gen-0122",
+    "nameZh": "天牛",
+    "type": "minion",
+    "cost": 2,
+    "attack": 3,
+    "health": 2,
+    "rarity": "rare",
+    "theme": "animal",
+    "vocabId": "05-17",
+    "effectText": "潛行",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "stealth"
+    ]
+  },
+  {
+    "id": "gen-0123",
+    "nameZh": "螳螂",
+    "type": "minion",
+    "cost": 1,
+    "attack": 1,
+    "health": 1,
+    "rarity": "rare",
+    "theme": "animal",
+    "vocabId": "05-18",
+    "effectText": "疾風",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "windfury"
+    ]
+  },
+  {
+    "id": "gen-0124",
+    "nameZh": "金龜子",
+    "type": "minion",
+    "cost": 3,
+    "attack": 4,
+    "health": 3,
+    "rarity": "rare",
+    "theme": "animal",
+    "vocabId": "05-19",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0125",
+    "nameZh": "瓢蟲",
+    "type": "minion",
+    "cost": 2,
+    "attack": 3,
+    "health": 2,
+    "rarity": "rare",
+    "theme": "animal",
+    "vocabId": "05-20",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0126",
+    "nameZh": "紅檜",
+    "type": "minion",
+    "cost": 4,
+    "attack": 4,
+    "health": 5,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "05-21",
+    "effectText": "嘲諷",
+    "bonusText": "+0/+2",
+    "bonusStats": {
+      "atk": 0,
+      "hp": 2
+    },
+    "keywords": [
+      "taunt"
+    ]
+  },
+  {
+    "id": "gen-0127",
+    "nameZh": "五葉松",
+    "type": "minion",
+    "cost": 3,
+    "attack": 3,
+    "health": 4,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "05-22",
+    "effectText": "石鎧",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "divineShield"
+    ]
+  },
+  {
+    "id": "gen-0128",
+    "nameZh": "台灣肖楠",
+    "type": "minion",
+    "cost": 2,
+    "attack": 2,
+    "health": 3,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "05-23",
+    "effectText": "嘲諷",
+    "bonusText": "+0/+2",
+    "bonusStats": {
+      "atk": 0,
+      "hp": 2
+    },
+    "keywords": [
+      "taunt"
+    ]
+  },
+  {
+    "id": "gen-0129",
+    "nameZh": "鐵杉",
+    "type": "minion",
+    "cost": 5,
+    "attack": 6,
+    "health": 5,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "05-24",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0130",
+    "nameZh": "冷杉",
+    "type": "minion",
+    "cost": 4,
+    "attack": 5,
+    "health": 4,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "05-25",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0131",
+    "nameZh": "茄苳",
+    "type": "minion",
+    "cost": 3,
+    "attack": 4,
+    "health": 3,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "06-01",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0132",
+    "nameZh": "樟樹",
+    "type": "minion",
+    "cost": 6,
+    "attack": 6,
+    "health": 7,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "06-02",
+    "effectText": "嘲諷",
+    "bonusText": "+0/+2",
+    "bonusStats": {
+      "atk": 0,
+      "hp": 2
+    },
+    "keywords": [
+      "taunt"
+    ]
+  },
+  {
+    "id": "gen-0133",
+    "nameZh": "相思樹",
+    "type": "minion",
+    "cost": 2,
+    "attack": 2,
+    "health": 3,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "06-03",
+    "effectText": "石鎧",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "divineShield"
+    ]
+  },
+  {
+    "id": "gen-0134",
+    "nameZh": "九芎",
+    "type": "minion",
+    "cost": 4,
+    "attack": 4,
+    "health": 5,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "06-04",
+    "effectText": "嘲諷",
+    "bonusText": "+0/+2",
+    "bonusStats": {
+      "atk": 0,
+      "hp": 2
+    },
+    "keywords": [
+      "taunt"
+    ]
+  },
+  {
+    "id": "gen-0135",
+    "nameZh": "台灣赤楊",
+    "type": "minion",
+    "cost": 7,
+    "attack": 8,
+    "health": 7,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "06-05",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0136",
+    "nameZh": "山桐子",
+    "type": "minion",
+    "cost": 3,
+    "attack": 4,
+    "health": 3,
+    "rarity": "epic",
+    "theme": "plant",
+    "vocabId": "06-06",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0137",
+    "nameZh": "山枇杷",
+    "type": "minion",
+    "cost": 2,
+    "attack": 3,
+    "health": 2,
+    "rarity": "rare",
+    "theme": "plant",
+    "vocabId": "06-07",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0138",
+    "nameZh": "玉山杜鵑",
+    "type": "minion",
+    "cost": 1,
+    "attack": 1,
+    "health": 2,
+    "rarity": "rare",
+    "theme": "plant",
+    "vocabId": "06-08",
+    "effectText": "嘲諷",
+    "bonusText": "+0/+2",
+    "bonusStats": {
+      "atk": 0,
+      "hp": 2
+    },
+    "keywords": [
+      "taunt"
+    ]
+  },
+  {
+    "id": "gen-0139",
+    "nameZh": "紅毛杜鵑",
+    "type": "minion",
+    "cost": 3,
+    "attack": 3,
+    "health": 4,
+    "rarity": "rare",
+    "theme": "plant",
+    "vocabId": "06-09",
+    "effectText": "石鎧",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "divineShield"
+    ]
+  },
+  {
+    "id": "gen-0140",
+    "nameZh": "山芙蓉",
+    "type": "minion",
+    "cost": 2,
+    "attack": 2,
+    "health": 3,
+    "rarity": "rare",
+    "theme": "plant",
+    "vocabId": "06-10",
+    "effectText": "嘲諷",
+    "bonusText": "+0/+2",
+    "bonusStats": {
+      "atk": 0,
+      "hp": 2
+    },
+    "keywords": [
+      "taunt"
+    ]
+  },
+  {
+    "id": "gen-0141",
+    "nameZh": "玉山金梅",
+    "type": "minion",
+    "cost": 4,
+    "attack": 5,
+    "health": 4,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "06-11",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0142",
+    "nameZh": "高山沙參",
+    "type": "minion",
+    "cost": 3,
+    "attack": 4,
+    "health": 3,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "06-12",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0143",
+    "nameZh": "咸豐草",
+    "type": "minion",
+    "cost": 2,
+    "attack": 3,
+    "health": 2,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "06-13",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0144",
+    "nameZh": "台灣澤蘭",
+    "type": "minion",
+    "cost": 5,
+    "attack": 5,
+    "health": 6,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "06-14",
+    "effectText": "嘲諷",
+    "bonusText": "+0/+2",
+    "bonusStats": {
+      "atk": 0,
+      "hp": 2
+    },
+    "keywords": [
+      "taunt"
+    ]
+  },
+  {
+    "id": "gen-0145",
+    "nameZh": "鴨跖草",
+    "type": "minion",
+    "cost": 4,
+    "attack": 4,
+    "health": 5,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "06-15",
+    "effectText": "石鎧",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "divineShield"
+    ]
+  },
+  {
+    "id": "gen-0146",
+    "nameZh": "通泉草",
+    "type": "minion",
+    "cost": 3,
+    "attack": 3,
+    "health": 4,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "06-16",
+    "effectText": "嘲諷",
+    "bonusText": "+0/+2",
+    "bonusStats": {
+      "atk": 0,
+      "hp": 2
+    },
+    "keywords": [
+      "taunt"
+    ]
+  },
+  {
+    "id": "gen-0147",
+    "nameZh": "兔兒菜",
+    "type": "minion",
+    "cost": 6,
+    "attack": 7,
+    "health": 6,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "06-17",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0148",
+    "nameZh": "山萵苣",
+    "type": "minion",
+    "cost": 2,
+    "attack": 3,
+    "health": 2,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "06-18",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0149",
+    "nameZh": "靈芝",
+    "type": "minion",
+    "cost": 4,
+    "attack": 5,
+    "health": 4,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "06-19",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0150",
+    "nameZh": "猴頭菇",
+    "type": "minion",
+    "cost": 7,
+    "attack": 7,
+    "health": 8,
+    "rarity": "common",
+    "theme": "plant",
+    "vocabId": "06-20",
+    "effectText": "嘲諷",
+    "bonusText": "+0/+2",
+    "bonusStats": {
+      "atk": 0,
+      "hp": 2
+    },
+    "keywords": [
+      "taunt"
+    ]
+  },
+  {
+    "id": "gen-0151",
+    "nameZh": "珊瑚菇",
+    "type": "minion",
+    "cost": 3,
+    "attack": 3,
+    "health": 4,
+    "rarity": "epic",
+    "theme": "plant",
+    "vocabId": "06-21",
+    "effectText": "石鎧",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "divineShield"
+    ]
+  },
+  {
+    "id": "gen-0152",
+    "nameZh": "木杵",
+    "type": "minion",
+    "cost": 2,
+    "attack": 2,
+    "health": 3,
+    "rarity": "rare",
+    "theme": "tool",
+    "vocabId": "06-22",
+    "effectText": "石鎧",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "divineShield"
+    ]
+  },
+  {
+    "id": "gen-0153",
+    "nameZh": "陶罐",
+    "type": "minion",
+    "cost": 1,
+    "attack": 2,
+    "health": 1,
+    "rarity": "rare",
+    "theme": "tool",
+    "vocabId": "06-23",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0154",
+    "nameZh": "陶碗",
+    "type": "minion",
+    "cost": 3,
+    "attack": 4,
+    "health": 3,
+    "rarity": "rare",
+    "theme": "tool",
+    "vocabId": "06-24",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0155",
+    "nameZh": "竹筏",
+    "type": "minion",
+    "cost": 2,
+    "attack": 3,
+    "health": 2,
+    "rarity": "rare",
+    "theme": "tool",
+    "vocabId": "06-25",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0156",
+    "nameZh": "藤橋",
+    "type": "minion",
+    "cost": 4,
+    "attack": 5,
+    "health": 4,
+    "rarity": "common",
+    "theme": "tool",
+    "vocabId": "06-26",
+    "effectText": "汲取",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "lifesteal"
+    ]
+  },
+  {
+    "id": "gen-0157",
+    "nameZh": "獨木橋",
+    "type": "minion",
+    "cost": 3,
+    "attack": 3,
+    "health": 4,
+    "rarity": "common",
+    "theme": "tool",
+    "vocabId": "06-27",
+    "effectText": "嘲諷",
+    "bonusText": "+0/+2",
+    "bonusStats": {
+      "atk": 0,
+      "hp": 2
+    },
+    "keywords": [
+      "taunt"
+    ]
+  },
+  {
+    "id": "gen-0158",
+    "nameZh": "背簍",
+    "type": "minion",
+    "cost": 2,
+    "attack": 2,
+    "health": 3,
+    "rarity": "common",
+    "theme": "tool",
+    "vocabId": "06-28",
+    "effectText": "石鎧",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "divineShield"
+    ]
+  },
+  {
+    "id": "gen-0159",
+    "nameZh": "網袋",
+    "type": "minion",
+    "cost": 5,
+    "attack": 6,
+    "health": 5,
+    "rarity": "common",
+    "theme": "tool",
+    "vocabId": "06-29",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0160",
+    "nameZh": "火把",
+    "type": "minion",
+    "cost": 4,
+    "attack": 5,
+    "health": 4,
+    "rarity": "common",
+    "theme": "tool",
+    "vocabId": "06-30",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0161",
+    "nameZh": "口簧琴",
+    "type": "minion",
+    "cost": 3,
+    "attack": 4,
+    "health": 3,
+    "rarity": "common",
+    "theme": "tool",
+    "vocabId": "06-31",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0162",
+    "nameZh": "木梳",
+    "type": "minion",
+    "cost": 6,
+    "attack": 7,
+    "health": 6,
+    "rarity": "common",
+    "theme": "tool",
+    "vocabId": "06-32",
+    "effectText": "汲取",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "lifesteal"
+    ]
+  },
+  {
+    "id": "gen-0163",
+    "nameZh": "藤帽",
+    "type": "minion",
+    "cost": 2,
+    "attack": 2,
+    "health": 3,
+    "rarity": "common",
+    "theme": "tool",
+    "vocabId": "06-33",
+    "effectText": "嘲諷",
+    "bonusText": "+0/+2",
+    "bonusStats": {
+      "atk": 0,
+      "hp": 2
+    },
+    "keywords": [
+      "taunt"
+    ]
+  },
+  {
+    "id": "gen-0164",
+    "nameZh": "樹皮衣",
+    "type": "minion",
+    "cost": 4,
+    "attack": 4,
+    "health": 5,
+    "rarity": "common",
+    "theme": "tool",
+    "vocabId": "06-34",
+    "effectText": "石鎧",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "divineShield"
+    ]
+  },
+  {
+    "id": "gen-0165",
+    "nameZh": "苧麻布",
+    "type": "minion",
+    "cost": 7,
+    "attack": 8,
+    "health": 7,
+    "rarity": "common",
+    "theme": "tool",
+    "vocabId": "06-35",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0166",
+    "nameZh": "小米糕",
+    "type": "minion",
+    "cost": 3,
+    "attack": 4,
+    "health": 3,
+    "rarity": "epic",
+    "theme": "tool",
+    "vocabId": "06-36",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0167",
+    "nameZh": "醃魚",
+    "type": "minion",
+    "cost": 2,
+    "attack": 3,
+    "health": 2,
+    "rarity": "rare",
+    "theme": "tool",
+    "vocabId": "06-37",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0168",
+    "nameZh": "竹笛",
+    "type": "minion",
+    "cost": 1,
+    "attack": 2,
+    "health": 1,
+    "rarity": "rare",
+    "theme": "tool",
+    "vocabId": "06-38",
+    "effectText": "汲取",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "lifesteal"
+    ]
+  },
+  {
+    "id": "gen-0169",
+    "nameZh": "石鍋",
+    "type": "minion",
+    "cost": 3,
+    "attack": 3,
+    "health": 4,
+    "rarity": "rare",
+    "theme": "tool",
+    "vocabId": "06-39",
+    "effectText": "嘲諷",
+    "bonusText": "+0/+2",
+    "bonusStats": {
+      "atk": 0,
+      "hp": 2
+    },
+    "keywords": [
+      "taunt"
+    ]
+  },
+  {
+    "id": "gen-0170",
+    "nameZh": "木盾",
+    "type": "minion",
+    "cost": 2,
+    "attack": 2,
+    "health": 3,
+    "rarity": "rare",
+    "theme": "tool",
+    "vocabId": "06-40",
+    "effectText": "石鎧",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    },
+    "keywords": [
+      "divineShield"
+    ]
+  },
+  {
+    "id": "gen-0171",
+    "nameZh": "竹編",
+    "type": "minion",
+    "cost": 4,
+    "attack": 5,
+    "health": 4,
+    "rarity": "common",
+    "theme": "tool",
+    "vocabId": "06-41",
+    "effectText": "—",
+    "bonusText": "+1/+1",
+    "bonusStats": {
+      "atk": 1,
+      "hp": 1
+    }
+  },
+  {
+    "id": "gen-0172",
+    "nameZh": "稜線",
+    "type": "spell",
+    "cost": 1,
+    "rarity": "common",
+    "theme": "nature",
+    "vocabId": "06-42",
+    "effect": "buffFriend11",
+    "effectText": "給一個友方隨從 +1/+1",
+    "bonusText": "改為 +2/+2"
+  },
+  {
+    "id": "gen-0173",
+    "nameZh": "埡口",
+    "type": "spell",
+    "cost": 2,
+    "rarity": "common",
+    "theme": "nature",
+    "vocabId": "06-43",
+    "effect": "dmgEnemyMinion3",
+    "effectText": "對一個敵方隨從造成 3 點傷害",
+    "bonusText": "改為 4 點"
+  },
+  {
+    "id": "gen-0174",
+    "nameZh": "河階",
+    "type": "spell",
+    "cost": 3,
+    "rarity": "common",
+    "theme": "nature",
+    "vocabId": "06-44",
+    "effect": "aoeEnemy2",
+    "effectText": "對所有敵方隨從造成 2 點傷害",
+    "bonusText": "改為 3 點"
+  },
+  {
+    "id": "gen-0175",
+    "nameZh": "湧泉",
+    "type": "spell",
+    "cost": 3,
+    "rarity": "common",
+    "theme": "nature",
+    "vocabId": "06-45",
+    "effect": "draw2",
+    "effectText": "抽 2 張牌",
+    "bonusText": "再抽 1 張"
+  },
+  {
+    "id": "gen-0176",
+    "nameZh": "曲流",
+    "type": "spell",
+    "cost": 3,
+    "rarity": "common",
+    "theme": "nature",
+    "vocabId": "06-46",
+    "effect": "dmgMinion4",
+    "effectText": "對一個隨從造成 4 點傷害",
+    "bonusText": "改為 5 點"
+  },
+  {
+    "id": "gen-0177",
+    "nameZh": "壺穴",
+    "type": "spell",
+    "cost": 4,
+    "rarity": "common",
+    "theme": "nature",
+    "vocabId": "06-47",
+    "effect": "dmgAny5",
+    "effectText": "造成 5 點傷害（任一目標）",
+    "bonusText": "改為 6 點"
+  },
+  {
+    "id": "gen-0178",
+    "nameZh": "潮間帶",
+    "type": "spell",
+    "cost": 4,
+    "rarity": "common",
+    "theme": "nature",
+    "vocabId": "06-48",
+    "effect": "healHero5",
+    "effectText": "回復我方英雄 5 點",
+    "bonusText": "額外抽 1 張"
+  },
+  {
+    "id": "gen-0179",
+    "nameZh": "珊瑚礁",
+    "type": "spell",
+    "cost": 5,
+    "rarity": "common",
+    "theme": "nature",
+    "vocabId": "06-49",
+    "effect": "aoeEnemy3",
+    "effectText": "對所有敵方隨從造成 3 點傷害",
+    "bonusText": "改為 4 點"
+  },
+  {
+    "id": "gen-0180",
+    "nameZh": "海蝕洞",
+    "type": "spell",
+    "cost": 1,
+    "rarity": "common",
+    "theme": "nature",
+    "vocabId": "06-50",
+    "effect": "buffFriend11",
+    "effectText": "給一個友方隨從 +1/+1",
+    "bonusText": "改為 +2/+2"
+  },
+  {
+    "id": "gen-0181",
+    "nameZh": "積雨雲",
+    "type": "spell",
+    "cost": 2,
+    "rarity": "epic",
+    "theme": "nature",
+    "vocabId": "06-51",
+    "effect": "dmgEnemyMinion3",
+    "effectText": "對一個敵方隨從造成 3 點傷害",
+    "bonusText": "改為 4 點"
+  },
+  {
+    "id": "gen-0182",
+    "nameZh": "流星雨",
+    "type": "spell",
+    "cost": 3,
+    "rarity": "rare",
+    "theme": "nature",
+    "vocabId": "06-52",
+    "effect": "aoeEnemy2",
+    "effectText": "對所有敵方隨從造成 2 點傷害",
+    "bonusText": "改為 3 點"
+  },
+  {
+    "id": "gen-0183",
+    "nameZh": "銀河",
+    "type": "spell",
+    "cost": 3,
+    "rarity": "rare",
+    "theme": "nature",
+    "vocabId": "06-53",
+    "effect": "draw2",
+    "effectText": "抽 2 張牌",
+    "bonusText": "再抽 1 張"
+  },
+  {
+    "id": "gen-0184",
+    "nameZh": "晚霞",
+    "type": "spell",
+    "cost": 3,
+    "rarity": "rare",
+    "theme": "nature",
+    "vocabId": "06-54",
+    "effect": "dmgMinion4",
+    "effectText": "對一個隨從造成 4 點傷害",
+    "bonusText": "改為 5 點"
+  },
+  {
+    "id": "gen-0185",
+    "nameZh": "曙光",
+    "type": "spell",
+    "cost": 4,
+    "rarity": "rare",
+    "theme": "nature",
+    "vocabId": "06-55",
+    "effect": "dmgAny5",
+    "effectText": "造成 5 點傷害（任一目標）",
+    "bonusText": "改為 6 點"
+  },
+  {
+    "id": "gen-0186",
+    "nameZh": "崩壁",
+    "type": "spell",
+    "cost": 4,
+    "rarity": "common",
+    "theme": "nature",
+    "vocabId": "06-56",
+    "effect": "healHero5",
+    "effectText": "回復我方英雄 5 點",
+    "bonusText": "額外抽 1 張"
+  },
+  {
+    "id": "gen-0187",
+    "nameZh": "沖積扇",
+    "type": "spell",
+    "cost": 5,
+    "rarity": "common",
+    "theme": "nature",
+    "vocabId": "07-01",
+    "effect": "aoeEnemy3",
+    "effectText": "對所有敵方隨從造成 3 點傷害",
+    "bonusText": "改為 4 點"
+  },
+  {
+    "id": "gen-0188",
+    "nameZh": "伏流",
+    "type": "spell",
+    "cost": 1,
+    "rarity": "common",
+    "theme": "nature",
+    "vocabId": "07-02",
+    "effect": "buffFriend11",
+    "effectText": "給一個友方隨從 +1/+1",
+    "bonusText": "改為 +2/+2"
+  },
+  {
+    "id": "gen-0189",
+    "nameZh": "沙洲",
+    "type": "spell",
+    "cost": 2,
+    "rarity": "common",
+    "theme": "nature",
+    "vocabId": "07-03",
+    "effect": "dmgEnemyMinion3",
+    "effectText": "對一個敵方隨從造成 3 點傷害",
+    "bonusText": "改為 4 點"
   }
 ]
