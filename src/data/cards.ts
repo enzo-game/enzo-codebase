@@ -234,6 +234,9 @@ const BASE_CARDS: Card[] = [
   { id: "leg-l39", nameZh: "熊與豹的紋身", type: "minion", cost: 4, attack: 4, health: 5, rarity: "epic", theme: "legend", vocabId: "07-24", effectText: "—", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
   { id: "leg-l40", nameZh: "穿山甲與猴子", type: "minion", cost: 3, attack: 2, health: 5, rarity: "rare", theme: "legend", vocabId: "10-22", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+0/+2", bonusStats: { atk: 0, hp: 2 } },
   { id: "leg-l41", nameZh: "追逐的日月", type: "spell", cost: 3, rarity: "rare", theme: "legend", vocabId: "08-25", effect: "draw2", effectText: "抽 2 張牌", bonusText: "再抽 1 張" },
+  // 批次 3–5 傳說（有出處、動物/天象/地景，避紅線）
+  { id: "leg-l42", nameZh: "取火的動物", type: "minion", cost: 3, attack: 3, health: 3, rarity: "rare", theme: "legend", vocabId: "07-24", keywords: ["rush"], effectText: "突襲", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-l43", nameZh: "洪水中的浮木", type: "spell", cost: 4, rarity: "rare", theme: "legend", vocabId: "11-31", effect: "healHero5", effectText: "回復我方英雄 5 點", bonusText: "額外抽 1 張" },
 ];
 
 // 完整卡池＝手寫核准卡 ＋ 批次生成的安全題材卡（scripts/gen-cards.mjs 產出）。
@@ -417,6 +420,8 @@ export const CARD_LEARNING: Record<string, string> = {
   "leg-l39": "排灣族與魯凱族傳說黑熊與雲豹互相在身上刺花紋，解釋黑熊胸前白紋與雲豹身上雲斑的由來；牌面只呈現兩隻動物。",
   "leg-l40": "賽德克族與太魯閣族流傳穿山甲與猴子鬥智的動物故事，解釋穿山甲的鱗甲與掘地習性；牌面只呈現兩隻動物。",
   "leg-l41": "台灣原住民多族的射日傳說裡，被射傷的太陽退為月亮，自此日月交替、晝夜分明；牌面只呈現日月與山稜的天象。",
+  "leg-l42": "台灣多族流傳『動物冒險取回火種』的傳說（如飛鼠、山羊涉水取火）；牌面只呈現動物與火光，不畫人形。",
+  "leg-l43": "台灣多族大洪水傳說中，人攀附浮木或漂流物避過洪水；牌面只呈現洪水與漂木的地景，不畫人形。",
   // 批次生成的安全題材卡學習小註（scripts/gen-cards.mjs 產出）。
   ...(GENERATED_LEARNING as Record<string, string>),
 };
