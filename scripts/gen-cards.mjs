@@ -42,6 +42,32 @@ const SUBJECTS = [
   ["寒流", "nature", "s"], ["土石流", "nature", "s"], ["山崩", "nature", "s"], ["湍流", "nature", "s"],
   ["深潭", "nature", "s"], ["斷崖", "nature", "s"], ["雲海", "nature", "s"], ["霜降", "nature", "s"],
   ["溪水暴漲後", "nature", "s"], ["山谷回音", "nature", "s"], ["夜霧", "nature", "s"], ["朝陽初露", "nature", "s"],
+  // ── 批次1 擴充（往 ~180；仍為安全題材、真實台灣山林物、避紅線）──
+  // 動物（哺乳/鳥/兩棲爬蟲/魚蟲）
+  ["梅花鹿", "animal", "m"], ["麝香貓", "animal", "m"], ["食蟹獴", "animal", "m"], ["白面鼯鼠", "animal", "m"], ["條紋松鼠", "animal", "m"],
+  ["白頭翁", "animal", "m"], ["樹鵲", "animal", "m"], ["朱鸝", "animal", "m"], ["青背山雀", "animal", "m"], ["紫嘯鶇", "animal", "m"],
+  ["鉛色水鶇", "animal", "m"], ["河烏", "animal", "m"], ["小啄木", "animal", "m"], ["灰喉山椒鳥", "animal", "m"], ["黑枕藍鶲", "animal", "m"],
+  ["栗背林鴝", "animal", "m"], ["火冠戴菊", "animal", "m"], ["黃山雀", "animal", "m"], ["攀木蜥蜴", "animal", "m"], ["麗紋石龍子", "animal", "m"],
+  ["台灣草蜥", "animal", "m"], ["台北樹蛙", "animal", "m"], ["梭德氏赤蛙", "animal", "m"], ["斯文豪氏赤蛙", "animal", "m"], ["中國樹蟾", "animal", "m"],
+  ["台灣石賓", "animal", "m"], ["爬岩鰍", "animal", "m"], ["明潭吻鰕虎", "animal", "m"], ["澤蟹", "animal", "m"], ["沼蝦", "animal", "m"],
+  ["青斑蝶", "animal", "m"], ["大紫蛺蝶", "animal", "m"], ["台灣寬尾鳳蝶", "animal", "m"], ["黃裳鳳蝶", "animal", "m"], ["台灣爺蟬", "animal", "m"],
+  ["熊蟬", "animal", "m"], ["紡織娘", "animal", "m"], ["天牛", "animal", "m"], ["螳螂", "animal", "m"], ["金龜子", "animal", "m"], ["瓢蟲", "animal", "m"],
+  // 植物（樹/花草/菌）
+  ["紅檜", "plant", "m"], ["五葉松", "plant", "m"], ["台灣肖楠", "plant", "m"], ["鐵杉", "plant", "m"], ["冷杉", "plant", "m"],
+  ["茄苳", "plant", "m"], ["樟樹", "plant", "m"], ["相思樹", "plant", "m"], ["九芎", "plant", "m"], ["台灣赤楊", "plant", "m"],
+  ["山桐子", "plant", "m"], ["山枇杷", "plant", "m"], ["玉山杜鵑", "plant", "m"], ["紅毛杜鵑", "plant", "m"], ["山芙蓉", "plant", "m"],
+  ["玉山金梅", "plant", "m"], ["高山沙參", "plant", "m"], ["咸豐草", "plant", "m"], ["台灣澤蘭", "plant", "m"], ["鴨跖草", "plant", "m"],
+  ["通泉草", "plant", "m"], ["兔兒菜", "plant", "m"], ["山萵苣", "plant", "m"], ["靈芝", "plant", "m"], ["猴頭菇", "plant", "m"], ["珊瑚菇", "plant", "m"],
+  // 器物（工具/食物/材料）
+  ["木杵", "tool", "m"], ["陶罐", "tool", "m"], ["陶碗", "tool", "m"], ["竹筏", "tool", "m"], ["藤橋", "tool", "m"],
+  ["獨木橋", "tool", "m"], ["背簍", "tool", "m"], ["網袋", "tool", "m"], ["火把", "tool", "m"], ["口簧琴", "tool", "m"],
+  ["木梳", "tool", "m"], ["藤帽", "tool", "m"], ["樹皮衣", "tool", "m"], ["苧麻布", "tool", "m"], ["小米糕", "tool", "m"],
+  ["醃魚", "tool", "m"], ["竹笛", "tool", "m"], ["石鍋", "tool", "m"], ["木盾", "tool", "m"], ["竹編", "tool", "m"],
+  // 自然/地景/天氣（法術）
+  ["稜線", "nature", "s"], ["埡口", "nature", "s"], ["河階", "nature", "s"], ["湧泉", "nature", "s"], ["曲流", "nature", "s"],
+  ["壺穴", "nature", "s"], ["潮間帶", "nature", "s"], ["珊瑚礁", "nature", "s"], ["海蝕洞", "nature", "s"], ["積雨雲", "nature", "s"],
+  ["流星雨", "nature", "s"], ["銀河", "nature", "s"], ["晚霞", "nature", "s"], ["曙光", "nature", "s"], ["崩壁", "nature", "s"],
+  ["沖積扇", "nature", "s"], ["伏流", "nature", "s"], ["沙洲", "nature", "s"],
 ];
 
 // 隨從數值曲線：總值 ≈ cost*2+1，攻守均分。關鍵字微調（嘲諷偏血、衝鋒/突襲偏攻且少 1 總值）。
@@ -54,6 +80,7 @@ function minionStats(cost, kw) {
   return { atk: Math.max(1, atk), hp: Math.max(1, hp) };
 }
 
+const THEME_ZH_MD = { animal: "動物", plant: "植物", nature: "自然", tool: "器物", legend: "傳說" };
 const KW_TEXT = { taunt: "嘲諷", stealth: "潛行", charge: "衝鋒", rush: "突襲", divineShield: "石鎧", lifesteal: "汲取", windfury: "疾風" };
 // 各主題可帶的關鍵字池（含 null=無關鍵字的普通隨從）。
 const KW_BY_THEME = {
@@ -122,6 +149,40 @@ SUBJECTS.forEach((sub, idx) => {
 
 writeFileSync("src/data/cards.generated.json", JSON.stringify(cards, null, 2) + "\n");
 writeFileSync("src/data/cardLearning.generated.json", JSON.stringify(learn, null, 2) + "\n");
+
+// ── 美術生成 MD（給 Codex 生圖用）：每張一列，含檔名與美術提示 ──
+const STYLE = "厚塗寫實／水彩感的台灣山林插畫，5:7 直式，構圖飽滿，無文字、無邊框、無浮水印。";
+const GUARD = "不畫人形、不畫神聖器物或祭儀場景、不畫百步蛇。";
+function artPrompt(name, theme) {
+  const body = {
+    animal: `一隻「${name}」在牠的自然棲地（溪流／森林／草叢），晨光與山霧的台灣山林背景`,
+    plant: `「${name}」的植株特寫，襯台灣山林地景與自然光影`,
+    nature: `「${name}」的台灣山林地景或天氣景象，開闊有氣勢`,
+    tool: `山林生活的器物「${name}」（木／竹／藤／獸皮／陶等材質）的靜物特寫，襯部落生活地景`,
+  }[theme] ?? `「${name}」的台灣山林意象`;
+  return `${body}。${STYLE}${GUARD}`;
+}
+// 手寫傳說卡（art-less，一併列入本批請 Codex 生圖）；提示謹守地景/自然、不畫人形。
+const LEGEND_ROWS = [
+  ["leg-l34", "飛魚報汛", "傳說", `隨黑潮而來的飛魚群躍出海面，遠方是蘭嶼海岸線的清晨；${STYLE}只畫魚群與海景，不畫人形、不涉祭儀。`],
+  ["leg-l35", "拼板舟", "傳說", `一艘達悟族傳統拼板舟停在礫石海灘，船身有紅白黑幾何彩繪，背景晨光海岸；${STYLE}只畫船體工藝與海景，不畫人形、不涉下水祭儀。`],
+  ["leg-l36", "銜穀種的鳥", "傳說", `一隻小鳥口銜一串飽滿穀穗，飛越山田上空，晨光地景；${STYLE}只畫鳥與穀穗，不畫人形。`],
+  ["leg-l37", "避洪的玉山", "傳說", `大水漫過谷地、遠處玉山高峰露出雲海之上的地景，光線由陰轉晴；${STYLE}只畫高山避洪的地景，不畫人形。`],
+  ["leg-l38", "楓紅的山", "傳說", `深秋滿山楓紅的台灣中海拔山林，葉片隨風飄落，層層山巒；${STYLE}只畫楓紅地景，不畫人形。`],
+];
+const rowsGen = cards.map((c) => `| ${c.id} | ${c.nameZh} | ${THEME_ZH_MD[c.theme]} | ${c.type === "spell" ? "法術" : "隨從"} | ${c.id}.jpg | ${artPrompt(c.nameZh, c.theme)} |`);
+const rowsLeg = LEGEND_ROWS.map(([id, name, , p]) => `| ${id} | ${name} | 傳說 | — | ${id}.jpg | ${p} |`);
+const md = `# 峽谷行者 · 卡面美術生成 批次 1（共 ${cards.length + LEGEND_ROWS.length} 張）
+
+給 Codex／繪圖：請依下表生成卡面圖。**風格統一**：${STYLE}**文化框限**：${GUARD}
+**輸出**：每張存成 \`public/images/cards/<檔名>\`（檔名見下表），完成後由工程端登錄進 \`CARD_ART\`。
+生成後建議跑 \`node scripts/compress-card-art.mjs\` 壓縮再進 repo（或改放 R2）。
+
+| id | 卡名 | 主題 | 類型 | 檔名 | 美術提示 |
+|----|------|------|------|------|----------|
+${[...rowsLeg, ...rowsGen].join("\n")}
+`;
+writeFileSync("docs/card-art-batch-1.md", md);
 const byRarity = cards.reduce((a, c) => ((a[c.rarity] = (a[c.rarity] || 0) + 1), a), {});
 const byType = cards.reduce((a, c) => ((a[c.type] = (a[c.type] || 0) + 1), a), {});
 console.log(`生成 ${cards.length} 張（去重後）| 型別 ${JSON.stringify(byType)} | 稀有度 ${JSON.stringify(byRarity)}`);
