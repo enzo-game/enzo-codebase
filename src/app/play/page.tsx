@@ -12,6 +12,7 @@ import { audioUrl } from "@/data/truku";
 import AmbientAudio from "@/components/AmbientAudio";
 import BattleMusic from "@/components/BattleMusic";
 import MatchClock from "@/components/MatchClock";
+import { loadSavedDeck } from "@/lib/deck";
 import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose, sfxAttack } from "@/lib/sfx";
 import {
   Game,
@@ -303,7 +304,7 @@ export default function PlayPage() {
     // 刻意的客戶端 mount 初始化：newGame() 內含 Math.random()，須在 client 產生以避免 SSR/CSR hydration 不一致
     /* eslint-disable react-hooks/set-state-in-effect */
     setMounted(true);
-    setGame(newGame());
+    setGame(newGame(undefined, loadSavedDeck() ?? undefined));
     setMulliganPhase(true);
     try {
       if (!localStorage.getItem("enzo-play-onboarded")) setOnboarding(true);
@@ -314,7 +315,7 @@ export default function PlayPage() {
       const opp = OPPONENTS.find((o) => o.id === localStorage.getItem("enzo-play-opponent"));
       if (opp) {
         setOpponentId(opp.id);
-        if (opp.theme) setGame(newGame(opp.theme)); // 有偏向的對手重發一次牌
+        if (opp.theme) setGame(newGame(opp.theme, loadSavedDeck() ?? undefined)); // 有偏向的對手重發一次牌
       }
     } catch {
       setOnboarding(true); // localStorage 不可用（隱私模式）時仍給第一次引導
@@ -378,7 +379,7 @@ export default function PlayPage() {
     setPending(null);
     setConfirmConcede(false);
     setMulliganSel(new Set());
-    setGame(newGame(opponent.theme));
+    setGame(newGame(opponent.theme, loadSavedDeck() ?? undefined));
     setMulliganPhase(true);
     setBattleStartMs(null); // 回換牌階段，計時歸零
   }
@@ -400,7 +401,7 @@ export default function PlayPage() {
     setConfirmConcede(false);
     setMulliganSel(new Set());
     resetFx();
-    setGame(newGame(opp.theme));
+    setGame(newGame(opp.theme, loadSavedDeck() ?? undefined));
     setMulliganPhase(true);
     setBattleStartMs(null); // 換對手＝開新局，計時歸零
   }
