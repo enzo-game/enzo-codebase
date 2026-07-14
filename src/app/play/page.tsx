@@ -1308,12 +1308,15 @@ export default function PlayPage() {
                 難度：{DIFF_ZH[difficulty]}
                 {difficulty === "hard" && <span className="text-amber-400">（答題考句子）</span>}
               </span>
-              <button
-                onClick={confirmMulligan}
-                className="rounded bg-amber-500 hover:bg-amber-400 px-5 py-2 text-sm font-bold text-black"
-              >
-                {mulliganSel.size > 0 ? `換掉 ${mulliganSel.size} 張並開始 ▶` : "保留全部開始 ▶"}
-              </button>
+              <div className="flex items-center gap-3">
+                <Link href="/" className="text-xs text-slate-400 hover:text-slate-200 underline">← 返回首頁</Link>
+                <button
+                  onClick={confirmMulligan}
+                  className="rounded bg-amber-500 hover:bg-amber-400 px-5 py-2 text-sm font-bold text-black"
+                >
+                  {mulliganSel.size > 0 ? `換掉 ${mulliganSel.size} 張並開始 ▶` : "保留全部開始 ▶"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1590,12 +1593,15 @@ export default function PlayPage() {
                 <span className="rounded bg-slate-800 px-2 py-1 text-slate-400">最佳連勝 {bestStreak}</span>
               )}
             </div>
-            <button
-              onClick={reset}
-              className="rounded bg-sky-600 hover:bg-sky-500 px-5 py-2 font-medium"
-            >
-              再挑戰一次
-            </button>
+            <div className="flex flex-col items-center gap-2">
+              <button
+                onClick={reset}
+                className="rounded bg-sky-600 hover:bg-sky-500 px-5 py-2 font-medium"
+              >
+                再挑戰一次
+              </button>
+              <Link href="/" className="text-xs text-slate-400 hover:text-slate-200 underline">返回首頁</Link>
+            </div>
           </div>
         </div>
       )}

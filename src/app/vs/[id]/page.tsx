@@ -1011,6 +1011,7 @@ function MulliganModal({
         <div className="w-full max-w-sm rounded-2xl border border-sky-600/40 bg-neutral-900 p-6 text-center space-y-3">
           <p className="text-sky-200 animate-pulse">已送出換牌，等待對手決定…</p>
           {clock}
+          <Link href="/" className="inline-block text-xs text-neutral-400 hover:text-neutral-200 underline">返回首頁</Link>
         </div>
       </div>
     );
@@ -1059,7 +1060,8 @@ function MulliganModal({
             );
           })}
         </div>
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="text-xs text-neutral-400 hover:text-neutral-200 underline">← 返回首頁</Link>
           <button
             onClick={onConfirm}
             disabled={busy}
@@ -1142,9 +1144,12 @@ function OverOverlay({ win, onExit }: { win: boolean; onExit: () => void }) {
     <div className="fixed inset-0 bg-neutral-950/90 flex items-center justify-center z-50">
       <div className="text-center space-y-5">
         <div className={`text-5xl font-black ${win ? "text-emerald-400" : "text-neutral-400"}`}>{win ? "勝利" : "落敗"}</div>
-        <button onClick={onExit} className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-6 py-2.5 font-semibold transition">
-          回大廳
-        </button>
+        <div className="flex flex-col items-center gap-3">
+          <button onClick={onExit} className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-6 py-2.5 font-semibold transition">
+            回大廳
+          </button>
+          <Link href="/" className="text-sm text-neutral-400 hover:text-neutral-200 underline">返回首頁</Link>
+        </div>
       </div>
     </div>
   );
