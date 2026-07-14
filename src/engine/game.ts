@@ -1,7 +1,7 @@
 // 對戰引擎核心邏輯 —— 純函式，無 React 依賴。
 // P0：從 src/app/play/page.tsx 抽出，供前端 UI 與（未來）Supabase Edge Function 共用。
 import { CARDS, Card, TOKEN_SAPLING, Theme } from "@/data/cards";
-import { vocab, distractors } from "@/data/truku";
+import { randomVocab, distractors } from "@/data/truku";
 import { randomSentence, sentenceDistractors } from "@/data/truku-sentences";
 import {
   Anchor,
@@ -789,12 +789,13 @@ export function mulligan(g: Game, replaceIdx: number[]): Game {
 
 // ───────────────────────── 答題（真實太魯閣語詞庫）─────────────────────────
 
-/** 單字題：隨機決定方向（中文找族語 / 族語找中文），同一張卡不會每次都長得一樣。 */
+/** 單字題：族語題不綁卡片，每次從詞庫隨機抽一個詞出題（司令 2026-07-14：卡片與詞脫鉤，
+ *  之後擴充卡池不必逐張配詞）。隨機決定方向（中文找族語 / 族語找中文）。 */
 export function makeQuiz(card: Card): QuizState {
-  const v = vocab(card.vocabId);
+  const v = randomVocab();
   const reverse = Math.random() < 0.5;
   // 多要幾個干擾候選（詞庫偶爾有同義重複詞，去重後才 slice(0,3)，確保選項一定湊滿 4 個）。
-  const candidates = distractors(card.vocabId, 8);
+  const candidates = distractors(v.id, 8);
   const options = reverse
     ? dedupeWithAnswer(v.chinese, candidates.map((d) => d.chinese), 3)
     : dedupeWithAnswer(v.word, candidates.map((d) => d.word), 3);
