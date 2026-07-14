@@ -15,6 +15,7 @@ import type { SeatView, ClientTarget, MatchState, MatchAction } from "@/engine/m
 import { initMatch, applyMatchAction, viewFor } from "@/engine/match";
 import { ensureAnonSession, subscribeMatch, fetchView, sendAction, subscribeChat, sendChat, type ChatMsg } from "@/lib/vs";
 import { runPracticeBotTurn } from "@/lib/practiceBot";
+import { loadSavedDeck } from "@/lib/deck";
 import { supabaseConfigured } from "@/lib/supabase";
 import AmbientAudio from "@/components/AmbientAudio";
 import BattleMusic from "@/components/BattleMusic";
@@ -175,7 +176,8 @@ export default function BattlePage() {
       } catch {
         // 讀不到就用預設
       }
-      const st = initMatch(0, diff); // now=0＝不計時，練習不搞逾時壓力
+      // 座位 a（你）用自組牌組（有存的話），讓你在練習房測牌組；座位 b（機器人）用全卡池。
+      const st = initMatch(0, diff, loadSavedDeck()); // now=0＝不計時，練習不搞逾時壓力
       practiceRef.current = st;
       // eslint-disable-next-line react-hooks/set-state-in-effect -- 練習模式一次性初始化本地視角
       setView(practiceView(st));

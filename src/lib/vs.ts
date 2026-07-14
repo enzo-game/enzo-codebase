@@ -50,18 +50,22 @@ export async function ensureAnonSession(): Promise<string> {
   return anonSessionInFlight;
 }
 
-/** 建立房間，回傳含 6 碼房號的 match。difficulty＝房主選的共用難度（normal=單字題、hard=句子題）。 */
-export async function createRoom(difficulty: "normal" | "hard" = "normal"): Promise<Match> {
+/** 建立房間，回傳含 6 碼房號的 match。difficulty＝房主選的共用難度（normal=單字題、hard=句子題）；
+ *  deck＝房主的自組牌組（card id 陣列，30 張），沒帶就用整個卡池。 */
+export async function createRoom(
+  difficulty: "normal" | "hard" = "normal",
+  deck?: string[] | null,
+): Promise<Match> {
   const sb = client();
-  const { data, error } = await sb.rpc("create_match", { p_difficulty: difficulty });
+  const { data, error } = await sb.rpc("create_match", { p_difficulty: difficulty, p_deck: deck ?? null });
   if (error) throw error;
   return data as Match;
 }
 
-/** 以房號加入房間；房號不存在/已滿/是自己的房會丟錯。 */
-export async function joinRoom(code: string): Promise<Match> {
+/** 以房號加入房間；房號不存在/已滿/是自己的房會丟錯。deck＝加入者的自組牌組（沒帶就用整個卡池）。 */
+export async function joinRoom(code: string, deck?: string[] | null): Promise<Match> {
   const sb = client();
-  const { data, error } = await sb.rpc("join_match", { p_code: code.trim().toUpperCase() });
+  const { data, error } = await sb.rpc("join_match", { p_code: code.trim().toUpperCase(), p_deck: deck ?? null });
   if (error) throw error;
   return data as Match;
 }

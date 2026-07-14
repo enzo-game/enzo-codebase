@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabaseConfigured } from "@/lib/supabase";
+import { loadSavedDeck } from "@/lib/deck";
 import {
   createRoom,
   joinRoom,
@@ -177,7 +178,7 @@ export default function VsPage() {
     setView("creating");
     try {
       await ensureAnonSession();
-      const m = await createRoom(difficulty);
+      const m = await createRoom(difficulty, loadSavedDeck());
       setMatch(m);
       setView("waiting");
       watch(m); // 等對手加入 → Realtime 推 active
@@ -197,7 +198,7 @@ export default function VsPage() {
     setView("joining");
     try {
       await ensureAnonSession();
-      const m = await joinRoom(c);
+      const m = await joinRoom(c, loadSavedDeck());
       setMatch(m);
       setView("connected"); // join 成功即為 active
       enterBattle(m); // 直接進盤面（我方為後手 B）
