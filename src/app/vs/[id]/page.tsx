@@ -41,6 +41,19 @@ function practiceView(s: MatchState): SeatView {
   return { ...viewFor(s, "a"), youName: "你", oppName: "練習對手" };
 }
 
+// 練習模式沒有真人對手，聊天由機器人回罐頭訊息——目的只是讓人看得到 /vs 聊天介面（送出＋收到的
+// 泡泡都會出現）。真人房才是真的即時對話。（全站禁 emoji：這裡一律純文字。）
+const PRACTICE_CHAT_REPLIES = [
+  "嗨！",
+  "放馬過來。",
+  "（練習對手：我只會罐頭回覆，真人房才是真的對手喔。）",
+  "這步不錯。",
+  "小心我的隨從。",
+  "再來一局？",
+  "嗯，有意思。",
+  "加油！",
+];
+
 export default function BattlePage() {
   const params = useParams<{ id: string }>();
   const matchId = params.id;
@@ -202,11 +215,23 @@ export default function BattlePage() {
 
   const sendChatMsg = useCallback(() => {
     const text = chatInput.trim().slice(0, 200);
-    if (!text || !chatChannelRef.current) return;
+    if (!text) return;
+    // 練習模式：本地顯示自己的訊息，機器人稍後回一句罐頭訊息（純示範聊天介面）。
+    if (isPractice) {
+      setChatMsgs((list) => [...list.slice(-49), { from: "you", text, id: ++chatIdRef.current }]);
+      setChatInput("");
+      const reply = PRACTICE_CHAT_REPLIES[Math.floor(Math.random() * PRACTICE_CHAT_REPLIES.length)];
+      setTimeout(() => {
+        setChatMsgs((list) => [...list.slice(-49), { from: "opp", text: reply, id: ++chatIdRef.current }]);
+        if (!chatOpenRef.current) setChatUnread((n) => n + 1);
+      }, 700);
+      return;
+    }
+    if (!chatChannelRef.current) return;
     sendChat(chatChannelRef.current, text);
     setChatMsgs((list) => [...list.slice(-49), { from: "you", text, id: ++chatIdRef.current }]);
     setChatInput("");
-  }, [chatInput]);
+  }, [chatInput, isPractice]);
 
   // 每秒跳動（用來導出倒數；setState 在 interval callback 內）
   useEffect(() => {
@@ -620,8 +645,7 @@ export default function BattlePage() {
         </div>
       ) : null}
 
-      {/* 左下即時聊天（好友對戰）：一顆浮動按鈕，點開往上展開聊天窗。練習模式無對手，不顯示。 */}
-      {!isPractice && (
+      {/* 左下即時聊天：一顆浮動按鈕，點開往上展開聊天窗。真人房＝即時對話；練習房＝機器人罐頭回覆（示範介面）。 */}
       <div className="fixed left-3 bottom-24 z-40 flex flex-col items-start gap-2">
         {chatOpen && (
           <div className="w-64 rounded-xl border border-neutral-700/70 bg-neutral-950/90 backdrop-blur-sm shadow-2xl overflow-hidden">
@@ -631,7 +655,7 @@ export default function BattlePage() {
             </div>
             <div className="max-h-48 min-h-[3rem] overflow-y-auto px-3 py-2 space-y-1.5 text-[12px] leading-snug">
               {chatMsgs.length === 0 ? (
-                <p className="text-neutral-600">跟對手打聲招呼吧！</p>
+                <p className="text-neutral-600">{isPractice ? "練習房：傳訊息看看，機器人會罐頭回你（示範聊天介面）。" : "跟對手打聲招呼吧！"}</p>
               ) : (
                 chatMsgs.map((m) => (
                   <div key={m.id} className={m.from === "you" ? "text-right" : "text-left"}>
@@ -680,7 +704,6 @@ export default function BattlePage() {
           )}
         </button>
       </div>
-      )}
 
       {inspect && (
         <CardInspectModal

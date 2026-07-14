@@ -139,28 +139,6 @@ function FeatureCard({
   );
 }
 
-// 入口列小圖示（ORDER-039：全站禁 emoji，改用 inline SVG 線稿）
-function GlobeIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className={className} aria-hidden>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M3 12h18" strokeLinecap="round" />
-      <path d="M12 3c2.8 2.6 2.8 15.4 0 18M12 3c-2.8 2.6-2.8 15.4 0 18" />
-    </svg>
-  );
-}
-
-// 山巔登頂旗（呼應 /vs/leaderboard 的天梯主題）
-function SummitIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinejoin="round" className={className} aria-hidden>
-      <path d="M2 20h20" strokeLinecap="round" />
-      <path d="M4 20 L10 7 L13 12 L16.5 5 L21 20 Z" />
-      <path d="M16.5 5 V1.5 M16.5 2 L19 3 L16.5 4" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 export default function Home() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
@@ -217,38 +195,18 @@ export default function Home() {
             cta="走上山徑"
           />
           <ModeCard
-            href="/play"
+            href="/battle"
             order={2}
             accent="sky"
             emblemSrc="/images/home/emblem-mode-b-cards-v1.png"
             bgSrc="/images/home/home-mode-b-arena-v1.jpg"
-            chip="可連玩"
+            chip="AI · 真人"
             title="模式 B · 競技對戰"
-            kicker="vs 山林試煉（系統） · 闖五式"
-            desc="雙方英雄血量、AI 回合、隨從攻擊與勝敗判定。出牌答對族語題觸發加成，適合熟練者。"
+            kicker="進來再選：AI 對戰 或 真人連線"
+            desc="爐石式卡牌對戰。跟 AI 練功、或用房號跟真人連線一較高下；出牌答對族語題觸發加成。天梯排行、斷線重連都在真人房。"
             cta="進入對戰"
           />
         </div>
-
-        {/* 線上對戰入口（真人 PvP，ORDER-060 P2→P4 已上線） */}
-        <Link
-          href="/vs"
-          className="anim-logo mt-5 flex items-center justify-between gap-4 rounded-2xl border border-fuchsia-500/40 bg-gradient-to-r from-fuchsia-950/30 via-slate-900/40 to-sky-950/30 px-6 py-4 transition hover:border-fuchsia-400/70 hover:from-fuchsia-900/40"
-        >
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-base font-semibold text-fuchsia-100/90">
-              <GlobeIcon className="h-[1.15em] w-[1.15em] shrink-0" />
-              <span>線上對戰 · 跟真人連線</span>
-            </div>
-            <div className="mt-0.5 text-xs text-slate-400">
-              好友房房號連線 · 回合計時 · 斷線重連 ·{" "}
-              <SummitIcon className="inline-block h-[1.15em] w-[1.15em] align-[-0.2em] text-amber-300/90" /> 天梯排行
-            </div>
-          </div>
-          <span className="shrink-0 rounded-full border border-fuchsia-400/50 px-4 py-1.5 text-sm text-fuchsia-100/90">
-            連線對戰 →
-          </span>
-        </Link>
 
         {/* 卡牌圖鑑入口 */}
         <Link
