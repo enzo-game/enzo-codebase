@@ -13,7 +13,8 @@ const existing = new Set(
 const vocabIds = JSON.parse(readFileSync("src/data/truku-vocab.json", "utf8")).entries.map((e) => e.id);
 
 // ── 安全題材主題名（真實台灣山林自然物，避開神聖/禁忌/占卜鳥類）。type: m=隨從 s=法術 ──
-const SUBJECTS = [
+// 分批：每個內層陣列＝一批。批次 1 的順序固定不動（id 依攤平後位置編，才不會擾動已生的圖）。
+const B1_SUBJECTS = [
   // 動物（哺乳）
   ["石虎", "animal", "m"], ["白鼻心", "animal", "m"], ["鼬獾", "animal", "m"], ["黃喉貂", "animal", "m"],
   ["台灣野兔", "animal", "m"], ["赤腹松鼠", "animal", "m"], ["長鬃山羊", "animal", "m"], ["水獺", "animal", "m"],
@@ -70,6 +71,54 @@ const SUBJECTS = [
   ["沖積扇", "nature", "s"], ["伏流", "nature", "s"], ["沙洲", "nature", "s"],
 ];
 
+// ── 批次 2（~185 張，另一組真實台灣山林物，續避紅線；跨批自動去重）──
+const B2_SUBJECTS = [
+  // 動物（猛禽/鴞/燕雀/其他鳥）
+  ["熊鷹", "animal", "m"], ["林鵰", "animal", "m"], ["蜂鷹", "animal", "m"], ["黑鳶", "animal", "m"], ["紅隼", "animal", "m"],
+  ["鳳頭蒼鷹", "animal", "m"], ["台灣松雀鷹", "animal", "m"], ["黃嘴角鴞", "animal", "m"], ["褐鷹鴞", "animal", "m"], ["灰林鴞", "animal", "m"],
+  ["黃魚鴞", "animal", "m"], ["綠啄木", "animal", "m"], ["大赤啄木", "animal", "m"], ["家燕", "animal", "m"], ["洋燕", "animal", "m"],
+  ["白鶺鴒", "animal", "m"], ["灰鶺鴒", "animal", "m"], ["白腹鶇", "animal", "m"], ["虎鶇", "animal", "m"], ["紅嘴黑鵯", "animal", "m"],
+  ["烏頭翁", "animal", "m"], ["黃胸青鶲", "animal", "m"], ["小剪尾", "animal", "m"], ["鉛色水鶇", "animal", "m"],
+  // 動物（哺乳/兩棲爬蟲/魚蟹）
+  ["大赤鼯鼠", "animal", "m"], ["小鼯鼠", "animal", "m"], ["刺鼠", "animal", "m"], ["台灣森鼠", "animal", "m"], ["鼴鼠", "animal", "m"],
+  ["斯文豪氏攀蜥", "animal", "m"], ["中國石龍子", "animal", "m"], ["蓬萊草蜥", "animal", "m"], ["台灣滑蜥", "animal", "m"], ["鉛山壁虎", "animal", "m"],
+  ["面天樹蛙", "animal", "m"], ["翡翠樹蛙", "animal", "m"], ["諸羅樹蛙", "animal", "m"], ["拉都希氏赤蛙", "animal", "m"], ["貢德氏赤蛙", "animal", "m"],
+  ["腹斑蛙", "animal", "m"], ["小雨蛙", "animal", "m"], ["黑眶蟾蜍", "animal", "m"], ["高身鯝魚", "animal", "m"], ["日本禿頭鯊", "animal", "m"],
+  ["鱸鰻", "animal", "m"], ["毛蟹", "animal", "m"], ["拉氏清溪蟹", "animal", "m"], ["石蟳", "animal", "m"], ["川蜷", "animal", "m"],
+  // 動物（蟲）
+  ["曙鳳蝶", "animal", "m"], ["大鳳蝶", "animal", "m"], ["烏鴉鳳蝶", "animal", "m"], ["青帶鳳蝶", "animal", "m"], ["紫斑蝶", "animal", "m"],
+  ["端紅蝶", "animal", "m"], ["台灣騷蟬", "animal", "m"], ["草蟬", "animal", "m"], ["台灣大蝗", "animal", "m"], ["台灣長臂金龜", "animal", "m"],
+  ["鹿角鍬形蟲", "animal", "m"], ["扁鍬形蟲", "animal", "m"], ["星天牛", "animal", "m"], ["埋葬蟲", "animal", "m"], ["虎甲蟲", "animal", "m"],
+  ["水黽", "animal", "m"], ["龍蝨", "animal", "m"], ["豆娘", "animal", "m"], ["蜉蝣", "animal", "m"], ["台灣大蟋蟀", "animal", "m"],
+  // 植物（樹/櫟楠榕）
+  ["台灣紅榨槭", "plant", "m"], ["青剛櫟", "plant", "m"], ["森氏櫟", "plant", "m"], ["錐果櫟", "plant", "m"], ["台灣栲", "plant", "m"],
+  ["大葉楠", "plant", "m"], ["香楠", "plant", "m"], ["江某", "plant", "m"], ["山龍眼", "plant", "m"], ["楊梅", "plant", "m"],
+  ["猴歡喜", "plant", "m"], ["白匏子", "plant", "m"], ["野桐", "plant", "m"], ["羅氏鹽膚木", "plant", "m"], ["雀榕", "plant", "m"],
+  ["大葉雀榕", "plant", "m"], ["水同木", "plant", "m"], ["稜果榕", "plant", "m"], ["食茱萸", "plant", "m"], ["刺蔥", "plant", "m"],
+  ["台灣朴樹", "plant", "m"], ["苦楝", "plant", "m"], ["台灣欒樹", "plant", "m"], ["無患子", "plant", "m"], ["黃連木", "plant", "m"],
+  ["木棉", "plant", "m"], ["刺桐", "plant", "m"], ["通脫木", "plant", "m"], ["呂宋莢蒾", "plant", "m"], ["珊瑚樹", "plant", "m"],
+  // 植物（高山花草/蕨/菌）
+  ["台灣龍膽", "plant", "m"], ["玉山石竹", "plant", "m"], ["玉山飛蓬", "plant", "m"], ["阿里山黃菀", "plant", "m"], ["高山藜蘆", "plant", "m"],
+  ["川上氏忍冬", "plant", "m"], ["阿里山點地梅", "plant", "m"], ["尼泊爾籟簫", "plant", "m"], ["玉山圓柏", "plant", "m"], ["南湖柳葉菜", "plant", "m"],
+  ["台灣桫欏", "plant", "m"], ["鳥巢蕨", "plant", "m"], ["腎蕨", "plant", "m"], ["觀音座蓮", "plant", "m"], ["崖薑蕨", "plant", "m"],
+  ["伏石蕨", "plant", "m"], ["芒萁", "plant", "m"], ["烏毛蕨", "plant", "m"], ["卷柏", "plant", "m"], ["過溝菜蕨", "plant", "m"],
+  ["松茸", "plant", "m"], ["雞肉絲菇", "plant", "m"], ["竹蓀", "plant", "m"], ["銀耳", "plant", "m"], ["牛肝菌", "plant", "m"], ["雲芝", "plant", "m"],
+  // 器物（工具/食物/材料）
+  ["藤簍", "tool", "m"], ["竹籃", "tool", "m"], ["木碗", "tool", "m"], ["木匙", "tool", "m"], ["陶甕", "tool", "m"],
+  ["火鑽", "tool", "m"], ["磨石", "tool", "m"], ["石臼", "tool", "m"], ["綁腿", "tool", "m"], ["藤盾", "tool", "m"],
+  ["魚叉", "tool", "m"], ["魚網", "tool", "m"], ["蝦籠", "tool", "m"], ["竹陷阱", "tool", "m"], ["穀倉", "tool", "m"],
+  ["曬肉架", "tool", "m"], ["醃肉甕", "tool", "m"], ["蜂桶", "tool", "m"], ["鹽袋", "tool", "m"], ["竹管", "tool", "m"],
+  ["木盤", "tool", "m"], ["藤帶", "tool", "m"], ["樹皮布", "tool", "m"], ["竹筒水", "tool", "m"], ["小米飯", "tool", "m"],
+  // 自然/地景/天氣（法術）
+  ["峭壁", "nature", "s"], ["岩洞", "nature", "s"], ["天然橋", "nature", "s"], ["亂石灘", "nature", "s"], ["瀑潭", "nature", "s"],
+  ["幽谷", "nature", "s"], ["溪口", "nature", "s"], ["潟湖", "nature", "s"], ["浪花", "nature", "s"], ["海霧", "nature", "s"],
+  ["雲瀑", "nature", "s"], ["霧淞", "nature", "s"], ["冰瀑", "nature", "s"], ["融雪", "nature", "s"], ["梅雨", "nature", "s"],
+  ["午後雷陣雨", "nature", "s"], ["落山風", "nature", "s"], ["東北季風", "nature", "s"], ["日暈", "nature", "s"], ["月暈", "nature", "s"],
+  ["霞光", "nature", "s"], ["星軌", "nature", "s"], ["幻日", "nature", "s"], ["山煙", "nature", "s"],
+];
+
+const SUBJECT_BATCHES = [B1_SUBJECTS, B2_SUBJECTS];
+
 // 隨從數值曲線：總值 ≈ cost*2+1，攻守均分。關鍵字微調（嘲諷偏血、衝鋒/突襲偏攻且少 1 總值）。
 function minionStats(cost, kw) {
   let total = cost * 2 + 1;
@@ -119,32 +168,39 @@ const LEARN_BY_THEME = {
 
 const cards = [];
 const learn = {};
-let mi = 0, si = 0, vi = 0;
-SUBJECTS.forEach((sub, idx) => {
-  const [name, theme, kind] = sub;
-  if (existing.has(name)) return; // 去重：跳過已存在卡名
-  const id = `gen-${String(idx + 1).padStart(4, "0")}`;
-  const vocabId = vocabIds[vi++ % vocabIds.length];
-  const rarity = rarityFor(idx);
-  learn[id] = (LEARN_BY_THEME[theme] ?? LEARN_BY_THEME.nature)(name);
-  if (kind === "s") {
-    const k = SPELL_KINDS[si++ % SPELL_KINDS.length];
-    cards.push({ id, nameZh: name, type: "spell", cost: k.cost, rarity, theme, vocabId, effect: k.effect, effectText: k.text, bonusText: k.bonus });
-  } else {
-    // 隨從：費用在 1..7 間依序分布（偏中低費）
-    const costPattern = [2, 1, 3, 2, 4, 3, 2, 5, 4, 3, 6, 2, 4, 7, 3];
-    const cost = costPattern[mi % costPattern.length];
-    const kwPool = KW_BY_THEME[theme] ?? [null];
-    const kw = kwPool[mi % kwPool.length];
-    mi++;
-    const { atk, hp } = minionStats(cost, kw);
-    const card = { id, nameZh: name, type: "minion", cost, attack: atk, health: hp, rarity, theme, vocabId,
-      effectText: kw ? KW_TEXT[kw] : "—",
-      bonusText: kw === "taunt" ? "+0/+2" : "+1/+1",
-      bonusStats: kw === "taunt" ? { atk: 0, hp: 2 } : { atk: 1, hp: 1 } };
-    if (kw) card.keywords = [kw];
-    cards.push(card);
-  }
+const batchOf = {}; // id -> 批次索引（供 MD 分批）
+const seen = new Set(); // 跨批去重
+let mi = 0, si = 0, vi = 0, pos = 0;
+// 攤平所有批次，用全域位置 pos 決定 id（批次1順序不變＝id 穩定，不擾動已生的圖）。
+SUBJECT_BATCHES.forEach((batch, bi) => {
+  batch.forEach((sub) => {
+    const idx = pos++;
+    const [name, theme, kind] = sub;
+    if (existing.has(name) || seen.has(name)) return; // 對現有＋跨批去重
+    seen.add(name);
+    const id = `gen-${String(idx + 1).padStart(4, "0")}`;
+    batchOf[id] = bi;
+    const vocabId = vocabIds[vi++ % vocabIds.length];
+    const rarity = rarityFor(idx);
+    learn[id] = (LEARN_BY_THEME[theme] ?? LEARN_BY_THEME.nature)(name);
+    if (kind === "s") {
+      const k = SPELL_KINDS[si++ % SPELL_KINDS.length];
+      cards.push({ id, nameZh: name, type: "spell", cost: k.cost, rarity, theme, vocabId, effect: k.effect, effectText: k.text, bonusText: k.bonus });
+    } else {
+      const costPattern = [2, 1, 3, 2, 4, 3, 2, 5, 4, 3, 6, 2, 4, 7, 3];
+      const cost = costPattern[mi % costPattern.length];
+      const kwPool = KW_BY_THEME[theme] ?? [null];
+      const kw = kwPool[mi % kwPool.length];
+      mi++;
+      const { atk, hp } = minionStats(cost, kw);
+      const card = { id, nameZh: name, type: "minion", cost, attack: atk, health: hp, rarity, theme, vocabId,
+        effectText: kw ? KW_TEXT[kw] : "—",
+        bonusText: kw === "taunt" ? "+0/+2" : "+1/+1",
+        bonusStats: kw === "taunt" ? { atk: 0, hp: 2 } : { atk: 1, hp: 1 } };
+      if (kw) card.keywords = [kw];
+      cards.push(card);
+    }
+  });
 });
 
 writeFileSync("src/data/cards.generated.json", JSON.stringify(cards, null, 2) + "\n");
@@ -162,27 +218,29 @@ function artPrompt(name, theme) {
   }[theme] ?? `「${name}」的台灣山林意象`;
   return `${body}。${STYLE}${GUARD}`;
 }
-// 手寫傳說卡（art-less，一併列入本批請 Codex 生圖）；提示謹守地景/自然、不畫人形。
-const LEGEND_ROWS = [
-  ["leg-l34", "飛魚報汛", "傳說", `隨黑潮而來的飛魚群躍出海面，遠方是蘭嶼海岸線的清晨；${STYLE}只畫魚群與海景，不畫人形、不涉祭儀。`],
-  ["leg-l35", "拼板舟", "傳說", `一艘達悟族傳統拼板舟停在礫石海灘，船身有紅白黑幾何彩繪，背景晨光海岸；${STYLE}只畫船體工藝與海景，不畫人形、不涉下水祭儀。`],
-  ["leg-l36", "銜穀種的鳥", "傳說", `一隻小鳥口銜一串飽滿穀穗，飛越山田上空，晨光地景；${STYLE}只畫鳥與穀穗，不畫人形。`],
-  ["leg-l37", "避洪的玉山", "傳說", `大水漫過谷地、遠處玉山高峰露出雲海之上的地景，光線由陰轉晴；${STYLE}只畫高山避洪的地景，不畫人形。`],
-  ["leg-l38", "楓紅的山", "傳說", `深秋滿山楓紅的台灣中海拔山林，葉片隨風飄落，層層山巒；${STYLE}只畫楓紅地景，不畫人形。`],
+// 手寫傳說卡（art-less）每批的美術列；提示謹守地景/自然、不畫人形。實際卡定義在 cards.ts。
+const LEGEND_BATCHES = [
+  [
+    ["leg-l34", "飛魚報汛", `隨黑潮而來的飛魚群躍出海面，遠方是蘭嶼海岸線的清晨；${STYLE}只畫魚群與海景，不畫人形、不涉祭儀。`],
+    ["leg-l35", "拼板舟", `一艘達悟族傳統拼板舟停在礫石海灘，船身有紅白黑幾何彩繪，背景晨光海岸；${STYLE}只畫船體工藝與海景，不畫人形、不涉下水祭儀。`],
+    ["leg-l36", "銜穀種的鳥", `一隻小鳥口銜一串飽滿穀穗，飛越山田上空，晨光地景；${STYLE}只畫鳥與穀穗，不畫人形。`],
+    ["leg-l37", "避洪的玉山", `大水漫過谷地、遠處玉山高峰露出雲海之上的地景，光線由陰轉晴；${STYLE}只畫高山避洪的地景，不畫人形。`],
+    ["leg-l38", "楓紅的山", `深秋滿山楓紅的台灣中海拔山林，葉片隨風飄落，層層山巒；${STYLE}只畫楓紅地景，不畫人形。`],
+  ],
+  [
+    ["leg-l39", "熊與豹的紋身", `台灣黑熊與雲豹在森林中相對，黑熊胸前有白色 V 紋、雲豹身上有雲狀斑，晨光林間；${STYLE}只畫兩隻動物，不畫人形。`],
+    ["leg-l40", "穿山甲與猴子", `一隻穿山甲蜷起鱗甲、一隻台灣獼猴在旁的森林地景，落葉與樹根；${STYLE}只畫兩隻動物，不畫人形。`],
+    ["leg-l41", "追逐的日月", `天空中日與月一前一後、晝夜交界的山稜地景，霞光過渡；${STYLE}只畫日月與山稜天象，不畫人形。`],
+  ],
 ];
-const rowsGen = cards.map((c) => `| ${c.id} | ${c.nameZh} | ${THEME_ZH_MD[c.theme]} | ${c.type === "spell" ? "法術" : "隨從"} | ${c.id}.jpg | ${artPrompt(c.nameZh, c.theme)} |`);
-const rowsLeg = LEGEND_ROWS.map(([id, name, , p]) => `| ${id} | ${name} | 傳說 | — | ${id}.jpg | ${p} |`);
-const md = `# 峽谷行者 · 卡面美術生成 批次 1（共 ${cards.length + LEGEND_ROWS.length} 張）
-
-給 Codex／繪圖：請依下表生成卡面圖。**風格統一**：${STYLE}**文化框限**：${GUARD}
-**輸出**：每張存成 \`public/images/cards/<檔名>\`（檔名見下表），完成後由工程端登錄進 \`CARD_ART\`。
-生成後建議跑 \`node scripts/compress-card-art.mjs\` 壓縮再進 repo（或改放 R2）。
-
-| id | 卡名 | 主題 | 類型 | 檔名 | 美術提示 |
-|----|------|------|------|------|----------|
-${[...rowsLeg, ...rowsGen].join("\n")}
-`;
-writeFileSync("docs/card-art-batch-1.md", md);
+SUBJECT_BATCHES.forEach((_, bi) => {
+  const genRows = cards.filter((c) => batchOf[c.id] === bi)
+    .map((c) => `| ${c.id} | ${c.nameZh} | ${THEME_ZH_MD[c.theme]} | ${c.type === "spell" ? "法術" : "隨從"} | ${c.id}.jpg | ${artPrompt(c.nameZh, c.theme)} |`);
+  const legRows = (LEGEND_BATCHES[bi] ?? []).map(([id, name, p]) => `| ${id} | ${name} | 傳說 | — | ${id}.jpg | ${p} |`);
+  const rows = [...legRows, ...genRows];
+  const md = `# 峽谷行者 · 卡面美術生成 批次 ${bi + 1}（共 ${rows.length} 張）\n\n給 Codex／繪圖：請依下表生成卡面圖。**風格統一**：${STYLE}**文化框限**：${GUARD}\n**輸出**：每張存成 \`public/images/cards/<檔名>\`，完成後由工程端登錄進 \`CARD_ART\`；建議先跑 \`node scripts/compress-card-art.mjs\` 壓縮（或改放 R2）。\n\n| id | 卡名 | 主題 | 類型 | 檔名 | 美術提示 |\n|----|------|------|------|------|----------|\n${rows.join("\n")}\n`;
+  writeFileSync(`docs/card-art-batch-${bi + 1}.md`, md);
+});
 const byRarity = cards.reduce((a, c) => ((a[c.rarity] = (a[c.rarity] || 0) + 1), a), {});
 const byType = cards.reduce((a, c) => ((a[c.type] = (a[c.type] || 0) + 1), a), {});
 console.log(`生成 ${cards.length} 張（去重後）| 型別 ${JSON.stringify(byType)} | 稀有度 ${JSON.stringify(byRarity)}`);

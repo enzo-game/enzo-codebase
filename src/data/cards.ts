@@ -230,6 +230,10 @@ const BASE_CARDS: Card[] = [
   { id: "leg-l36", nameZh: "銜穀種的鳥", type: "minion", cost: 2, attack: 2, health: 2, rarity: "rare", theme: "legend", vocabId: "10-22", effect: "draw1", effectText: "戰吼：抽 1 張牌", bonusText: "再抽 1 張" },
   { id: "leg-l37", nameZh: "避洪的玉山", type: "spell", cost: 3, rarity: "rare", theme: "legend", vocabId: "08-25", effect: "friendTaunt03", effectText: "一個友方隨從獲得嘲諷與 +0/+3", bonusText: "額外 +0/+2" },
   { id: "leg-l38", nameZh: "楓紅的山", type: "minion", cost: 4, attack: 4, health: 5, rarity: "epic", theme: "legend", vocabId: "10-19", effectText: "—", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  // 批次 2 傳說（有出處、動物/天象、避紅線）
+  { id: "leg-l39", nameZh: "熊與豹的紋身", type: "minion", cost: 4, attack: 4, health: 5, rarity: "epic", theme: "legend", vocabId: "07-24", effectText: "—", bonusText: "+1/+1", bonusStats: { atk: 1, hp: 1 } },
+  { id: "leg-l40", nameZh: "穿山甲與猴子", type: "minion", cost: 3, attack: 2, health: 5, rarity: "rare", theme: "legend", vocabId: "10-22", keywords: ["taunt"], effectText: "嘲諷", bonusText: "+0/+2", bonusStats: { atk: 0, hp: 2 } },
+  { id: "leg-l41", nameZh: "追逐的日月", type: "spell", cost: 3, rarity: "rare", theme: "legend", vocabId: "08-25", effect: "draw2", effectText: "抽 2 張牌", bonusText: "再抽 1 張" },
 ];
 
 // 完整卡池＝手寫核准卡 ＋ 批次生成的安全題材卡（scripts/gen-cards.mjs 產出）。
@@ -410,6 +414,9 @@ export const CARD_LEARNING: Record<string, string> = {
   "leg-l36": "台灣原住民多族流傳『動物自遠方帶回穀種』的小米起源傳說；牌面以鳥銜穀呈現作物的由來。",
   "leg-l37": "鄒族與布農族的大洪水傳說中，人避居玉山高處，待洪水退去後重返家園；牌面只呈現高山避洪的地景。",
   "leg-l38": "鄒族傳說以楓葉的飄落與再生比喻族人的繁衍生息；牌面只呈現楓紅的山林地景，不畫人形。",
+  "leg-l39": "排灣族與魯凱族傳說黑熊與雲豹互相在身上刺花紋，解釋黑熊胸前白紋與雲豹身上雲斑的由來；牌面只呈現兩隻動物。",
+  "leg-l40": "賽德克族與太魯閣族流傳穿山甲與猴子鬥智的動物故事，解釋穿山甲的鱗甲與掘地習性；牌面只呈現兩隻動物。",
+  "leg-l41": "台灣原住民多族的射日傳說裡，被射傷的太陽退為月亮，自此日月交替、晝夜分明；牌面只呈現日月與山稜的天象。",
   // 批次生成的安全題材卡學習小註（scripts/gen-cards.mjs 產出）。
   ...(GENERATED_LEARNING as Record<string, string>),
 };
