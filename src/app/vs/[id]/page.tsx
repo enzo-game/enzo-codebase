@@ -18,6 +18,7 @@ import { runPracticeBotTurn } from "@/lib/practiceBot";
 import { supabaseConfigured } from "@/lib/supabase";
 import AmbientAudio from "@/components/AmbientAudio";
 import BattleMusic from "@/components/BattleMusic";
+import MatchClock from "@/components/MatchClock";
 import { sfxPlayCard, sfxCorrect, sfxWrong, sfxSummon, sfxAttack, sfxHit, sfxArrive, sfxLose } from "@/lib/sfx";
 import {
   GemDefs,
@@ -63,6 +64,25 @@ export default function BattlePage() {
   // 不用湊人，讓司令隨時進來看/測所有 /vs 功能（板面/補牌/難度題型/攻擊動畫…）。聊天因無對手停用。
   const isPractice = matchId === "practice";
   const practiceRef = useRef<MatchState | null>(null);
+
+  // 對戰計時：這局打了多久。真人房把起點存 localStorage（重整/重連仍接續）；練習房每次進來重新計。
+  const [matchStartMs, setMatchStartMs] = useState<number | null>(null);
+  useEffect(() => {
+    if (matchStartMs != null) return;
+    if (isPractice) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 練習房：進來即開始計時
+      setMatchStartMs(Date.now());
+      return;
+    }
+    const key = `enzo-vs-start-${matchId}`;
+    let v = Number(window.localStorage.getItem(key));
+    if (!v) {
+      v = Date.now();
+      try { window.localStorage.setItem(key, String(v)); } catch {}
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 真人房：對齊 localStorage 存的起點
+    setMatchStartMs(v);
+  }, [isPractice, matchId, matchStartMs]);
 
   const [view, setView] = useState<SeatView | null>(null);
   const [err, setErr] = useState("");
@@ -478,6 +498,12 @@ export default function BattlePage() {
             title="這局的答題難度（房主建房時決定，兩人共用）"
           >
             {view.difficulty === "hard" ? "困難·句子題" : "普通·單字題"}
+          </span>
+          <span
+            className="text-[10px] rounded-full border border-neutral-700 bg-neutral-900/70 px-2 py-0.5 text-neutral-400 tabular-nums"
+            title="這局已經打了多久"
+          >
+            時間 <MatchClock startMs={matchStartMs} running={view.phase !== "over"} />
           </span>
         </div>
         <TurnBadge view={view} secondsLeft={secondsLeft} />

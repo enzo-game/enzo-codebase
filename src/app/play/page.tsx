@@ -11,6 +11,7 @@ import { GemDefs, StatGem } from "@/lib/statGem";
 import { audioUrl } from "@/data/truku";
 import AmbientAudio from "@/components/AmbientAudio";
 import BattleMusic from "@/components/BattleMusic";
+import MatchClock from "@/components/MatchClock";
 import { sfxPlayCard, sfxCorrect, sfxWrong, sfxArrive, sfxLose, sfxAttack } from "@/lib/sfx";
 import {
   Game,
@@ -295,6 +296,8 @@ export default function PlayPage() {
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [confirmConcede, setConfirmConcede] = useState(false);
+  // 對戰計時：換牌確認、正式開打起算；每開新局重置（回換牌時歸零）。
+  const [battleStartMs, setBattleStartMs] = useState<number | null>(null);
 
   useEffect(() => {
     // 刻意的客戶端 mount 初始化：newGame() 內含 Math.random()，須在 client 產生以避免 SSR/CSR hydration 不一致
@@ -377,6 +380,7 @@ export default function PlayPage() {
     setMulliganSel(new Set());
     setGame(newGame(opponent.theme));
     setMulliganPhase(true);
+    setBattleStartMs(null); // 回換牌階段，計時歸零
   }
 
   // 選對手＝開新局（敵方牌組隨主題重建）。記憶選擇。
@@ -398,6 +402,7 @@ export default function PlayPage() {
     resetFx();
     setGame(newGame(opp.theme));
     setMulliganPhase(true);
+    setBattleStartMs(null); // 換對手＝開新局，計時歸零
   }
 
   // 開局換牌：把選取的牌洗回牌庫、重抽等量，然後進入對戰
@@ -414,6 +419,7 @@ export default function PlayPage() {
     if (idx.length > 0) setGame((g) => mulligan(g, idx));
     setMulliganSel(new Set());
     setMulliganPhase(false);
+    setBattleStartMs(Date.now()); // 換牌確認＝正式開打，計時起算
   }
 
   // 認輸：直接判系統獲勝（會觸發連勝歸零）。二次點擊確認，避免誤觸。
@@ -744,6 +750,11 @@ export default function PlayPage() {
               規則
             </button>
             <span className="rounded bg-slate-800 px-2 py-1">回合 {game.turn}</span>
+            {battleStartMs != null && (
+              <span className="rounded bg-slate-800 px-2 py-1 tabular-nums" title="這局已經打了多久">
+                時間 <MatchClock startMs={battleStartMs} running={!game.winner} />
+              </span>
+            )}
             <span className="rounded bg-sky-900/60 px-2 py-1">
               法力 {game.pMana}/{game.pMaxMana}
             </span>
