@@ -79,6 +79,8 @@ export const CARD_ART: Record<string, string> = {
   "leg-n08": "/images/cards/n08-night-rest.jpg",
   "leg-n09": "/images/cards/n09-creek-supply.jpg",
   "leg-n10": "/images/cards/n10-headwind-pass.jpg",
+  // ORDER-059 補件：退水河床（洪水退去、河床裸露的地景）
+  "leg-n11": "/images/cards/n11-riverbed.jpg",
   // ORDER-077 補件（3）
   "leg-n12": "/images/cards/n12-waterfall.jpg",
   "leg-n13": "/images/cards/n13-winter-night.jpg",
@@ -150,6 +152,8 @@ export const CARD_ART: Record<string, string> = {
   "leg-p06": "/images/cards/p06-after-wind-road.jpg",
   "leg-p07": "/images/cards/p07-stone-marker.jpg",
   "leg-p08": "/images/cards/p08-night-fire.jpg",
+  // ORDER-059 補件：樹根護徑（植物/地形，山徑樹根護路基）
+  "leg-p09": "/images/cards/p09-root-path.jpg",
   // ORDER-077 補件（4）
   "leg-p10": "/images/cards/p10-bamboo.jpg",
   "leg-p11": "/images/cards/p11-leaf-path.jpg",
