@@ -117,7 +117,108 @@ const B2_SUBJECTS = [
   ["霞光", "nature", "s"], ["星軌", "nature", "s"], ["幻日", "nature", "s"], ["山煙", "nature", "s"],
 ];
 
-const SUBJECT_BATCHES = [B1_SUBJECTS, B2_SUBJECTS];
+// ── 批次 3（~165：水鳥/猛禽/鴞、爬蟲兩棲、溪魚、蝶蟬甲蟲、高山花草）──
+const B3_SUBJECTS = [
+  ["黑面琵鷺", "animal", "m"], ["蒼鷺", "animal", "m"], ["大白鷺", "animal", "m"], ["中白鷺", "animal", "m"], ["黃頭鷺", "animal", "m"],
+  ["綠簑鷺", "animal", "m"], ["栗小鷺", "animal", "m"], ["黃小鷺", "animal", "m"], ["紅冠水雞", "animal", "m"], ["白腹秧雞", "animal", "m"],
+  ["緋秧雞", "animal", "m"], ["彩鷸", "animal", "m"], ["高蹺鴴", "animal", "m"], ["東方環頸鴴", "animal", "m"], ["磯鷸", "animal", "m"],
+  ["青足鷸", "animal", "m"], ["赤足鷸", "animal", "m"], ["鷹斑鷸", "animal", "m"], ["大杓鷸", "animal", "m"], ["反嘴鴴", "animal", "m"],
+  ["燕鴴", "animal", "m"], ["小燕鷗", "animal", "m"], ["鳳頭燕鷗", "animal", "m"], ["鴛鴦", "animal", "m"], ["綠頭鴨", "animal", "m"],
+  ["尖尾鴨", "animal", "m"], ["琵嘴鴨", "animal", "m"], ["小水鴨", "animal", "m"], ["花嘴鴨", "animal", "m"], ["小鸊鷉", "animal", "m"],
+  ["鸕鶿", "animal", "m"], ["台灣朱雀", "animal", "m"], ["灰鷽", "animal", "m"], ["煤山雀", "animal", "m"], ["赤腹山雀", "animal", "m"],
+  ["黃腹琉璃", "animal", "m"], ["大卷尾", "animal", "m"], ["小卷尾", "animal", "m"], ["巨嘴鴉", "animal", "m"], ["星鴉", "animal", "m"],
+  ["松鴉", "animal", "m"], ["藍磯鶇", "animal", "m"], ["白尾鴝", "animal", "m"], ["黃尾鴝", "animal", "m"], ["綠鳩", "animal", "m"],
+  ["金背鳩", "animal", "m"], ["珠頸斑鳩", "animal", "m"], ["東方角鴞", "animal", "m"], ["鵂鶹", "animal", "m"], ["草鴞", "animal", "m"],
+  ["雪山草蜥", "animal", "m"], ["印度蜓蜥", "animal", "m"], ["股鱗蜓蜥", "animal", "m"], ["半葉趾虎", "animal", "m"], ["短肢攀蜥", "animal", "m"],
+  ["台灣龍蜥", "animal", "m"], ["黃口攀蜥", "animal", "m"], ["艾氏樹蛙", "animal", "m"], ["褐樹蛙", "animal", "m"], ["日本樹蛙", "animal", "m"],
+  ["白頷樹蛙", "animal", "m"], ["台北赤蛙", "animal", "m"], ["金線蛙", "animal", "m"], ["虎皮蛙", "animal", "m"], ["古氏赤蛙", "animal", "m"],
+  ["斑龜", "animal", "m"], ["食蛇龜", "animal", "m"], ["柴棺龜", "animal", "m"], ["中華鱉", "animal", "m"], ["台灣纓口鰍", "animal", "m"],
+  ["台灣馬口魚", "animal", "m"], ["粗首馬口鱲", "animal", "m"], ["台灣白甲魚", "animal", "m"], ["羅漢魚", "animal", "m"], ["七星鱧", "animal", "m"],
+  ["溪鱧", "animal", "m"], ["大吻鰕虎", "animal", "m"], ["極樂吻鰕虎", "animal", "m"], ["字紋弓蟹", "animal", "m"], ["粗糙沼蝦", "animal", "m"],
+  ["珠光鳳蝶", "animal", "m"], ["台灣鳳蝶", "animal", "m"], ["白紋鳳蝶", "animal", "m"], ["玉帶鳳蝶", "animal", "m"], ["無尾鳳蝶", "animal", "m"],
+  ["大琉璃紋鳳蝶", "animal", "m"], ["雙環鳳蝶", "animal", "m"], ["淡黃蝶", "animal", "m"], ["荷氏黃蝶", "animal", "m"], ["遷粉蝶", "animal", "m"],
+  ["斯氏紫斑蝶", "animal", "m"], ["圓翅紫斑蝶", "animal", "m"], ["樺斑蝶", "animal", "m"], ["琉球青斑蝶", "animal", "m"], ["小紋青斑蝶", "animal", "m"],
+  ["蟪蛄", "animal", "m"], ["薄翅蟬", "animal", "m"], ["高砂熊蟬", "animal", "m"], ["台灣大鍬形蟲", "animal", "m"], ["兩點鋸鍬形蟲", "animal", "m"],
+  ["鬼豔鍬形蟲", "animal", "m"], ["深山鍬形蟲", "animal", "m"], ["圓翅鍬形蟲", "animal", "m"], ["彩虹吉丁蟲", "animal", "m"], ["白條天牛", "animal", "m"],
+  ["台灣角金龜", "animal", "m"], ["寬腹螳螂", "animal", "m"], ["台灣稻蝗", "animal", "m"], ["黃斑黑蟋蟀", "animal", "m"], ["螽斯", "animal", "m"],
+  ["無霸勾蜓", "animal", "m"], ["善變蜻蜓", "animal", "m"], ["杜松蜻蜓", "animal", "m"], ["短腹幽蟌", "animal", "m"], ["白痣珈蟌", "animal", "m"],
+  ["黑翅螢", "animal", "m"], ["黃緣螢", "animal", "m"], ["台灣窗螢", "animal", "m"], ["刺鼠", "animal", "m"], ["高山田鼠", "animal", "m"],
+  ["台灣杜鵑", "plant", "m"], ["西施花", "plant", "m"], ["玉山薔薇", "plant", "m"], ["高山白珠樹", "plant", "m"], ["玉山龍膽", "plant", "m"],
+  ["黑斑龍膽", "plant", "m"], ["玉山金絲桃", "plant", "m"], ["玉山佛甲草", "plant", "m"], ["玉山蠅子草", "plant", "m"], ["玉山沙參", "plant", "m"],
+  ["台灣繡線菊", "plant", "m"], ["玉山箭竹", "plant", "m"], ["包籜矢竹", "plant", "m"], ["巒大花楸", "plant", "m"], ["台灣扁核木", "plant", "m"],
+  ["阿里山十大功勞", "plant", "m"], ["玉山假沙梨", "plant", "m"], ["玉山當歸", "plant", "m"], ["森氏當歸", "plant", "m"], ["台灣附地草", "plant", "m"],
+  ["高山芒", "nature", "s"], ["雪坡", "nature", "s"], ["圈谷", "nature", "s"], ["碎石坡", "nature", "s"], ["高山湖泊", "nature", "s"],
+  ["雲隙光", "nature", "s"], ["山雨欲來", "nature", "s"], ["午後山嵐", "nature", "s"], ["雪融溪水", "nature", "s"], ["高山寒夜", "nature", "s"],
+];
+
+// ── 批次 4（~165：喬木/灌木/藤蔓/蘭花/蕨/竹/菌苔、水生植物）──
+const B4_SUBJECTS = [
+  ["台灣五葉松", "plant", "m"], ["華山松", "plant", "m"], ["馬尾松", "plant", "m"], ["台灣華山松", "plant", "m"], ["紅豆杉", "plant", "m"],
+  ["台灣粗榧", "plant", "m"], ["巒大杉", "plant", "m"], ["香杉", "plant", "m"], ["台灣杉木", "plant", "m"], ["柳杉", "plant", "m"],
+  ["青剛櫟", "plant", "m"], ["赤皮", "plant", "m"], ["捲斗櫟", "plant", "m"], ["長尾栲", "plant", "m"], ["三斗石櫟", "plant", "m"],
+  ["台灣紅豆樹", "plant", "m"], ["台灣櫸木", "plant", "m"], ["櫸", "plant", "m"], ["櫧", "plant", "m"], ["水青岡", "plant", "m"],
+  ["台灣山毛櫸", "plant", "m"], ["昆欄", "plant", "m"], ["西施花木", "plant", "m"], ["假繡球", "plant", "m"], ["鵝掌藤", "plant", "m"],
+  ["山胡桃", "plant", "m"], ["黃杞", "plant", "m"], ["楓楊", "plant", "m"], ["水柳", "plant", "m"], ["水社柳", "plant", "m"],
+  ["台灣蘆竹", "plant", "m"], ["桂竹", "plant", "m"], ["孟宗竹", "plant", "m"], ["麻竹", "plant", "m"], ["綠竹", "plant", "m"],
+  ["刺竹", "plant", "m"], ["莿竹", "plant", "m"], ["長枝竹", "plant", "m"], ["台灣矢竹", "plant", "m"], ["七弦竹", "plant", "m"],
+  ["台灣一葉蘭", "plant", "m"], ["白及", "plant", "m"], ["金線蓮", "plant", "m"], ["石斛蘭", "plant", "m"], ["豆蘭", "plant", "m"],
+  ["蝴蝶蘭", "plant", "m"], ["台灣蝴蝶蘭", "plant", "m"], ["風蘭", "plant", "m"], ["黃花石斛", "plant", "m"], ["綬草", "plant", "m"],
+  ["台灣捲瓣蘭", "plant", "m"], ["根節蘭", "plant", "m"], ["鶴頂蘭", "plant", "m"], ["蜘蛛蘭", "plant", "m"], ["台灣金釵蘭", "plant", "m"],
+  ["山蘇花", "plant", "m"], ["崖薑蕨", "plant", "m"], ["山蘇仔", "plant", "m"], ["台灣桫欏", "plant", "m"], ["筆筒樹木", "plant", "m"],
+  ["觀音座蓮", "plant", "m"], ["伏石蕨", "plant", "m"], ["芒萁草", "plant", "m"], ["烏毛蕨草", "plant", "m"], ["台灣金狗毛蕨", "plant", "m"],
+  ["卷柏草", "plant", "m"], ["石松", "plant", "m"], ["瓶爾小草", "plant", "m"], ["水蕨", "plant", "m"], ["槐葉蘋", "plant", "m"],
+  ["台灣萍蓬草", "plant", "m"], ["台灣水韭", "plant", "m"], ["水社野牡丹", "plant", "m"], ["野薑花", "plant", "m"], ["月桃花", "plant", "m"],
+  ["台灣百合", "plant", "m"], ["鐵砲百合", "plant", "m"], ["艷紅鹿子百合", "plant", "m"], ["金針花", "plant", "m"], ["台灣萱草", "plant", "m"],
+  ["台灣油點草", "plant", "m"], ["黃花鼠尾草", "plant", "m"], ["台灣蝴蝶戲珠花", "plant", "m"], ["山芙蓉花", "plant", "m"], ["木芙蓉", "plant", "m"],
+  ["台灣馬藍", "plant", "m"], ["大菁", "plant", "m"], ["山棕葉", "plant", "m"], ["黃藤芯", "plant", "m"], ["台灣魚藤", "plant", "m"],
+  ["雞屎藤", "plant", "m"], ["野牡丹", "plant", "m"], ["杜虹花", "plant", "m"], ["台灣海棗", "plant", "m"], ["林投", "plant", "m"],
+  ["月橘", "plant", "m"], ["火刺木", "plant", "m"], ["台灣火刺木", "plant", "m"], ["硃砂根", "plant", "m"], ["山黃梔", "plant", "m"],
+  ["台灣繡球", "plant", "m"], ["長葉茅膏菜", "plant", "m"], ["台灣萍蓬", "plant", "m"], ["田字草", "plant", "m"], ["大安水蓑衣", "plant", "m"],
+  ["靈芝木", "plant", "m"], ["珊瑚菌", "plant", "m"], ["猴板凳", "plant", "m"], ["桑黃", "plant", "m"], ["雞油菌", "plant", "m"],
+  ["羊肚菌", "plant", "m"], ["松露", "plant", "m"], ["木層孔菌", "plant", "m"], ["台灣捲柏", "plant", "m"], ["土馬騌", "plant", "m"],
+  ["地錢", "plant", "m"], ["大灰蘚", "plant", "m"], ["泥炭苔", "plant", "m"], ["曲尾苔", "plant", "m"], ["羽蘚", "plant", "m"],
+  ["山桂花", "plant", "m"], ["馬醉木花", "plant", "m"], ["埔里杜鵑", "plant", "m"], ["守城滿山紅", "plant", "m"], ["著生杜鵑", "plant", "m"],
+  ["台灣掌葉槭", "plant", "m"], ["尖葉槭", "plant", "m"], ["樟葉槭", "plant", "m"], ["台灣三角楓", "plant", "m"], ["青楓木", "plant", "m"],
+  ["九芎木", "plant", "m"], ["台灣欒木", "plant", "m"], ["苦楝樹", "plant", "m"], ["茄苳樹", "plant", "m"], ["雀榕木", "plant", "m"],
+  ["白榕", "plant", "m"], ["正榕", "plant", "m"], ["黃槿", "plant", "m"], ["水黃皮", "plant", "m"], ["台灣海桐", "plant", "m"],
+  ["草海桐", "plant", "m"], ["文珠蘭", "plant", "m"], ["濱刀豆", "plant", "m"], ["馬鞍藤", "plant", "m"], ["林投果", "plant", "m"],
+];
+
+// ── 批次 5（~165：地景/地形/天氣/星空、材質文化/器物/食物/工藝、溪海）──
+const B5_SUBJECTS = [
+  ["岩壁", "nature", "s"], ["峭岩", "nature", "s"], ["石瀑", "nature", "s"], ["巨石堆", "nature", "s"], ["天坑", "nature", "s"],
+  ["石灰岩洞", "nature", "s"], ["鐘乳石", "nature", "s"], ["溫泉煙", "nature", "s"], ["硫氣孔", "nature", "s"], ["泥火山", "nature", "s"],
+  ["堰塞湖", "nature", "s"], ["瀑布群", "nature", "s"], ["跌水", "nature", "s"], ["急湍", "nature", "s"], ["漩渦", "nature", "s"],
+  ["回水潭", "nature", "s"], ["礫石河床", "nature", "s"], ["曲流頸", "nature", "s"], ["牛軛湖", "nature", "s"], ["三角洲", "nature", "s"],
+  ["海階", "nature", "s"], ["海崖", "nature", "s"], ["海蝕平台", "nature", "s"], ["礁岩", "nature", "s"], ["海蝕溝", "nature", "s"],
+  ["潮池", "nature", "s"], ["浪濤", "nature", "s"], ["湧浪", "nature", "s"], ["退潮", "nature", "s"], ["漲潮", "nature", "s"],
+  ["海風", "nature", "s"], ["山谷風", "nature", "s"], ["谷地霧", "nature", "s"], ["輻射霧", "nature", "s"], ["平流霧", "nature", "s"],
+  ["朝霧散", "nature", "s"], ["雲隙", "nature", "s"], ["積雲", "nature", "s"], ["層雲", "nature", "s"], ["卷積雲", "nature", "s"],
+  ["莢狀雲", "nature", "s"], ["旗雲", "nature", "s"], ["火燒雲", "nature", "s"], ["夕燒", "nature", "s"], ["朝燒", "nature", "s"],
+  ["虹暈", "nature", "s"], ["環天頂弧", "nature", "s"], ["日柱", "nature", "s"], ["月華", "nature", "s"], ["星團", "nature", "s"],
+  ["流星群", "nature", "s"], ["夏季大三角", "nature", "s"], ["南十字", "nature", "s"], ["晨星", "nature", "s"], ["晚星", "nature", "s"],
+  ["驟雨", "nature", "s"], ["雷陣雨", "nature", "s"], ["連綿細雨", "nature", "s"], ["山風呼嘯", "nature", "s"], ["寒露", "nature", "s"],
+  ["結霜", "nature", "s"], ["薄冰", "nature", "s"], ["冰晶", "nature", "s"], ["雪霰", "nature", "s"], ["粉雪", "nature", "s"],
+  ["木杓", "tool", "m"], ["木盆", "tool", "m"], ["竹匙", "tool", "m"], ["竹筷", "tool", "m"], ["陶壺水", "tool", "m"],
+  ["石板灶", "tool", "m"], ["三石灶", "tool", "m"], ["火鉗", "tool", "m"], ["火塘灰", "tool", "m"], ["燻架", "tool", "m"],
+  ["竹樓", "tool", "m"], ["茅屋頂", "tool", "m"], ["石板牆", "tool", "m"], ["穀倉柱", "tool", "m"], ["望樓", "tool", "m"],
+  ["藤梯", "tool", "m"], ["竹橋", "tool", "m"], ["繩橋", "tool", "m"], ["水車", "tool", "m"], ["石堰", "tool", "m"],
+  ["竹筧", "tool", "m"], ["竹水管", "tool", "m"], ["魚梁", "tool", "m"], ["石滬", "tool", "m"], ["竹籠陷阱", "tool", "m"],
+  ["套索", "tool", "m"], ["彈弓", "tool", "m"], ["投石索", "tool", "m"], ["竹弓箭", "tool", "m"], ["木矛", "tool", "m"],
+  ["藤編盔", "tool", "m"], ["皮甲", "tool", "m"], ["樹皮帽", "tool", "m"], ["草鞋", "tool", "m"], ["綁腿布", "tool", "m"],
+  ["苧麻繩", "tool", "m"], ["麻線團", "tool", "m"], ["紡錘", "tool", "m"], ["織布機", "tool", "m"], ["整經架", "tool", "m"],
+  ["染料缸", "tool", "m"], ["薯榔染", "tool", "m"], ["九芎炭", "tool", "m"], ["木炭", "tool", "m"], ["火種罐", "tool", "m"],
+  ["小米穗", "tool", "m"], ["紅藜", "tool", "m"], ["樹豆莢", "tool", "m"], ["山芋", "tool", "m"], ["山藥", "tool", "m"],
+  ["樹薯", "tool", "m"], ["芋頭", "tool", "m"], ["地瓜", "tool", "m"], ["糯小米", "tool", "m"], ["小米糰", "tool", "m"],
+  ["竹筒飯團", "tool", "m"], ["月桃粽", "tool", "m"], ["假酸漿葉", "tool", "m"], ["吉拿富", "tool", "m"], ["阿拜", "tool", "m"],
+  ["醃山肉", "tool", "m"], ["風乾魚", "tool", "m"], ["蜂蜜罐", "tool", "m"], ["山鹽", "tool", "m"], ["馬告粒", "tool", "m"],
+  ["刺蔥葉", "tool", "m"], ["山胡椒果", "tool", "m"], ["香蕉葉包", "tool", "m"], ["竹杯酒", "tool", "m"], ["連杯", "tool", "m"],
+  ["木臼杵", "tool", "m"], ["石磨盤", "tool", "m"], ["篩子", "tool", "m"], ["簸箕", "tool", "m"], ["穀耙", "tool", "m"],
+  ["漁筌", "tool", "m"], ["魚簍網", "tool", "m"], ["蝦籠竹", "tool", "m"], ["八卦網", "tool", "m"], ["撒網", "tool", "m"],
+  ["竹排筏", "tool", "m"], ["樹皮舟", "tool", "m"], ["木槳", "tool", "m"], ["竹篙", "tool", "m"], ["浮標", "tool", "m"],
+];
+
+const SUBJECT_BATCHES = [B1_SUBJECTS, B2_SUBJECTS, B3_SUBJECTS, B4_SUBJECTS, B5_SUBJECTS];
 
 // 隨從數值曲線：總值 ≈ cost*2+1，攻守均分。關鍵字微調（嘲諷偏血、衝鋒/突襲偏攻且少 1 總值）。
 function minionStats(cost, kw) {
@@ -231,6 +332,12 @@ const LEGEND_BATCHES = [
     ["leg-l39", "熊與豹的紋身", `台灣黑熊與雲豹在森林中相對，黑熊胸前有白色 V 紋、雲豹身上有雲狀斑，晨光林間；${STYLE}只畫兩隻動物，不畫人形。`],
     ["leg-l40", "穿山甲與猴子", `一隻穿山甲蜷起鱗甲、一隻台灣獼猴在旁的森林地景，落葉與樹根；${STYLE}只畫兩隻動物，不畫人形。`],
     ["leg-l41", "追逐的日月", `天空中日與月一前一後、晝夜交界的山稜地景，霞光過渡；${STYLE}只畫日月與山稜天象，不畫人形。`],
+  ],
+  [
+    ["leg-l42", "取火的動物", `一隻小動物口銜火種、涉過溪流帶回山林，火光映在水面與夜色山林；${STYLE}只畫動物與火光，不畫人形。`],
+  ],
+  [
+    ["leg-l43", "洪水中的浮木", `大洪水中一段漂流的巨木浮在濁浪上、遠山露出水面的地景，光線由陰轉晴；${STYLE}只畫洪水與漂木地景，不畫人形。`],
   ],
 ];
 SUBJECT_BATCHES.forEach((_, bi) => {
