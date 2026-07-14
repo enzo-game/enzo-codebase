@@ -238,6 +238,23 @@ function drawNote(n: number, requested: number): string {
 
 // ───────────────────────── 隨從入場（含戰吼）─────────────────────────
 
+// 手牌一清空就補抽（司令 2026-07-14）：出牌出到手牌 0 張的當下馬上補 5 張，讓玩家不會沒牌可出、
+// 節奏更順（仍受法力限制，不是無限）。/vs 與 /play、雙方（含 AI）都吃這條——因為兩邊出牌都會
+// 走到 playMinionFor / castSpell，且都在呼叫前就把打出的牌從手牌移除，這裡看到的手牌已是出牌後狀態。
+const HAND_REFILL = 5;
+function refillHandIfEmpty(ng: Game, side: Side): void {
+  const hand = side === "player" ? ng.pHand : ng.eHand;
+  if (hand.length > 0) return; // 手牌還有牌就不補（含這張出牌本身有抽牌效果、補回手牌的情況）
+  const n = drawCards(ng, side, HAND_REFILL);
+  if (n > 0) {
+    ng.log = pushLog(
+      ng.log,
+      `${side === "player" ? "織者" : "山林試煉"} 手牌用盡，補抽 ${n} 張。`,
+      side === "player" ? "info" : "sys",
+    );
+  }
+}
+
 export function playMinionFor(g: Game, side: Side, card: Card, isCorrect: boolean): Game {
   const ng = cloneGame(g);
   const my = side === "player";
@@ -291,6 +308,7 @@ export function playMinionFor(g: Game, side: Side, card: Card, isCorrect: boolea
       break;
     }
   }
+  refillHandIfEmpty(ng, side); // 手牌清空→補抽 5
   return checkWinner(reap(ng));
 }
 
@@ -489,6 +507,7 @@ export function castSpell(g: Game, side: Side, card: Card, isCorrect: boolean, t
   } else {
     ng.log = pushLog(ng.log, `山林試煉施放「${card.nameZh}」：${note}`, "sys");
   }
+  refillHandIfEmpty(ng, side); // 手牌清空→補抽 5
   return checkWinner(reap(ng));
 }
 
