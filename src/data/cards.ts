@@ -238,6 +238,11 @@ export const TOKEN_SAPLING: Card = {
   bonusText: "—",
 };
 
+/** id → 卡片 查表（含幼樹 token）。供 match_state 存讀時把牌庫/手牌壓成 id 再還原。 */
+export const CARD_BY_ID: Map<string, Card> = new Map(
+  [...CARDS, TOKEN_SAPLING].map((c) => [c.id, c]),
+);
+
 /** 玩家看到卡片時的學習小註：傳說牌標出故事來源；自然/動物/器物牌標出詞彙與山林生活脈絡。 */
 export const CARD_LEARNING: Record<string, string> = {
   "leg-l01": "射日傳說裡，遠行者沿途種下作物，象徵長路上的補給與接力。",

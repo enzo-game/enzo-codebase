@@ -13,6 +13,7 @@ import {
   type Seat,
   type SeatView,
 } from "@/engine/match";
+import { packState, unpackState } from "@/lib/matchStateCodec";
 
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -104,19 +105,19 @@ async function ensureState(
   now: number,
 ): Promise<{ state: MatchState; version: number } | null> {
   const { data } = await svc.from("match_state").select("state,version").eq("match_id", m.id).maybeSingle();
-  if (data) return { state: data.state as MatchState, version: (data as { version: number }).version };
+  if (data) return { state: unpackState(data.state), version: (data as { version: number }).version };
   if (m.status !== "active" || !m.player_b) return null; // 還沒兩人到齊，無狀態可建
   // 首次初始化：發牌（帶 now 設回合截止、房主選的共用難度）。舊列 difficulty 為 null 視同 normal。
   const diff = m.difficulty === "hard" || m.difficulty === "easy" ? m.difficulty : "normal";
   const fresh = initMatch(now, diff);
-  await svc.from("match_state").insert({ match_id: m.id, state: fresh, version: 0 }).select().maybeSingle();
+  await svc.from("match_state").insert({ match_id: m.id, state: packState(fresh), version: 0 }).select().maybeSingle();
   const { data: after } = await svc.from("match_state").select("state,version").eq("match_id", m.id).maybeSingle();
   if (!after) return null;
   await svc
     .from("matches")
     .update({ turn_owner: seatUid(m, fresh.current), turn_deadline: iso(fresh.deadline), version: 0 })
     .eq("id", m.id);
-  return { state: after.state as MatchState, version: (after as { version: number }).version };
+  return { state: unpackState(after.state), version: (after as { version: number }).version };
 }
 
 /** 讀權威狀態，並在讀到的當下懶執行「回合逾時」：若已過截止就自動結束當前回合、寫回、bump version
@@ -134,14 +135,14 @@ async function loadEnforced(
   const nextVersion = loaded.version + 1;
   const { data: written } = await svc
     .from("match_state")
-    .update({ state, version: nextVersion, updated_at: new Date().toISOString() })
+    .update({ state: packState(state), version: nextVersion, updated_at: new Date().toISOString() })
     .eq("match_id", m.id)
     .eq("version", loaded.version) // version-guard：別人搶先寫就以對方的為準
     .select("match_id")
     .maybeSingle();
   if (!written) {
     const { data: re } = await svc.from("match_state").select("state,version").eq("match_id", m.id).maybeSingle();
-    return re ? { state: re.state as MatchState, version: (re as { version: number }).version } : loaded;
+    return re ? { state: unpackState(re.state), version: (re as { version: number }).version } : loaded;
   }
   await svc
     .from("matches")
@@ -206,7 +207,7 @@ export async function postAction(
     const nextVersion = loaded.version + 1;
     const { data: written } = await svc
       .from("match_state")
-      .update({ state: next, version: nextVersion, updated_at: new Date().toISOString() })
+      .update({ state: packState(next), version: nextVersion, updated_at: new Date().toISOString() })
       .eq("match_id", m.id)
       .eq("version", loaded.version) // version-guard
       .select("match_id")
