@@ -38,6 +38,7 @@ export default function VsPage() {
   const [savedName, setSavedName] = useState(false);
   const [copied, setCopied] = useState(false);
   const [nowTs, setNowTs] = useState(() => Date.now());
+  const [difficulty, setDifficulty] = useState<"normal" | "hard">("normal"); // 建房共用難度：單字/句子題
   // 序號帳號（跨裝置保留戰績）：申請或登入共用這組欄位，acctMode 切換兩種模式。
   const [acctMode, setAcctMode] = useState<"register" | "login">("register");
   const [acctName, setAcctName] = useState("");
@@ -52,6 +53,26 @@ export default function VsPage() {
       channelRef.current?.unsubscribe();
     };
   }, []);
+
+  // 記住上次選的難度（跟 /play 同招；localStorage 初始化用 eslint-disable，同 /play 的做法）。
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    try {
+      const d = localStorage.getItem("enzo-vs-difficulty");
+      if (d === "hard" || d === "normal") setDifficulty(d);
+    } catch {
+      // 讀不到就用預設
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+  function pickDifficulty(d: "normal" | "hard") {
+    setDifficulty(d);
+    try {
+      localStorage.setItem("enzo-vs-difficulty", d);
+    } catch {
+      // 記不住就算了
+    }
+  }
 
   // 等待對手時每秒跳動一次，純用來在畫面上倒數「房間 1 分鐘沒人加入會失效」（懶算，不用伺服器推）。
   useEffect(() => {
@@ -156,7 +177,7 @@ export default function VsPage() {
     setView("creating");
     try {
       await ensureAnonSession();
-      const m = await createRoom();
+      const m = await createRoom(difficulty);
       setMatch(m);
       setView("waiting");
       watch(m); // 等對手加入 → Realtime 推 active
@@ -304,11 +325,35 @@ export default function VsPage() {
                 ↩︎ 回到進行中的對戰（房號 {resume.room_code}）
               </button>
             ) : null}
+            {/* 建房前選共用難度（整局兩人同題型；房主決定）。/vs 沒有電腦，難度只影響答題題型。 */}
+            <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-3">
+              <p className="text-[11px] text-neutral-400 mb-2">答題難度（這局兩人共用）</p>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  ["normal", "普通", "單字題"],
+                  ["hard", "困難", "句子題"],
+                ] as const).map(([d, label, sub]) => (
+                  <button
+                    key={d}
+                    onClick={() => pickDifficulty(d)}
+                    aria-pressed={difficulty === d}
+                    className={`rounded-md border px-2 py-2 text-sm transition ${
+                      difficulty === d
+                        ? "border-emerald-400 bg-emerald-950/50 text-emerald-200"
+                        : "border-neutral-700 bg-neutral-800/50 text-neutral-300 hover:bg-neutral-800"
+                    }`}
+                  >
+                    <span className="font-semibold">{label}</span>
+                    <span className="ml-1 text-[11px] text-neutral-400">· {sub}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
             <button
               onClick={handleCreate}
               className="w-full rounded-lg bg-emerald-600 hover:bg-emerald-500 py-3 font-semibold transition"
             >
-              建立房間
+              建立房間（{difficulty === "hard" ? "困難·句子題" : "普通·單字題"}）
             </button>
             <p className="text-[11px] text-neutral-600 text-center -mt-1">
               房間 {ROOM_EXPIRE_SECONDS} 秒內沒人加入會自動失效，記得建房後馬上把連結傳給對方

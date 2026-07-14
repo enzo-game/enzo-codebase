@@ -32,6 +32,7 @@ type MatchRow = {
   player_b: string | null;
   winner: string | null;
   version: number;
+  difficulty: string | null; // 房主建房時選的共用難度（migration 0005 加的欄；舊列為 null＝normal）
 };
 
 /** 從 Authorization: Bearer <jwt> 認出呼叫者 user id（匿名 session 也有 id）。 */
@@ -56,7 +57,7 @@ const otherSeat = (seat: Seat): Seat => (seat === "a" ? "b" : "a");
 async function loadMatch(svc: SupabaseClient, matchId: string): Promise<MatchRow | null> {
   const { data } = await svc
     .from("matches")
-    .select("id,status,player_a,player_b,winner,version")
+    .select("id,status,player_a,player_b,winner,version,difficulty")
     .eq("id", matchId)
     .maybeSingle();
   return (data as MatchRow) ?? null;
@@ -105,8 +106,9 @@ async function ensureState(
   const { data } = await svc.from("match_state").select("state,version").eq("match_id", m.id).maybeSingle();
   if (data) return { state: data.state as MatchState, version: (data as { version: number }).version };
   if (m.status !== "active" || !m.player_b) return null; // 還沒兩人到齊，無狀態可建
-  // 首次初始化：發牌（帶 now 設回合截止）。on conflict do nothing 保證雙方同時觸發也只留一份。
-  const fresh = initMatch(now);
+  // 首次初始化：發牌（帶 now 設回合截止、房主選的共用難度）。舊列 difficulty 為 null 視同 normal。
+  const diff = m.difficulty === "hard" || m.difficulty === "easy" ? m.difficulty : "normal";
+  const fresh = initMatch(now, diff);
   await svc.from("match_state").insert({ match_id: m.id, state: fresh, version: 0 }).select().maybeSingle();
   const { data: after } = await svc.from("match_state").select("state,version").eq("match_id", m.id).maybeSingle();
   if (!after) return null;

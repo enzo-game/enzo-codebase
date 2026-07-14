@@ -391,7 +391,15 @@ export default function BattlePage() {
       <GemDefs />
       {/* 頂部列 */}
       <div className="px-4 py-2.5 flex items-center justify-between border-b border-neutral-800/80">
-        <Link href="/vs" className="text-xs text-neutral-500 hover:text-neutral-300 underline">← 大廳</Link>
+        <div className="flex items-center gap-2">
+          <Link href="/vs" className="text-xs text-neutral-500 hover:text-neutral-300 underline">← 大廳</Link>
+          <span
+            className="text-[10px] rounded-full border border-neutral-700 bg-neutral-900/70 px-2 py-0.5 text-neutral-400"
+            title="這局的答題難度（房主建房時決定，兩人共用）"
+          >
+            {view.difficulty === "hard" ? "困難·句子題" : "普通·單字題"}
+          </span>
+        </div>
         <TurnBadge view={view} secondsLeft={secondsLeft} />
         <button
           onClick={() => act({ type: "concede" })}
