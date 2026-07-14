@@ -1,4 +1,5 @@
 import Link from "next/link";
+import HomeHeroBoard from "@/components/HomeHeroBoard";
 
 // 首頁／模式選擇（landing）——依設計目標稿「圖2」改版骨架。
 // 註：本檔為「無敏感裝飾」的中性骨架。ORDER-016 生圖到位後，於各 {/* ORDER-016 */}
@@ -207,6 +208,9 @@ export default function Home() {
             cta="進入對戰"
           />
         </div>
+
+        {/* 峽谷英雄榜（天梯前 5 名精華，資料即時抓 /api/leaderboard） */}
+        <HomeHeroBoard />
 
         {/* 卡牌圖鑑入口 */}
         <Link
