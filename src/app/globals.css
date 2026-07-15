@@ -3006,6 +3006,10 @@ body {
 /* ── 標題 ── */
 .lb-header {
   position: relative;
+  /* 修正既有 bug（非本輪素材整合造成）：.lb-shell::after 那根木梁裝飾是絕對定位、無 z-index，
+     在繪製順序上等同「.lb-shell 的最後一個子元素」，蓋過同樣無 z-index 的 .lb-header，
+     切穿「天梯」標題。給標題一個高於預設的 z-index 讓它蓋在木梁之上即可，不需重做版面。 */
+  z-index: 2;
   width: min(560px, 86%);
   min-height: 100px;
   margin: 0 auto 26px;
