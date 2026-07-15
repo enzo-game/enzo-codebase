@@ -2913,856 +2913,390 @@ body {
   }
 }
 
-/* ───── 天梯（leaderboard）── CLAUDE-leaderboard-visual-handoff.md ───── */
-.lb-page {
-  --lb-stone-dark: #171511;
-  --lb-stone-mid: #3b3127;
-  --lb-stone-light: #76624b;
-  --lb-wood-dark: #1a0f08;
-  --lb-wood-mid: #3a2415;
-  --lb-wood-light: #6f4b2b;
-  --lb-border: rgba(171, 122, 55, 0.72);
-  --lb-border-soft: rgba(238, 205, 143, 0.22);
-  --lb-parchment: #f7e7c3;
-  --lb-parchment-dim: rgba(247, 231, 195, 0.68);
-  --lb-parchment-faint: rgba(247, 231, 195, 0.42);
-  --lb-gold: #d99535;
-  --lb-gold-bright: #ffd98a;
-  --lb-silver: #d2d5d4;
-  --lb-bronze: #d1834c;
-  --lb-win: #b6d879;
-  --lb-loss: #f28d62;
 
+/* ═════════ 天梯（leaderboard）v2 —— enzo-art ui-leaderboard 全素材整合 ═════════ */
+/* 目標 mock：山巔排行殿。素材＝舞台，資料層疊在上。防對齊錯誤的三招：
+   (1) 每張美術各自 aspect-ratio 鎖比例、整張等比縮放；
+   (2) 領獎台疊字用容器查詢單位 cqw（＝領獎台寬度的 1%），縮放時與石碑凹槽永遠同步；
+   (3) 木石框用 border-image 九宮切，列數不限、角不變形。 */
+.lb-page {
   position: relative;
-  min-height: 100svh;
+  min-height: 100dvh;
+  padding: clamp(16px, 4vw, 40px) 0 clamp(28px, 5vw, 56px);
   overflow: hidden;
-  color: var(--lb-parchment);
-  background: #08110f;
-  font-family: Arial, Helvetica, sans-serif;
+  display: flex;
+  justify-content: center;
+}
+.lb-bg {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+}
+.lb-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(120% 80% at 50% 0%, transparent 40%, rgba(6, 9, 14, 0.55) 100%),
+    linear-gradient(180deg, rgba(8, 11, 17, 0.32), rgba(6, 9, 14, 0.62));
+  pointer-events: none;
+}
+.lb-shell {
+  position: relative;
+  z-index: 1;
+  width: min(1180px, calc(100% - 28px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.lb-bg,
-.lb-scrim {
+/* ── 頁首冠冕：山峰＋刻字石牌 ── */
+.lb-crest {
+  position: relative;
+  width: min(940px, 100%);
+  margin-bottom: clamp(6px, 1.4vw, 14px);
+  aspect-ratio: 1280 / 272;
+}
+.lb-crest-art {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.5));
   pointer-events: none;
 }
-.lb-bg {
-  object-fit: cover;
-  object-position: center;
-  opacity: 0.96;
-}
-.lb-scrim {
-  background:
-    radial-gradient(circle at 50% 38%, rgba(10, 8, 5, 0.12), rgba(2, 4, 7, 0.34) 58%, rgba(0, 0, 0, 0.72) 100%),
-    linear-gradient(180deg, rgba(3, 6, 10, 0.2), rgba(3, 6, 10, 0.74));
-}
-
-.lb-shell {
-  position: relative;
-  z-index: 1;
-  width: min(1190px, calc(100% - 42px));
-  margin: 0 auto;
-  padding: 44px 0 30px;
-}
-.lb-shell::before {
-  content: "";
-  position: absolute;
-  left: -34px;
-  right: -34px;
-  top: 78px;
-  height: 126px;
-  border-radius: 20px 20px 8px 8px;
-  border: 1px solid rgba(238, 205, 143, 0.16);
-  background:
-    linear-gradient(90deg, rgba(40, 25, 14, 0.78), transparent 11%, transparent 89%, rgba(40, 25, 14, 0.78)),
-    linear-gradient(180deg, rgba(45, 39, 32, 0.72), rgba(13, 12, 11, 0.9));
-  box-shadow:
-    0 20px 48px rgba(0, 0, 0, 0.46),
-    inset 0 1px rgba(255, 255, 255, 0.08),
-    inset 0 -10px 20px rgba(0, 0, 0, 0.36);
-  pointer-events: none;
-}
-.lb-shell::after {
-  content: "";
-  position: absolute;
-  left: -52px;
-  right: -52px;
-  top: 68px;
-  height: 24px;
-  border-radius: 999px;
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 78px),
-    linear-gradient(180deg, #5d3b21, #25150c 62%, #0e0805);
-  box-shadow:
-    0 5px 0 rgba(8, 5, 3, 0.78),
-    0 16px 24px rgba(0, 0, 0, 0.42),
-    inset 0 2px rgba(255, 236, 186, 0.18);
-  pointer-events: none;
-}
-
-/* ── 標題 ── */
-.lb-header {
-  position: relative;
-  /* 修正既有 bug（非本輪素材整合造成）：.lb-shell::after 那根木梁裝飾是絕對定位、無 z-index，
-     在繪製順序上等同「.lb-shell 的最後一個子元素」，蓋過同樣無 z-index 的 .lb-header，
-     切穿「天梯」標題。給標題一個高於預設的 z-index 讓它蓋在木梁之上即可，不需重做版面。 */
-  z-index: 2;
-  width: min(560px, 86%);
-  min-height: 100px;
-  margin: 0 auto 26px;
-  padding: 16px 36px 18px;
-  text-align: center;
-  border: 2px solid rgba(210, 153, 75, 0.58);
-  border-radius: 7px;
-  background:
-    linear-gradient(90deg, transparent, rgba(255, 217, 138, 0.18) 50%, transparent),
-    linear-gradient(180deg, #3b3128, #191512 62%, #0f0b08);
-  box-shadow:
-    0 16px 28px rgba(0, 0, 0, 0.48),
-    inset 0 1px rgba(255, 244, 210, 0.18),
-    inset 0 -8px 14px rgba(0, 0, 0, 0.34);
-  clip-path: polygon(6% 0, 94% 0, 100% 30%, 96% 100%, 4% 100%, 0 30%);
-}
-.lb-header::before {
-  content: "";
+.lb-crest-text {
   position: absolute;
   left: 50%;
-  top: -42px;
-  width: 128px;
-  height: 62px;
-  transform: translateX(-50%);
-  border: 2px solid rgba(210, 153, 75, 0.58);
-  border-bottom: 0;
-  background:
-    linear-gradient(135deg, transparent 33%, rgba(255, 217, 138, 0.82) 34% 39%, transparent 40%),
-    linear-gradient(225deg, transparent 33%, rgba(255, 217, 138, 0.72) 34% 39%, transparent 40%),
-    linear-gradient(180deg, #4b3825, #19130d);
-  clip-path: polygon(50% 0, 100% 100%, 0 100%);
-  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.38));
+  top: 70%;
+  transform: translate(-50%, -50%);
+  width: 62%;
+  text-align: center;
+  pointer-events: none;
 }
-.lb-header::after {
-  content: "";
-  position: absolute;
-  left: 42px;
-  right: 42px;
-  bottom: 21px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 217, 138, 0.68), transparent);
-}
-.lb-summit-icon {
-  display: none;
-}
-.lb-header h1 {
+.lb-crest-text h1 {
   margin: 0;
-  font-size: clamp(30px, 4.2vw, 54px);
+  font-size: clamp(26px, 4vw, 48px);
   font-weight: 900;
   line-height: 1;
-  letter-spacing: 0.34em;
-  color: #fff0cb;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  color: #f6e6c0;
   text-shadow:
-    0 2px 0 #2f1d0e,
-    0 0 16px rgba(255, 198, 94, 0.34),
-    0 7px 16px rgba(0, 0, 0, 0.7);
+    0 2px 0 #2b1a0c,
+    0 0 18px rgba(255, 198, 94, 0.36),
+    0 6px 14px rgba(0, 0, 0, 0.7);
 }
-.lb-header p {
-  margin: 10px 0 0;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.32em;
-  color: var(--lb-gold-bright);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.72);
+.lb-crest-text p {
+  margin: 5px 0 0;
+  font-size: clamp(10px, 1.3vw, 14px);
+  letter-spacing: 0.24em;
+  text-indent: 0.24em;
+  color: rgba(233, 205, 152, 0.82);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
-/* ── 領獎台（2-1-3）── */
+/* ── 前三名石碑領獎台 ── */
 .lb-podium {
   position: relative;
-  display: grid;
-  grid-template-columns: 0.92fr 1.08fr 0.92fr;
-  align-items: end;
-  gap: 0;
-  margin: 0 auto -1px;
-  width: min(770px, 88%);
+  width: min(900px, 100%);
+  aspect-ratio: 900 / 420;
+  margin-bottom: clamp(10px, 2vw, 22px);
+  container-type: inline-size;
 }
-/* 領獎台石碑背板（enzo-art ui-leaderboard，2026-07-15）：氛圍背景，不追求跟卡片逐畫素對齊，
-   object-fit: contain 置中鋪在卡片後方，卡片本身既有的不透明底維持可讀。 */
-.lb-podium-plaque {
+.lb-podium-art {
   position: absolute;
-  inset: -18px -6% -30px;
-  width: 112%;
-  height: calc(100% + 48px);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  object-position: center bottom;
-  opacity: 0.85;
+  filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.46));
   pointer-events: none;
-  z-index: 0;
 }
-.lb-podium-card {
-  z-index: 1;
-}
-.lb-podium-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  min-height: 156px;
-  justify-content: flex-end;
-  padding: 34px 18px 18px;
-  border-radius: 22px 22px 5px 5px;
-  background:
-    radial-gradient(circle at 40% 8%, rgba(255, 255, 255, 0.12), transparent 32%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.06), transparent 28%),
-    linear-gradient(180deg, #5b5249, #312a25 56%, #1a1411);
-  border: 2px solid rgba(213, 183, 133, 0.34);
-  box-shadow:
-    0 14px 28px rgba(0, 0, 0, 0.45),
-    inset 0 1px rgba(255, 247, 220, 0.16),
-    inset 0 -14px 18px rgba(0, 0, 0, 0.28);
-  backdrop-filter: none;
-  opacity: 0;
-  animation: lbCardIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.lb-podium-card::before {
-  content: "";
+.lb-pod {
   position: absolute;
-  inset: 13px 16px auto auto;
-  width: 52px;
-  height: 36px;
-  opacity: 0.28;
-  background:
-    linear-gradient(135deg, transparent 45%, rgba(20, 14, 9, 0.65) 46% 52%, transparent 53%),
-    linear-gradient(225deg, transparent 45%, rgba(20, 14, 9, 0.65) 46% 52%, transparent 53%);
-  clip-path: polygon(0 100%, 44% 28%, 58% 52%, 76% 10%, 100% 100%);
+  inset: 0;
+  animation: lbCardIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.lb-podium-card.is-second {
-  min-height: 138px;
-  transform: translateY(18px);
-  background:
-    radial-gradient(circle at 38% 8%, rgba(255, 255, 255, 0.22), transparent 30%),
-    linear-gradient(180deg, #65696c, #34383a 56%, #1a1c1d);
-}
-.lb-podium-card.is-third {
-  min-height: 132px;
-  transform: translateY(24px);
-  background:
-    radial-gradient(circle at 38% 8%, rgba(255, 211, 170, 0.18), transparent 30%),
-    linear-gradient(180deg, #76513d, #42281b 56%, #1c110c);
-}
-.lb-podium-card.is-first {
-  z-index: 2;
-  min-height: 186px;
-  padding-top: 44px;
-  border-color: rgba(255, 217, 138, 0.54);
-  background:
-    radial-gradient(circle at 42% 8%, rgba(255, 236, 178, 0.22), transparent 30%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 28%),
-    linear-gradient(180deg, #7b6040, #4a3524 56%, #21150d);
-  box-shadow:
-    0 20px 38px rgba(0, 0, 0, 0.54),
-    0 0 0 1px rgba(255, 217, 138, 0.22),
-    inset 0 1px rgba(255, 247, 220, 0.22),
-    inset 0 -16px 20px rgba(0, 0, 0, 0.34);
-}
-.lb-podium-card.is-me {
-  outline: 2px solid rgba(182, 216, 121, 0.8);
-  outline-offset: -6px;
-}
-
-.lb-podium-crown {
+/* 每名的三個錨點（盾徽/橢圓頭像/名牌）以領獎台 900x420 為基準的百分比座標 */
+.lb-pod-1 { --rx: 50%;   --ry: 13.5%; --ax: 50%;   --ay: 35%;   --nx: 50%;   --ny: 57.5%; --cx: 50%;   --cy: 66%;   --af: 5.4cqw; }
+.lb-pod-2 { --rx: 19.2%; --ry: 24.5%; --ax: 19.2%; --ay: 44%;   --nx: 19.2%; --ny: 63.5%; --cx: 19.2%; --cy: 72%;   --af: 4.6cqw; }
+.lb-pod-3 { --rx: 80.3%; --ry: 39.5%; --ax: 80.3%; --ay: 55%;   --nx: 80.3%; --ny: 74.5%; --cx: 80.3%; --cy: 82.5%; --af: 4.2cqw; }
+.lb-pod-rank {
   position: absolute;
-  top: -40px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 20px;
-  height: 20px;
-  z-index: 2;
-  color: var(--lb-gold-bright);
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
-  animation: lbCrownPulse 3.2s ease-in-out infinite;
+  left: var(--rx);
+  top: var(--ry);
+  transform: translate(-50%, -50%);
+  font-size: 4.2cqw;
+  font-weight: 900;
+  color: #fdeec3;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 8px rgba(255, 205, 110, 0.5);
 }
-
-/* 冠軍章環兩側的月桂——絕對定位錨在 rank 章本身（見下），不吃卡片高度 */
-.lb-podium-laurel {
+.lb-pod-avatar {
   position: absolute;
-  top: 50%;
-  width: 26px;
-  height: 26px;
-  color: var(--lb-gold);
-  opacity: 0.85;
-  transform: translateY(-50%);
-}
-.lb-podium-laurel.side-l {
-  right: 100%;
-  margin-right: 2px;
-}
-.lb-podium-laurel.side-r {
-  left: 100%;
-  margin-left: 2px;
-  transform: translateY(-50%) scaleX(-1);
-}
-
-/* 亞／季軍頭像角落的裝飾小徽——錨在頭像容器本身 */
-.lb-podium-accent {
-  position: absolute;
-  right: -6px;
-  bottom: -2px;
-  width: 20px;
-  height: 20px;
-  padding: 3px;
-  border-radius: 50%;
-  background: rgba(14, 12, 10, 0.85);
-  border: 1px solid rgba(245, 230, 197, 0.25);
-  opacity: 0.9;
-}
-.is-second .lb-podium-accent {
-  color: #9fceb1;
-}
-.is-third .lb-podium-accent {
-  color: var(--lb-bronze);
-}
-
-.lb-podium-rank {
-  position: absolute;
-  top: -23px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 42px;
-  margin: 0;
-  border-radius: 50%;
-  border: 2px solid;
-  font-size: 18px;
+  left: var(--ax);
+  top: var(--ay);
+  transform: translate(-50%, -50%);
+  /* 石碑已內建橢圓頭像框（暗底），這裡只把首字放進凹槽中央，不再另加圓底以免蓋住金/銀/銅框 */
+  color: #eef3f8;
+  font-size: var(--af);
   font-weight: 800;
-  z-index: 1;
-  box-shadow: 0 5px 9px rgba(0, 0, 0, 0.46), inset 0 1px rgba(255, 255, 255, 0.32);
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
 }
-.lb-podium-rank::before {
-  content: "";
+.lb-pod-name {
   position: absolute;
-  top: 58%;
-  left: 50%;
-  width: 26px;
-  height: 15px;
-  background: inherit;
-  border: inherit;
-  border-top: none;
-  clip-path: polygon(0 0, 50% 60%, 100% 0, 82% 100%, 50% 78%, 18% 100%);
-  transform: translateX(-50%);
-  z-index: -1;
-  filter: brightness(0.82);
-}
-.is-first .lb-podium-rank {
-  width: 52px;
-  height: 50px;
-  top: -28px;
-  font-size: 22px;
-  color: #3d2705;
-  background: linear-gradient(180deg, #ffe6a6, var(--lb-gold));
-  border-color: #fff3d0;
-}
-.is-second .lb-podium-rank {
-  color: #232a30;
-  background: linear-gradient(180deg, #e9edf1, #a9b4bd);
-  border-color: #f4f7fa;
-}
-.is-third .lb-podium-rank {
-  color: #3a1f0d;
-  background: linear-gradient(180deg, #e2a06a, #a35b28);
-  border-color: #f0c79a;
-}
-
-/* 頭像框（enzo-art ui-leaderboard）：疊在頭像圓外緣的裝飾框，比容器大一圈、置中、不擋點擊。
-   自帶容器、跟底層版面無關，任何尺寸都不會對不齊，風險低。 */
-.lb-podium-avatar::after,
-.lb-player-avatar::after {
-  content: "";
-  position: absolute;
-  inset: -34%;
-  background: url("/images/ui/leaderboard/leaderboard-avatar-frame-v1.png") center / contain no-repeat;
-  pointer-events: none;
-}
-
-.lb-podium-avatar {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 50px;
-  height: 50px;
-  margin: 0 0 10px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(218, 187, 143, 0.62), rgba(43, 31, 22, 0.95));
-  border: 3px solid rgba(18, 12, 8, 0.8);
-  box-shadow: 0 0 0 2px rgba(210, 153, 75, 0.72), inset 0 -8px 10px rgba(0, 0, 0, 0.35);
-  font-size: 19px;
-  font-weight: 700;
-  color: rgba(15, 11, 8, 0.72);
-}
-.is-first .lb-podium-avatar {
-  width: 62px;
-  height: 62px;
-  font-size: 23px;
-}
-
-.lb-podium-name {
-  max-width: 100%;
+  left: var(--nx);
+  top: var(--ny);
+  transform: translate(-50%, -50%);
+  width: 22cqw;
+  text-align: center;
+  font-size: 3.1cqw;
+  font-weight: 800;
+  color: #f4ead2;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 19px;
-  font-weight: 800;
-  color: var(--lb-parchment);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.72);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
 }
-.lb-podium-you {
-  margin-left: 4px;
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--lb-win);
-}
-.lb-podium-record {
-  margin-top: 6px;
-  font-size: 14px;
-  font-variant-numeric: tabular-nums;
-}
-.lb-podium-record .lb-w {
-  color: var(--lb-win);
+.lb-pod-you {
+  color: #c7e39a;
   font-weight: 700;
 }
-.lb-podium-record .lb-l {
-  color: var(--lb-loss);
-}
-.lb-podium-label {
-  margin-top: 9px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-}
-.is-first .lb-podium-label {
-  color: var(--lb-gold-bright);
-}
-.is-second .lb-podium-label {
-  color: var(--lb-silver);
-}
-.is-third .lb-podium-label {
-  color: var(--lb-bronze);
-}
-
-/* ── 排行榜石板 ── */
-.lb-ranking,
-.lb-panel {
-  overflow: hidden;
-  border: 3px solid rgba(89, 57, 31, 0.95);
-  border-radius: 7px;
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.28), transparent 7%, transparent 93%, rgba(0, 0, 0, 0.28)),
-    linear-gradient(180deg, #4b2f1c, #21150d);
-  box-shadow:
-    0 22px 46px rgba(0, 0, 0, 0.58),
-    0 0 0 1px rgba(221, 171, 93, 0.34),
-    inset 0 2px rgba(255, 232, 180, 0.12),
-    inset 0 -8px 16px rgba(0, 0, 0, 0.42);
-  backdrop-filter: none;
-}
-.lb-panel {
-  padding: 40px 24px;
-  text-align: center;
-}
-.lb-panel-title {
-  font-size: 14px;
-  color: var(--lb-parchment);
-}
-.lb-panel-sub {
-  margin-top: 6px;
-  font-size: 12px;
-  color: var(--lb-parchment-dim);
-}
-.lb-panel.is-loading .lb-panel-title {
-  animation: lbPulse 1.6s ease-in-out infinite;
-}
-.lb-panel.is-error .lb-panel-title {
-  color: var(--lb-loss);
-}
-.lb-panel.is-warn .lb-panel-title {
-  color: var(--lb-gold-bright);
-}
-
-.lb-ranking-head,
-.lb-row {
-  display: grid;
-  grid-template-columns: 84px minmax(180px, 1.1fr) minmax(270px, 1fr) 90px 90px;
-  align-items: center;
-  gap: 18px;
-}
-.lb-ranking-head {
-  min-height: 52px;
-  padding: 13px 28px;
-  color: rgba(247, 231, 195, 0.72);
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  background:
-    linear-gradient(180deg, rgba(99, 63, 34, 0.62), rgba(36, 22, 12, 0.76)),
-    repeating-linear-gradient(90deg, transparent 0 70px, rgba(255, 255, 255, 0.035) 70px 72px);
-  box-shadow: inset 0 -3px rgba(0, 0, 0, 0.35);
-}
-/* 每列是一塊木板：上緣高光＋下緣接縫陰影，列與列之間有「板縫」 */
-.lb-row {
-  position: relative;
-  min-height: 62px;
-  padding: 9px 28px;
-  background:
-    linear-gradient(180deg, rgba(255, 226, 170, 0.035), transparent 40%),
-    linear-gradient(180deg, #382313, #1e120a);
-  box-shadow:
-    inset 0 1px rgba(255, 239, 202, 0.08),
-    inset 0 -3px rgba(0, 0, 0, 0.52);
-  opacity: 0;
-  animation: lbRowIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.lb-row.is-me {
-  /* enzo-art ui-leaderboard 高亮列材質疊在既有漸層上方；background-size 100% 100% 貼滿整列，
-     跟列高（響應式會變）無關，不會對不齊。 */
-  background:
-    url("/images/ui/leaderboard/leaderboard-player-row-highlight-v1.png") center / 100% 100% no-repeat,
-    linear-gradient(90deg, rgba(182, 216, 121, 0.22), rgba(77, 92, 41, 0.54) 22%, rgba(47, 55, 28, 0.6)),
-    linear-gradient(180deg, #4a4a22, #242412);
-  box-shadow:
-    inset 0 1px rgba(235, 246, 176, 0.2),
-    inset 0 -3px rgba(0, 0, 0, 0.52),
-    0 0 0 1px rgba(208, 216, 100, 0.42);
-}
-.lb-row.is-me::before {
-  content: "你";
+.lb-pod-rec {
   position: absolute;
-  left: -1px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 48px;
-  padding: 5px 0;
-  border-radius: 0 8px 8px 0;
-  background: linear-gradient(180deg, #cde98a, #6f8e38);
-  color: #172009;
-  font-size: 12px;
-  font-weight: 900;
+  left: var(--cx);
+  top: var(--cy);
+  transform: translate(-50%, -50%);
+  width: 26cqw;
   text-align: center;
-  box-shadow: 3px 0 8px rgba(0, 0, 0, 0.42), inset 0 1px rgba(255, 255, 255, 0.32);
+  font-size: 2.5cqw;
+  font-weight: 700;
+  color: rgba(233, 214, 178, 0.9);
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
 }
-.lb-rank {
+.lb-pod-label { color: rgba(214, 176, 108, 0.85); }
+.lb-w { color: #a9d977; font-weight: 800; }
+.lb-l { color: #e08d7a; font-weight: 800; }
+
+/* ── 排行表（第 4 名起）：木石框 border-image 九宮切 ── */
+.lb-ranking {
+  width: 100%;
+  border-style: solid;
+  border-width: 24px 28px;
+  border-image: url("/images/ui/leaderboard/leaderboard-table-panel-v1.png") 52 90 fill / 24px 28px / 0 round;
+  padding: 6px clamp(10px, 2vw, 26px) 12px;
+}
+.lb-thead {
   display: grid;
-  place-items: center;
-  width: 42px;
-  height: 40px;
-  margin: 0 auto;
-  color: #ffe3ac;
-  background:
-    linear-gradient(180deg, #8f5f30, #432513 64%, #231209);
-  border: 2px solid rgba(218, 162, 86, 0.72);
-  clip-path: polygon(50% 0%, 88% 18%, 100% 55%, 50% 100%, 0 55%, 12% 18%);
-  font-size: 18px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.36), inset 0 1px rgba(255, 255, 255, 0.22);
-}
-.lb-player {
-  display: flex;
+  grid-template-columns: 62px minmax(150px, 1.1fr) minmax(200px, 1fr) 72px 72px;
   align-items: center;
   gap: 14px;
-  min-width: 0;
+  padding: 8px 12px 10px;
+  color: rgba(244, 224, 186, 0.66);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid rgba(255, 216, 150, 0.18);
 }
-.lb-player-avatar {
+.lb-thead span:nth-child(4),
+.lb-thead span:nth-child(5) { text-align: center; }
+.lb-rows { display: flex; flex-direction: column; }
+.lb-row {
   position: relative;
   display: grid;
+  grid-template-columns: 62px minmax(150px, 1.1fr) minmax(200px, 1fr) 72px 72px;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 12px;
+  animation: lbRowIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.lb-row + .lb-row { border-top: 1px solid rgba(0, 0, 0, 0.28); box-shadow: 0 -1px 0 rgba(255, 235, 190, 0.05); }
+.lb-row.is-me {
+  border-top-color: transparent;
+}
+.lb-row.is-me::before {
+  content: "";
+  position: absolute;
+  inset: -1px -14px;
+  background: url("/images/ui/leaderboard/leaderboard-player-row-highlight-v1.png") center / 100% 100% no-repeat;
+  z-index: 0;
+  pointer-events: none;
+}
+.lb-row > * { position: relative; z-index: 1; }
+.lb-row-you {
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #7fa348, #55702f);
+  color: #f3f7e4;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+/* 名次盾徽 */
+.lb-rank {
+  width: 46px;
+  height: 46px;
+  display: grid;
   place-items: center;
+  background: url("/images/ui/leaderboard/leaderboard-rank-badge-blank-v1.png") center / contain no-repeat;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
+}
+.lb-rank-n {
+  font-size: 17px;
+  font-weight: 900;
+  color: #f6e6c0;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.7);
+  transform: translateY(-1px);
+}
+/* 玩家頭像框 */
+.lb-player { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.lb-player-avatar {
   flex: none;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(218, 187, 143, 0.68), rgba(42, 28, 17, 0.95));
-  border: 2px solid rgba(218, 162, 86, 0.78);
-  box-shadow: inset 0 -7px 9px rgba(0, 0, 0, 0.36);
-  font-size: 14px;
-  font-weight: 700;
-  color: rgba(21, 14, 9, 0.78);
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  background: url("/images/ui/leaderboard/leaderboard-avatar-frame-v1.png") center / contain no-repeat;
+  color: #eaf0f6;
+  font-size: 16px;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 .lb-player-name {
-  min-width: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #f2e8d4;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 18px;
-  font-weight: 800;
-  color: #f7e8c8;
-  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.72);
 }
-.lb-rate {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
+/* 勝率條外框 */
+.lb-rate { display: flex; align-items: center; gap: 10px; }
 .lb-rate-track {
+  position: relative;
   flex: 1;
-  height: 14px;
-  overflow: hidden;
-  border-radius: 5px;
-  background: linear-gradient(180deg, rgba(10, 9, 7, 0.96), rgba(20, 17, 12, 0.96));
-  border: 1px solid rgba(0, 0, 0, 0.72);
-  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.68), 0 1px rgba(255, 255, 255, 0.08);
+  height: 26px;
+  background: url("/images/ui/leaderboard/leaderboard-progress-bar-frame-v1.png") center / 100% 100% no-repeat;
 }
 .lb-rate-fill {
-  position: relative;
-  display: block;
-  height: 100%;
-  border-radius: 4px;
-  background: linear-gradient(180deg, #c7df7a, #6f9b3d 60%, #415f23);
-  box-shadow: inset 0 5px 5px -3px rgba(255, 255, 255, 0.42), 0 0 8px rgba(151, 196, 83, 0.24);
-  transform-origin: left;
+  position: absolute;
+  left: 3.5%;
+  top: 34%;
+  height: 32%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #74d36b, #b8e66f);
+  box-shadow: 0 0 8px rgba(150, 220, 110, 0.55);
   animation: lbBarGrow 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .lb-rate-pct {
   flex: none;
-  min-width: 42px;
+  width: 42px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #cfe0a0;
   text-align: right;
-  font-size: 17px;
-  color: var(--lb-win);
-  font-variant-numeric: tabular-nums;
 }
-.lb-wins {
-  color: var(--lb-win);
-  font-size: 18px;
+.lb-wins, .lb-losses {
+  text-align: center;
+  font-size: 16px;
   font-weight: 800;
-  font-variant-numeric: tabular-nums;
 }
-.lb-losses {
-  color: var(--lb-loss);
-  font-size: 18px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
-.lb-record {
-  display: none;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-.lb-record .lb-w {
-  color: var(--lb-win);
-  font-weight: 700;
-}
-.lb-record .lb-l {
-  color: var(--lb-loss);
-}
+.lb-wins { color: #a9d977; }
+.lb-losses { color: #e08d7a; }
+.lb-record { display: none; }
 
-/* ── 空狀態 ── */
-.lb-empty {
-  padding: 44px 24px;
-}
-.lb-empty-icon {
-  width: 36px;
-  height: 36px;
-  margin: 0 auto;
-  color: var(--lb-parchment-faint);
-}
-.lb-empty-title {
-  margin-top: 12px;
-  font-size: 14px;
-  color: var(--lb-parchment-dim);
-}
-.lb-empty-sub {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--lb-parchment-faint);
-}
-
-/* ── 回大廳 ── */
+/* ── 返回大廳（木石牌 border-image） ── */
+.lb-back-wrap { margin-top: clamp(16px, 3vw, 30px); }
 .lb-back {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  min-width: 285px;
-  min-height: 58px;
-  margin-top: 22px;
-  padding: 0 30px;
-  border: 3px solid rgba(79, 45, 21, 0.95);
-  border-radius: 8px;
-  background:
-    linear-gradient(180deg, rgba(255, 229, 172, 0.12), transparent 34%),
-    linear-gradient(180deg, #7b4b22, #3d2110 58%, #160b05);
-  box-shadow:
-    0 12px 24px rgba(0, 0, 0, 0.46),
-    0 0 0 1px rgba(255, 217, 138, 0.34),
-    inset 0 1px rgba(255, 246, 211, 0.22);
-  color: var(--lb-gold-bright);
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  min-width: 240px;
+  border-style: solid;
+  border-width: 20px 42px;
+  border-image: url("/images/ui/leaderboard/leaderboard-button-plaque-v1.png") 30 68 fill / 20px 42px / 0 stretch;
+  padding: 6px 20px;
+  color: #f3e6c8;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   text-decoration: none;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.72);
-  transition: transform 0.2s, filter 0.2s;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  transition: transform 0.14s ease, filter 0.14s ease;
 }
-.lb-back:hover {
-  color: #fff1c8;
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-}
-.lb-back-wrap {
+.lb-back:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.lb-back:active { transform: translateY(0); }
+
+/* ── 訊息狀態 / 空狀態 ── */
+.lb-panel {
+  width: min(560px, 100%);
+  margin: 10px 0;
+  padding: 30px 26px;
   text-align: center;
+  border-radius: 12px;
+  border: 1px solid rgba(210, 170, 110, 0.28);
+  background: linear-gradient(180deg, rgba(38, 30, 22, 0.86), rgba(16, 13, 10, 0.9));
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.44);
 }
+.lb-panel-title { margin: 0; font-size: 15px; color: rgba(240, 224, 194, 0.9); }
+.lb-panel.is-error { border-color: rgba(210, 120, 96, 0.5); }
+.lb-panel.is-loading .lb-panel-title { animation: lbPulse 1.6s ease-in-out infinite; }
+.lb-empty-icon { width: 40px; height: 40px; margin: 0 auto 12px; color: rgba(220, 190, 140, 0.7); }
+.lb-empty-title { margin: 0; font-size: 16px; color: #efe0c6; }
+.lb-empty-sub { margin: 6px 0 0; font-size: 13px; color: rgba(224, 200, 160, 0.7); }
 
-@media (max-width: 900px) {
-  .lb-shell::before,
-  .lb-shell::after {
-    display: none;
-  }
-  .lb-header {
-    width: min(600px, 96%);
-    clip-path: none;
-  }
-  .lb-podium {
-    width: 100%;
-  }
-  .lb-ranking-head,
-  .lb-row {
-    grid-template-columns: 62px minmax(150px, 1fr) minmax(160px, 1fr) 70px 70px;
-    gap: 10px;
-  }
-}
-
-@media (max-width: 700px) {
-  .lb-shell {
-    width: min(100% - 24px, 520px);
-    padding-top: 28px;
-  }
-  .lb-header {
-    min-height: auto;
-    padding: 16px 20px;
-  }
-  .lb-header h1 {
-    font-size: 30px;
-  }
-  .lb-podium-plaque {
-    /* 手機版領獎台改單欄堆疊，三石碑背板跟卡片對不上，直接隱藏（卡片本身已有完整底色不受影響）。 */
-    display: none;
-  }
-  .lb-podium {
-    grid-template-columns: 1fr;
-    gap: 40px;
-    margin-bottom: 14px;
-  }
-  .lb-podium-card,
-  .lb-podium-card.is-first,
-  .lb-podium-card.is-second,
-  .lb-podium-card.is-third {
-    min-height: auto;
-    transform: none;
-    padding: 38px 16px 16px;
-  }
-  .lb-podium-crown {
-    top: -34px;
-  }
-  .lb-ranking-head {
-    display: none;
-  }
-  .lb-row {
-    grid-template-columns: 42px minmax(0, 1fr) auto;
-    grid-template-rows: auto auto;
-    gap: 6px 8px;
-    padding: 10px 14px;
-  }
-  .lb-rank {
-    grid-column: 1;
-    grid-row: 1;
-  }
-  .lb-player {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .lb-record {
-    display: block;
-    grid-column: 3;
-    grid-row: 1;
-    text-align: right;
-  }
-  .lb-rate {
-    grid-column: 2 / 4;
-    grid-row: 2;
-  }
-  .lb-rate-pct {
-    font-size: 12px;
-    color: var(--lb-parchment-dim);
-  }
-  .lb-wins,
-  .lb-losses {
-    display: none;
-  }
-  .lb-back {
-    min-width: 0;
-    width: 100%;
-    font-size: 16px;
-  }
-}
-
-/* ── 進場動效 ── */
 @keyframes lbCardIn {
-  from {
-    opacity: 0;
-    transform: translateY(24px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes lbRowIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
 }
-@keyframes lbBarGrow {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
+@keyframes lbBarGrow { from { width: 0 !important; } }
+@keyframes lbPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+/* ── 平板：表格欄距收斂 ── */
+@media (max-width: 820px) {
+  .lb-thead, .lb-row { grid-template-columns: 52px minmax(120px, 1.1fr) minmax(150px, 1fr) 60px 60px; gap: 10px; }
 }
-@keyframes lbCrownPulse {
-  0%,
-  100% {
-    opacity: 0.55;
+
+/* ── 手機：領獎台仍鎖比例縮放；表格收成「名次｜玩家｜勝率｜戰績」 ── */
+@media (max-width: 560px) {
+  .lb-thead { display: none; }
+  .lb-row {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-areas: "rank player rate" "rank record rate";
+    gap: 4px 10px;
+    row-gap: 2px;
   }
-  50% {
-    opacity: 1;
+  .lb-rank { grid-area: rank; width: 40px; height: 40px; align-self: center; }
+  .lb-player { grid-area: player; }
+  .lb-rate { grid-area: rate; flex-direction: column; align-items: flex-end; gap: 3px; width: 96px; }
+  .lb-rate-track { flex: none; width: 96px; height: 18px; }
+  .lb-wins, .lb-losses { display: none; }
+  .lb-record {
+    grid-area: record;
+    display: block;
+    font-size: 12px;
+    color: rgba(232, 214, 180, 0.85);
   }
-}
-@keyframes lbPulse {
-  0%,
-  100% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 1;
-  }
+  .lb-player-avatar { width: 34px; height: 34px; font-size: 14px; }
+  .lb-player-name { font-size: 13px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .lb-podium-card,
-  .lb-row,
-  .lb-rate-fill,
-  .lb-podium-crown,
-  .lb-panel.is-loading .lb-panel-title {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
+  .lb-pod, .lb-row, .lb-rate-fill { animation: none !important; }
 }
