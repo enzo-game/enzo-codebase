@@ -818,6 +818,8 @@ export function makeQuiz(card: Card): QuizState {
     word: v.word,
     chinese: v.chinese,
     kind: "word",
+    // 發音要對應「這次隨機抽到的詞」v，不是卡片本身綁定的詞（兩者已脫鉤，見上）。
+    audioUrl: v.audioUrl,
   };
 }
 

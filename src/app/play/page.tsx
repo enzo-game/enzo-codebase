@@ -8,7 +8,6 @@ import { CARD_LEARNING, CARDS, TOKEN_SAPLING, Card, RARITY_COLOR, Theme } from "
 import { CARD_ART, HERO_ART, CARDBACK, BOARD_BG, THEME_ZH, RARITY_ZH, RARITY_GLOW } from "@/data/cardArt";
 // 寶石 StatGem/GemDefs 也改由單一來源 src/lib/statGem.tsx 提供（與 /vs 共用）。
 import { GemDefs, StatGem } from "@/lib/statGem";
-import { audioUrl } from "@/data/truku";
 import AmbientAudio from "@/components/AmbientAudio";
 import BattleMusic from "@/components/BattleMusic";
 import MatchClock from "@/components/MatchClock";
@@ -469,10 +468,10 @@ export default function PlayPage() {
     if (isCorrect) sfxCorrect();
     else sfxWrong();
     setRevealed(idx);
-    // 揭曉後自動播一次正解發音（視聽同步），結算改由玩家自己按「繼續 ▶」
-    // 句子題（quiz.audioUrl）沿用 /sentences 的例句音檔；單字題沿用卡片 vocabId 查詞庫發音。
-    const audio = quiz.audioUrl ?? audioUrl(quiz.card.vocabId);
-    setTimeout(() => playAudioUrl(audio), 400);
+    // 揭曉後自動播一次正解發音（視聽同步），結算改由玩家自己按「繼續 ▶」。quiz.audioUrl 是出題
+    // 當下（makeQuiz／makeSentenceQuiz）就填好、對應「這一題實際問的詞／句」，不要另外查
+    // card.vocabId——單字題的題目詞已跟卡片脫鉤（隨機出題），查卡片的詞會放錯發音。
+    if (quiz.audioUrl) setTimeout(() => playAudioUrl(quiz.audioUrl!), 400);
   }
 
   /** 「繼續 ▶」：關閉答題視窗並結算出牌（需要目標的法術先進入選目標模式） */
