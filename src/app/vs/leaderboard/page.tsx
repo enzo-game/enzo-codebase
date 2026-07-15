@@ -1,10 +1,11 @@
 "use client";
 
 // ORDER-060 P4 —— 天梯：勝場前 20 名。資料走 /api/leaderboard（service role 跨玩家讀取）。
-// 視覺（CLAUDE-leaderboard-visual-handoff.md）：「山林天梯大廳」——通往山巔的排行榜石碑。
-// 背景走 enzo-art 已核發的 leaderboard-bg.jpg（夜山／溪流／木架／石碑／營火），前三名做
-// 2-1-3 領獎台（金銀銅牌），第 4 名起用石板排行表（勝率條）。所有名次／名稱／數字一律
-// 由 React 渲染，背景圖只提供構圖，不承載任何真實資料。圖示一律 inline SVG 線稿（no-emoji）。
+// 視覺（CLAUDE-leaderboard-visual-handoff.md，2026-07-15 由 enzo-art ui-leaderboard 素材再升級）：
+// 「山林天梯大廳」——通往山巔的排行榜石碑。背景／頭像框／領獎台石碑／自己那列高亮／返回按鈕
+// 木牌走 enzo-art 新素材（public/images/ui/leaderboard/），前三名做 2-1-3 領獎台（金銀銅牌），
+// 第 4 名起用石板排行表（勝率條，維持既有 CSS 繪製，響應式已調好不動）。所有名次／名稱／數字
+// 一律由 React 渲染，圖片只提供構圖、不承載任何真實資料。圖示一律 inline SVG 線稿（no-emoji）。
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabaseConfigured } from "@/lib/supabase";
@@ -33,7 +34,7 @@ export default function LeaderboardPage() {
   return (
     <main className="lb-page">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="lb-bg" src="/images/vs/leaderboard/leaderboard-bg.jpg" alt="" aria-hidden />
+      <img className="lb-bg" src="/images/ui/leaderboard/leaderboard-bg-mountain-night-v1.jpg" alt="" aria-hidden />
       <div className="lb-scrim" aria-hidden />
 
       <div className="lb-shell">
@@ -54,6 +55,8 @@ export default function LeaderboardPage() {
         ) : (
           <>
             <section className="lb-podium" aria-label="前三名">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="lb-podium-plaque" src="/images/ui/leaderboard/leaderboard-top3-podium-stones-v1.png" alt="" aria-hidden />
               <PodiumCard place={2} entry={podium[1]} isMe={podium[1] ? isMe(podium[1].display_name) : false} />
               <PodiumCard place={1} entry={podium[0]} isMe={podium[0] ? isMe(podium[0].display_name) : false} />
               <PodiumCard place={3} entry={podium[2]} isMe={podium[2] ? isMe(podium[2].display_name) : false} />
