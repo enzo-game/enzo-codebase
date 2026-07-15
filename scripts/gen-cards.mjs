@@ -5,7 +5,7 @@
 // 產出 src/data/cards.generated.json，由 cards.ts 併進 CARDS。
 //
 // 往 1000 張：把更多「已審核」的安全題材主題名字加進下面的 SUBJECTS 再跑一次即可。
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 
 const existing = new Set(
   [...readFileSync("src/data/cards.ts", "utf8").matchAll(/nameZh: "([^"]+)"/g)].map((m) => m[1]),
@@ -340,14 +340,36 @@ const LEGEND_BATCHES = [
     ["leg-l43", "洪水中的浮木", `大洪水中一段漂流的巨木浮在濁浪上、遠山露出水面的地景，光線由陰轉晴；${STYLE}只畫洪水與漂木地景，不畫人形。`],
   ],
 ];
+// 拆成小塊（每檔 CHUNK 張）——Codex 一次吃太多會當機，小塊比較穩。放 docs/card-art/。
+const CHUNK = 30;
+const OUT = "docs/card-art";
+mkdirSync(OUT, { recursive: true });
+const HEAD = `給 Codex／繪圖：請依下表生成卡面圖。**風格統一**：${STYLE}**文化框限**：${GUARD}\n**輸出**：每張存成 \`public/images/cards/<檔名>\`。**已有同名檔就跳過**（可續生、不重做）。生完通知工程端登錄 \`CARD_ART\`。`;
+const TABLE_HEAD = `| id | 卡名 | 主題 | 類型 | 檔名 | 美術提示 |\n|----|------|------|------|------|----------|`;
+const index = [
+  "# 峽谷行者 · 卡面美術任務清單（分小塊）",
+  "",
+  `全部拆成每檔 ${CHUNK} 張的小塊，Codex 一次做一檔即可（不會過載）。每張存 \`public/images/cards/<id>.jpg\`；`,
+  "**已存在同名檔就跳過**（可續生）。整體進度與規格見 `docs/card-art-status-report.md`。",
+  "",
+  "| 小塊檔 | 批次 | 張數 |",
+  "|--------|------|------|",
+];
 SUBJECT_BATCHES.forEach((_, bi) => {
   const genRows = cards.filter((c) => batchOf[c.id] === bi)
     .map((c) => `| ${c.id} | ${c.nameZh} | ${THEME_ZH_MD[c.theme]} | ${c.type === "spell" ? "法術" : "隨從"} | ${c.id}.jpg | ${artPrompt(c.nameZh, c.theme)} |`);
   const legRows = (LEGEND_BATCHES[bi] ?? []).map(([id, name, p]) => `| ${id} | ${name} | 傳說 | — | ${id}.jpg | ${p} |`);
   const rows = [...legRows, ...genRows];
-  const md = `# 峽谷行者 · 卡面美術生成 批次 ${bi + 1}（共 ${rows.length} 張）\n\n給 Codex／繪圖：請依下表生成卡面圖。**風格統一**：${STYLE}**文化框限**：${GUARD}\n**輸出**：每張存成 \`public/images/cards/<檔名>\`，完成後由工程端登錄進 \`CARD_ART\`；建議先跑 \`node scripts/compress-card-art.mjs\` 壓縮（或改放 R2）。\n\n| id | 卡名 | 主題 | 類型 | 檔名 | 美術提示 |\n|----|------|------|------|------|----------|\n${rows.join("\n")}\n`;
-  writeFileSync(`docs/card-art-batch-${bi + 1}.md`, md);
+  for (let p = 0; p * CHUNK < rows.length; p++) {
+    const part = rows.slice(p * CHUNK, (p + 1) * CHUNK);
+    const pp = String(p + 1).padStart(2, "0");
+    const fname = `batch-${bi + 1}-part-${pp}.md`;
+    const md = `# 卡面美術 · 批次 ${bi + 1} · 第 ${p + 1} 塊（${part.length} 張）\n\n${HEAD}\n\n${TABLE_HEAD}\n${part.join("\n")}\n`;
+    writeFileSync(`${OUT}/${fname}`, md);
+    index.push(`| \`${fname}\` | ${bi + 1} | ${part.length} |`);
+  }
 });
+writeFileSync(`${OUT}/README.md`, index.join("\n") + "\n");
 const byRarity = cards.reduce((a, c) => ((a[c.rarity] = (a[c.rarity] || 0) + 1), a), {});
 const byType = cards.reduce((a, c) => ((a[c.type] = (a[c.type] || 0) + 1), a), {});
 console.log(`生成 ${cards.length} 張（去重後）| 型別 ${JSON.stringify(byType)} | 稀有度 ${JSON.stringify(byRarity)}`);
