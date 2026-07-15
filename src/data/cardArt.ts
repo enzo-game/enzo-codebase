@@ -2,6 +2,7 @@
 // 純資料（無 JSX / 無 next/font），可被任何元件 import。新卡加圖只改這裡，兩邊自動同步。
 // 卡面圖 ORDER-044（enzo-culture 複核 35/35 通過）；沒有對應圖的卡維持純文字版型（UI 須容忍缺圖）。
 import type { Rarity, Theme } from "@/data/cards";
+import GENERATED_ART from "@/data/cardArt.generated.json";
 
 export const THEME_ZH: Record<Theme, string> = {
   legend: "傳說",
@@ -192,4 +193,6 @@ export const CARD_ART: Record<string, string> = {
   "leg-t13": "/images/cards/t13-ramie.jpg",
   "leg-t14": "/images/cards/t14-blanket.jpg",
   "leg-token-sapling": "/images/cards/token-sapling.jpg",
+  // 生成卡與新傳說卡的已完成圖（scripts/gen-cardart.mjs 掃 public/images/cards 產出，增量登錄）。
+  ...(GENERATED_ART as Record<string, string>),
 };
