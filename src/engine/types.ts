@@ -69,7 +69,9 @@ export type QuizState = {
   chinese: string;
   /** "word"＝單字四選一（預設）；"sentence"＝困難模式的句子四選一。 */
   kind?: "word" | "sentence";
-  /** 句子題的官方發音檔（word 題沿用舊路徑，從 card.vocabId 查 audioUrl()）。 */
+  /** 這一題實際問的詞／句的官方發音檔（word 題＝隨機抽到的詞、非卡片本身綁定的詞；
+   *  sentence 題＝例句音檔）。makeQuiz／makeSentenceQuiz 出題當下就填好，播放端直接用，
+   *  不要再回頭查 card.vocabId——那是卡片自己的詞，跟隨機出的題目詞是兩回事。 */
   audioUrl?: string | null;
 };
 
