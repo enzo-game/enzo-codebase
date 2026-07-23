@@ -10,7 +10,32 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 const existing = new Set(
   [...readFileSync("src/data/cards.ts", "utf8").matchAll(/nameZh: "([^"]+)"/g)].map((m) => m[1]),
 );
-const vocabIds = JSON.parse(readFileSync("src/data/truku-vocab.json", "utf8")).entries.map((e) => e.id);
+// 詞庫全條目——卡片依「意思」配詞（見 matchVocab），不再照順序亂塞（ORDER：卡↔題目對應）。
+const VOCAB = JSON.parse(readFileSync("src/data/truku-vocab.json", "utf8")).entries;
+// 卡片主題 → 詞庫語意類別（避開數字/代名詞/身體/時間/顏色/動作/祭儀等不宜當卡牌詞的類）。
+const THEME_CATS = {
+  animal: ["07"], // 動物
+  plant: ["08"], // 植物
+  nature: ["10", "11"], // 地景＋天象
+  tool: ["09", "12", "15", "16", "18", "19", "21"], // 器物/建築/農獵具/衣飾/簍/食
+};
+const ALL_SAFE = ["07", "08", "09", "10", "11", "12", "15", "16", "18", "19", "21"];
+const catOf = (v) => v.id.split("-")[0];
+const SAFE_VOCAB = VOCAB.filter((v) => ALL_SAFE.includes(catOf(v)));
+const EXACT = new Map(); // 中文 → 詞條（同名取第一個安全詞）
+for (const v of SAFE_VOCAB) if (!EXACT.has(v.chinese)) EXACT.set(v.chinese, v);
+const BY_LEN = [...SAFE_VOCAB].sort((a, b) => b.chinese.length - a.chinese.length);
+const strHash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; };
+// 卡片 → 意思相符的詞：① 完全同名 ② 卡名含「同主題」詞庫詞（長者優先，再單字；限本主題類別，
+// 避免動物卡被卡名裡的『水/雨』等他類字誤配） ③ 同主題退路（確定性 hash，無隨機）。
+function matchVocab(name, theme) {
+  if (EXACT.has(name)) return EXACT.get(name).id;
+  const cats = THEME_CATS[theme] ?? ALL_SAFE;
+  const themed = BY_LEN.filter((v) => cats.includes(catOf(v)));
+  for (const v of themed) if (v.chinese.length >= 2 && name.includes(v.chinese)) return v.id;
+  for (const v of themed) if (v.chinese.length === 1 && name.includes(v.chinese)) return v.id;
+  return themed[strHash(name) % themed.length].id;
+}
 
 // ── 安全題材主題名（真實台灣山林自然物，避開神聖/禁忌/占卜鳥類）。type: m=隨從 s=法術 ──
 // 分批：每個內層陣列＝一批。批次 1 的順序固定不動（id 依攤平後位置編，才不會擾動已生的圖）。
@@ -271,7 +296,7 @@ const cards = [];
 const learn = {};
 const batchOf = {}; // id -> 批次索引（供 MD 分批）
 const seen = new Set(); // 跨批去重
-let mi = 0, si = 0, vi = 0, pos = 0;
+let mi = 0, si = 0, pos = 0;
 // 攤平所有批次，用全域位置 pos 決定 id（批次1順序不變＝id 穩定，不擾動已生的圖）。
 SUBJECT_BATCHES.forEach((batch, bi) => {
   batch.forEach((sub) => {
@@ -281,7 +306,7 @@ SUBJECT_BATCHES.forEach((batch, bi) => {
     seen.add(name);
     const id = `gen-${String(idx + 1).padStart(4, "0")}`;
     batchOf[id] = bi;
-    const vocabId = vocabIds[vi++ % vocabIds.length];
+    const vocabId = matchVocab(name, theme);
     const rarity = rarityFor(idx);
     learn[id] = (LEARN_BY_THEME[theme] ?? LEARN_BY_THEME.nature)(name);
     if (kind === "s") {

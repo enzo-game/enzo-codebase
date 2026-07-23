@@ -8,7 +8,7 @@
     "health": 2,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "01-01",
+    "vocabId": "07-07",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -25,7 +25,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "01-02",
+    "vocabId": "07-62",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -45,7 +45,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "01-03",
+    "vocabId": "07-41",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -65,7 +65,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "01-04",
+    "vocabId": "07-60",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -85,7 +85,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "01-05",
+    "vocabId": "07-28",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -105,7 +105,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-06",
+    "vocabId": "07-30",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -122,7 +122,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-07",
+    "vocabId": "07-04",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -139,7 +139,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-08",
+    "vocabId": "07-49",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -159,7 +159,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-09",
+    "vocabId": "07-06",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -179,7 +179,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-10",
+    "vocabId": "07-63",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -199,7 +199,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-11",
+    "vocabId": "07-06",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -219,7 +219,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-12",
+    "vocabId": "07-02",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -236,7 +236,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-13",
+    "vocabId": "07-24",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -253,7 +253,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-14",
+    "vocabId": "07-53",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -273,7 +273,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-15",
+    "vocabId": "07-27",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -293,7 +293,7 @@
     "health": 2,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "01-16",
+    "vocabId": "07-59",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -313,7 +313,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "01-17",
+    "vocabId": "07-54",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -333,7 +333,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "01-18",
+    "vocabId": "07-08",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -350,7 +350,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "01-19",
+    "vocabId": "07-50",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -367,7 +367,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "01-20",
+    "vocabId": "07-08",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -387,7 +387,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-21",
+    "vocabId": "07-07",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -407,7 +407,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-22",
+    "vocabId": "07-31",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -427,7 +427,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-23",
+    "vocabId": "07-62",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -447,7 +447,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-24",
+    "vocabId": "07-50",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -464,7 +464,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-25",
+    "vocabId": "07-36",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -481,7 +481,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-26",
+    "vocabId": "07-53",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -501,7 +501,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-27",
+    "vocabId": "07-17",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -521,7 +521,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-28",
+    "vocabId": "07-26",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -541,7 +541,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-29",
+    "vocabId": "07-17",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -561,7 +561,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "01-30",
+    "vocabId": "07-25",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -578,7 +578,7 @@
     "health": 2,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "01-31",
+    "vocabId": "07-07",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -595,7 +595,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "01-32",
+    "vocabId": "07-40",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -615,7 +615,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "01-33",
+    "vocabId": "08-15",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -635,7 +635,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "01-34",
+    "vocabId": "08-05",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -655,7 +655,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "01-35",
+    "vocabId": "08-19",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -672,7 +672,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "01-36",
+    "vocabId": "08-40",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -689,7 +689,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "01-37",
+    "vocabId": "08-03",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -706,7 +706,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "01-38",
+    "vocabId": "08-40",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -726,7 +726,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "01-39",
+    "vocabId": "08-05",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -746,7 +746,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "01-40",
+    "vocabId": "08-20",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -766,7 +766,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "01-41",
+    "vocabId": "08-33",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -783,7 +783,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "01-42",
+    "vocabId": "08-28",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -800,7 +800,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "01-43",
+    "vocabId": "08-03",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -817,7 +817,7 @@
     "health": 8,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "01-44",
+    "vocabId": "08-27",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -837,7 +837,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "01-45",
+    "vocabId": "08-07",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -857,7 +857,7 @@
     "health": 3,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "02-01",
+    "vocabId": "08-20",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -877,7 +877,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "02-02",
+    "vocabId": "08-40",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -894,7 +894,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "02-03",
+    "vocabId": "08-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -911,7 +911,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "02-04",
+    "vocabId": "08-03",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -928,7 +928,7 @@
     "health": 5,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "02-05",
+    "vocabId": "08-40",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -948,7 +948,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "02-06",
+    "vocabId": "08-31",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -968,7 +968,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "02-07",
+    "vocabId": "08-09",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -988,7 +988,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "02-08",
+    "vocabId": "08-06",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1005,7 +1005,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "02-09",
+    "vocabId": "08-16",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1022,7 +1022,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "02-10",
+    "vocabId": "08-22",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1039,7 +1039,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "02-11",
+    "vocabId": "08-20",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -1059,7 +1059,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "02-12",
+    "vocabId": "09-26",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -1079,7 +1079,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "02-13",
+    "vocabId": "09-17",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1099,7 +1099,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "02-14",
+    "vocabId": "18-26",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1116,7 +1116,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "02-15",
+    "vocabId": "18-16",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1133,7 +1133,7 @@
     "health": 2,
     "rarity": "epic",
     "theme": "tool",
-    "vocabId": "02-16",
+    "vocabId": "09-31",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1150,7 +1150,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "02-17",
+    "vocabId": "21-14",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1170,7 +1170,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "02-18",
+    "vocabId": "09-16",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -1190,7 +1190,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "02-19",
+    "vocabId": "21-16",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1210,7 +1210,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "02-20",
+    "vocabId": "21-17",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1227,7 +1227,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "03-01",
+    "vocabId": "15-08",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1244,7 +1244,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "03-02",
+    "vocabId": "18-14",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1261,7 +1261,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "03-03",
+    "vocabId": "09-69",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1279,7 +1279,7 @@
     "cost": 1,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "03-04",
+    "vocabId": "10-04",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -1291,7 +1291,7 @@
     "cost": 2,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "03-05",
+    "vocabId": "10-04",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -1303,7 +1303,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "03-06",
+    "vocabId": "11-06",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -1315,7 +1315,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "03-07",
+    "vocabId": "11-18",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -1327,7 +1327,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "03-08",
+    "vocabId": "10-19",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -1339,7 +1339,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "03-09",
+    "vocabId": "10-18",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -1351,7 +1351,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "03-10",
+    "vocabId": "10-01",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -1363,7 +1363,7 @@
     "cost": 5,
     "rarity": "epic",
     "theme": "nature",
-    "vocabId": "03-11",
+    "vocabId": "11-13",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -1375,7 +1375,7 @@
     "cost": 1,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "03-12",
+    "vocabId": "10-08",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -1387,7 +1387,7 @@
     "cost": 2,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "03-13",
+    "vocabId": "11-31",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -1399,7 +1399,7 @@
     "cost": 3,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "03-14",
+    "vocabId": "11-12",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -1411,7 +1411,7 @@
     "cost": 3,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "04-01",
+    "vocabId": "11-22",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -1423,7 +1423,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "04-02",
+    "vocabId": "11-24",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -1435,7 +1435,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "04-03",
+    "vocabId": "11-29",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -1447,7 +1447,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "04-04",
+    "vocabId": "10-10",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -1459,7 +1459,7 @@
     "cost": 5,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "04-05",
+    "vocabId": "11-31",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -1473,7 +1473,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-06",
+    "vocabId": "07-51",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1493,7 +1493,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-07",
+    "vocabId": "07-05",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1513,7 +1513,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-08",
+    "vocabId": "07-08",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1533,7 +1533,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-09",
+    "vocabId": "07-58",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1550,7 +1550,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-10",
+    "vocabId": "07-30",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1567,7 +1567,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-11",
+    "vocabId": "07-28",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1587,7 +1587,7 @@
     "health": 3,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "04-12",
+    "vocabId": "07-40",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1607,7 +1607,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "04-13",
+    "vocabId": "07-51",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1627,7 +1627,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "04-14",
+    "vocabId": "07-05",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1647,7 +1647,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "04-15",
+    "vocabId": "07-11",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1664,7 +1664,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "04-16",
+    "vocabId": "07-26",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1681,7 +1681,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-17",
+    "vocabId": "07-54",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1701,7 +1701,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-18",
+    "vocabId": "07-50",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1721,7 +1721,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-19",
+    "vocabId": "07-06",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1741,7 +1741,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-20",
+    "vocabId": "07-48",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1761,7 +1761,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-21",
+    "vocabId": "07-58",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1778,7 +1778,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-22",
+    "vocabId": "07-64",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1795,7 +1795,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-23",
+    "vocabId": "07-15",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1815,7 +1815,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-24",
+    "vocabId": "07-11",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1835,7 +1835,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-25",
+    "vocabId": "07-08",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1855,7 +1855,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "04-26",
+    "vocabId": "07-52",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1875,7 +1875,7 @@
     "health": 3,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "05-01",
+    "vocabId": "07-19",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1892,7 +1892,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "05-02",
+    "vocabId": "07-43",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1909,7 +1909,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "05-03",
+    "vocabId": "07-51",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1929,7 +1929,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "05-04",
+    "vocabId": "07-19",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1949,7 +1949,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "05-05",
+    "vocabId": "07-44",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1969,7 +1969,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "05-06",
+    "vocabId": "07-32",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -1989,7 +1989,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "05-07",
+    "vocabId": "07-64",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2006,7 +2006,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "05-08",
+    "vocabId": "07-56",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2023,7 +2023,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "05-09",
+    "vocabId": "07-42",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2043,7 +2043,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "05-10",
+    "vocabId": "07-31",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2063,7 +2063,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "05-11",
+    "vocabId": "07-53",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2083,7 +2083,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "05-12",
+    "vocabId": "07-20",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2103,7 +2103,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "05-13",
+    "vocabId": "07-33",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2120,7 +2120,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "05-14",
+    "vocabId": "07-47",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2137,7 +2137,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "05-15",
+    "vocabId": "07-23",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2157,7 +2157,7 @@
     "health": 3,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "05-16",
+    "vocabId": "07-48",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2177,7 +2177,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "05-17",
+    "vocabId": "07-10",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2197,7 +2197,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "05-18",
+    "vocabId": "07-41",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2217,7 +2217,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "05-19",
+    "vocabId": "07-52",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2234,7 +2234,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "05-20",
+    "vocabId": "07-17",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2251,7 +2251,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "05-21",
+    "vocabId": "08-29",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -2271,7 +2271,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "05-22",
+    "vocabId": "08-09",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2291,7 +2291,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "05-23",
+    "vocabId": "08-12",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -2311,7 +2311,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "05-24",
+    "vocabId": "08-18",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2328,7 +2328,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "05-25",
+    "vocabId": "08-55",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2345,7 +2345,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "06-01",
+    "vocabId": "08-57",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2362,7 +2362,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "06-02",
+    "vocabId": "08-03",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -2382,7 +2382,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "06-03",
+    "vocabId": "08-03",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2402,7 +2402,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "06-04",
+    "vocabId": "08-43",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -2422,7 +2422,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "06-05",
+    "vocabId": "08-44",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2439,7 +2439,7 @@
     "health": 3,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "06-06",
+    "vocabId": "08-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2456,7 +2456,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "06-07",
+    "vocabId": "08-01",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2473,7 +2473,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "06-08",
+    "vocabId": "08-46",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -2493,7 +2493,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "06-09",
+    "vocabId": "08-24",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2513,7 +2513,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "06-10",
+    "vocabId": "08-52",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -2533,7 +2533,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "06-11",
+    "vocabId": "08-54",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2550,7 +2550,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "06-12",
+    "vocabId": "08-54",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2567,7 +2567,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "06-13",
+    "vocabId": "08-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2584,7 +2584,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "06-14",
+    "vocabId": "08-17",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -2604,7 +2604,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "06-15",
+    "vocabId": "08-20",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2624,7 +2624,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "06-16",
+    "vocabId": "08-20",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -2644,7 +2644,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "06-17",
+    "vocabId": "08-57",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2661,7 +2661,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "06-18",
+    "vocabId": "08-13",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2678,7 +2678,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "06-19",
+    "vocabId": "08-02",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2695,7 +2695,7 @@
     "health": 8,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "06-20",
+    "vocabId": "08-45",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -2715,7 +2715,7 @@
     "health": 4,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "06-21",
+    "vocabId": "08-37",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2735,7 +2735,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "06-22",
+    "vocabId": "09-17",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2755,7 +2755,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "06-23",
+    "vocabId": "09-62",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2772,7 +2772,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "06-24",
+    "vocabId": "09-33",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2789,7 +2789,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "06-25",
+    "vocabId": "12-14",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2806,7 +2806,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "06-26",
+    "vocabId": "09-15",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2826,7 +2826,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "06-27",
+    "vocabId": "18-12",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -2846,7 +2846,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "06-28",
+    "vocabId": "19-01",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2866,7 +2866,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "06-29",
+    "vocabId": "09-01",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2883,7 +2883,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "06-30",
+    "vocabId": "18-23",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2900,7 +2900,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "06-31",
+    "vocabId": "16-04",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2917,7 +2917,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "06-32",
+    "vocabId": "09-29",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2937,7 +2937,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "06-33",
+    "vocabId": "09-47",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -2957,7 +2957,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "06-34",
+    "vocabId": "18-24",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2977,7 +2977,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "06-35",
+    "vocabId": "18-12",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -2994,7 +2994,7 @@
     "health": 3,
     "rarity": "epic",
     "theme": "tool",
-    "vocabId": "06-36",
+    "vocabId": "21-18",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3011,7 +3011,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "06-37",
+    "vocabId": "15-12",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3028,7 +3028,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "06-38",
+    "vocabId": "09-23",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3048,7 +3048,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "06-39",
+    "vocabId": "09-42",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -3068,7 +3068,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "06-40",
+    "vocabId": "18-32",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3088,7 +3088,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "06-41",
+    "vocabId": "09-51",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3103,7 +3103,7 @@
     "cost": 1,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "06-42",
+    "vocabId": "11-32",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -3115,7 +3115,7 @@
     "cost": 2,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "06-43",
+    "vocabId": "11-16",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -3127,7 +3127,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "06-44",
+    "vocabId": "10-01",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -3139,7 +3139,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "06-45",
+    "vocabId": "11-01",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -3151,7 +3151,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "06-46",
+    "vocabId": "11-19",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -3163,7 +3163,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "06-47",
+    "vocabId": "11-05",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -3175,7 +3175,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "06-48",
+    "vocabId": "11-27",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -3187,7 +3187,7 @@
     "cost": 5,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "06-49",
+    "vocabId": "10-14",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -3199,7 +3199,7 @@
     "cost": 1,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "06-50",
+    "vocabId": "10-16",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -3211,7 +3211,7 @@
     "cost": 2,
     "rarity": "epic",
     "theme": "nature",
-    "vocabId": "06-51",
+    "vocabId": "11-06",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -3223,7 +3223,7 @@
     "cost": 3,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "06-52",
+    "vocabId": "11-06",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -3235,7 +3235,7 @@
     "cost": 3,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "06-53",
+    "vocabId": "11-15",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -3247,7 +3247,7 @@
     "cost": 3,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "06-54",
+    "vocabId": "11-30",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -3259,7 +3259,7 @@
     "cost": 4,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "06-55",
+    "vocabId": "10-17",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -3271,7 +3271,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "06-56",
+    "vocabId": "10-14",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -3283,7 +3283,7 @@
     "cost": 5,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "07-01",
+    "vocabId": "10-09",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -3295,7 +3295,7 @@
     "cost": 1,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "07-02",
+    "vocabId": "11-18",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -3307,7 +3307,7 @@
     "cost": 2,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "07-03",
+    "vocabId": "11-12",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -3321,7 +3321,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-04",
+    "vocabId": "07-23",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3338,7 +3338,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-05",
+    "vocabId": "07-50",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3355,7 +3355,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-06",
+    "vocabId": "07-50",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3375,7 +3375,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-07",
+    "vocabId": "07-33",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3395,7 +3395,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-08",
+    "vocabId": "07-50",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3435,7 +3435,7 @@
     "health": 2,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "07-10",
+    "vocabId": "07-18",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3452,7 +3452,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "07-11",
+    "vocabId": "07-22",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3469,7 +3469,7 @@
     "health": 7,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "07-12",
+    "vocabId": "07-54",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3489,7 +3489,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "07-13",
+    "vocabId": "07-60",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3509,7 +3509,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "07-14",
+    "vocabId": "07-07",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3529,7 +3529,7 @@
     "health": 1,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-15",
+    "vocabId": "07-04",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3549,7 +3549,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-16",
+    "vocabId": "07-13",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3566,7 +3566,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-17",
+    "vocabId": "07-41",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3583,7 +3583,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-18",
+    "vocabId": "07-54",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3603,7 +3603,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-19",
+    "vocabId": "07-46",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3623,7 +3623,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-20",
+    "vocabId": "07-09",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3643,7 +3643,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-21",
+    "vocabId": "07-03",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3663,7 +3663,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-22",
+    "vocabId": "07-56",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3680,7 +3680,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-23",
+    "vocabId": "07-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3697,7 +3697,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-24",
+    "vocabId": "07-46",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3717,7 +3717,7 @@
     "health": 2,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "07-25",
+    "vocabId": "07-05",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3737,7 +3737,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "07-26",
+    "vocabId": "07-33",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3757,7 +3757,7 @@
     "health": 7,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "07-27",
+    "vocabId": "07-24",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3777,7 +3777,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "07-28",
+    "vocabId": "07-07",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3794,7 +3794,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-29",
+    "vocabId": "07-42",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3811,7 +3811,7 @@
     "health": 1,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-30",
+    "vocabId": "07-18",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3831,7 +3831,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-31",
+    "vocabId": "07-09",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3851,7 +3851,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-32",
+    "vocabId": "07-28",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3871,7 +3871,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-33",
+    "vocabId": "07-29",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3891,7 +3891,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-34",
+    "vocabId": "07-30",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3908,7 +3908,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-35",
+    "vocabId": "07-43",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3925,7 +3925,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-36",
+    "vocabId": "07-03",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3945,7 +3945,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-37",
+    "vocabId": "07-32",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3965,7 +3965,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-38",
+    "vocabId": "07-05",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -3985,7 +3985,7 @@
     "health": 6,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "07-39",
+    "vocabId": "07-52",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4005,7 +4005,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "07-40",
+    "vocabId": "07-04",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4022,7 +4022,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "07-41",
+    "vocabId": "07-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4039,7 +4039,7 @@
     "health": 7,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "07-42",
+    "vocabId": "07-55",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4059,7 +4059,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "07-43",
+    "vocabId": "07-52",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4079,7 +4079,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-44",
+    "vocabId": "07-63",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4099,7 +4099,7 @@
     "health": 1,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-45",
+    "vocabId": "07-07",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4119,7 +4119,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-46",
+    "vocabId": "07-19",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4136,7 +4136,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-47",
+    "vocabId": "07-42",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4153,7 +4153,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-48",
+    "vocabId": "07-08",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4173,7 +4173,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-49",
+    "vocabId": "07-14",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4193,7 +4193,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-50",
+    "vocabId": "07-22",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4213,7 +4213,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-51",
+    "vocabId": "07-41",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4233,7 +4233,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-52",
+    "vocabId": "07-42",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4250,7 +4250,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-53",
+    "vocabId": "07-13",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4267,7 +4267,7 @@
     "health": 6,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "07-54",
+    "vocabId": "07-62",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4287,7 +4287,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "07-55",
+    "vocabId": "07-39",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4307,7 +4307,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "07-56",
+    "vocabId": "07-31",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4327,7 +4327,7 @@
     "health": 7,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "07-57",
+    "vocabId": "07-40",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4347,7 +4347,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "07-58",
+    "vocabId": "07-47",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4364,7 +4364,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-59",
+    "vocabId": "07-47",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4381,7 +4381,7 @@
     "health": 1,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-60",
+    "vocabId": "07-21",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4401,7 +4401,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-61",
+    "vocabId": "07-08",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4421,7 +4421,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-62",
+    "vocabId": "07-53",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4441,7 +4441,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-63",
+    "vocabId": "07-53",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4461,7 +4461,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-64",
+    "vocabId": "07-10",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4478,7 +4478,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "07-65",
+    "vocabId": "07-17",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4495,7 +4495,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "08-01",
+    "vocabId": "07-17",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4515,7 +4515,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "08-02",
+    "vocabId": "07-42",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4535,7 +4535,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "08-03",
+    "vocabId": "07-12",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4555,7 +4555,7 @@
     "health": 6,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "08-04",
+    "vocabId": "07-59",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4575,7 +4575,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "08-05",
+    "vocabId": "07-47",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4592,7 +4592,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "08-06",
+    "vocabId": "07-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4609,7 +4609,7 @@
     "health": 8,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "08-07",
+    "vocabId": "08-50",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -4629,7 +4629,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "08-08",
+    "vocabId": "08-06",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4649,7 +4649,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-09",
+    "vocabId": "08-39",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -4669,7 +4669,7 @@
     "health": 1,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-10",
+    "vocabId": "08-14",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4686,7 +4686,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-11",
+    "vocabId": "08-21",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4703,7 +4703,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-12",
+    "vocabId": "08-53",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4740,7 +4740,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-14",
+    "vocabId": "08-25",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4760,7 +4760,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-15",
+    "vocabId": "08-30",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -4780,7 +4780,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-16",
+    "vocabId": "08-32",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4797,7 +4797,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-17",
+    "vocabId": "08-16",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4814,7 +4814,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-18",
+    "vocabId": "08-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4831,7 +4831,7 @@
     "health": 7,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "08-19",
+    "vocabId": "08-31",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -4851,7 +4851,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "08-20",
+    "vocabId": "08-39",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4871,7 +4871,7 @@
     "health": 5,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "08-21",
+    "vocabId": "08-52",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -4891,7 +4891,7 @@
     "health": 7,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "08-22",
+    "vocabId": "08-46",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4908,7 +4908,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "08-23",
+    "vocabId": "08-06",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4925,7 +4925,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-24",
+    "vocabId": "08-50",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4942,7 +4942,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-25",
+    "vocabId": "08-43",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -4962,7 +4962,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-26",
+    "vocabId": "08-38",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -4982,7 +4982,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-27",
+    "vocabId": "08-03",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5019,7 +5019,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-29",
+    "vocabId": "08-03",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5036,7 +5036,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-30",
+    "vocabId": "08-28",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5053,7 +5053,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-31",
+    "vocabId": "08-56",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5073,7 +5073,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-32",
+    "vocabId": "08-54",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5093,7 +5093,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-33",
+    "vocabId": "08-44",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5113,7 +5113,7 @@
     "health": 6,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "08-34",
+    "vocabId": "08-26",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5130,7 +5130,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "08-35",
+    "vocabId": "08-32",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5147,7 +5147,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "08-36",
+    "vocabId": "08-03",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5164,7 +5164,7 @@
     "health": 8,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "08-37",
+    "vocabId": "08-28",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5184,7 +5184,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "08-38",
+    "vocabId": "08-08",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5204,7 +5204,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-39",
+    "vocabId": "08-18",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5224,7 +5224,7 @@
     "health": 1,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-40",
+    "vocabId": "08-07",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5241,7 +5241,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-41",
+    "vocabId": "08-44",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5258,7 +5258,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-42",
+    "vocabId": "08-12",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5275,7 +5275,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-43",
+    "vocabId": "08-37",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5295,7 +5295,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-44",
+    "vocabId": "08-22",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5315,7 +5315,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-45",
+    "vocabId": "08-31",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5335,7 +5335,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-46",
+    "vocabId": "08-30",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5352,7 +5352,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-47",
+    "vocabId": "08-34",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5369,7 +5369,7 @@
     "health": 3,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "08-48",
+    "vocabId": "08-11",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5386,7 +5386,7 @@
     "health": 7,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "08-49",
+    "vocabId": "08-17",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5406,7 +5406,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "08-50",
+    "vocabId": "08-47",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5426,7 +5426,7 @@
     "health": 5,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "08-51",
+    "vocabId": "08-56",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5446,7 +5446,7 @@
     "health": 7,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "08-52",
+    "vocabId": "08-03",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5463,7 +5463,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-53",
+    "vocabId": "08-19",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5480,7 +5480,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-54",
+    "vocabId": "08-55",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5497,7 +5497,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-55",
+    "vocabId": "08-06",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5517,7 +5517,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-56",
+    "vocabId": "08-12",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5537,7 +5537,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "08-57",
+    "vocabId": "08-23",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5557,7 +5557,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "09-01",
+    "vocabId": "08-18",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5574,7 +5574,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "09-02",
+    "vocabId": "08-41",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5591,7 +5591,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "09-03",
+    "vocabId": "08-44",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5608,7 +5608,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "09-04",
+    "vocabId": "08-17",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5628,7 +5628,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "09-05",
+    "vocabId": "12-02",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5648,7 +5648,7 @@
     "health": 4,
     "rarity": "epic",
     "theme": "tool",
-    "vocabId": "09-06",
+    "vocabId": "21-17",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5668,7 +5668,7 @@
     "health": 6,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "09-07",
+    "vocabId": "09-33",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5685,7 +5685,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "09-08",
+    "vocabId": "18-22",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5702,7 +5702,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "09-09",
+    "vocabId": "09-34",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5719,7 +5719,7 @@
     "health": 7,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "09-10",
+    "vocabId": "16-08",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5739,7 +5739,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "09-11",
+    "vocabId": "21-09",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5759,7 +5759,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "09-12",
+    "vocabId": "18-25",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5779,7 +5779,7 @@
     "health": 1,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "09-13",
+    "vocabId": "21-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5796,7 +5796,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "09-14",
+    "vocabId": "15-04",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5813,7 +5813,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "09-15",
+    "vocabId": "09-48",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5830,7 +5830,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "09-16",
+    "vocabId": "09-69",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5850,7 +5850,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "09-17",
+    "vocabId": "21-10",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5870,7 +5870,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "09-18",
+    "vocabId": "18-13",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5890,7 +5890,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "09-19",
+    "vocabId": "12-16",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5907,7 +5907,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "09-20",
+    "vocabId": "15-01",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5924,7 +5924,7 @@
     "health": 3,
     "rarity": "epic",
     "theme": "tool",
-    "vocabId": "09-21",
+    "vocabId": "15-02",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5941,7 +5941,7 @@
     "health": 6,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "09-22",
+    "vocabId": "18-27",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -5961,7 +5961,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "09-23",
+    "vocabId": "21-07",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -5981,7 +5981,7 @@
     "health": 5,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "09-24",
+    "vocabId": "18-30",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6001,7 +6001,7 @@
     "health": 7,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "09-25",
+    "vocabId": "09-29",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6018,7 +6018,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "09-26",
+    "vocabId": "09-39",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6035,7 +6035,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "09-27",
+    "vocabId": "18-30",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6052,7 +6052,7 @@
     "health": 1,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "09-28",
+    "vocabId": "09-26",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6072,7 +6072,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "09-29",
+    "vocabId": "21-18",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -6090,7 +6090,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-30",
+    "vocabId": "11-04",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -6102,7 +6102,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-31",
+    "vocabId": "11-12",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -6114,7 +6114,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-32",
+    "vocabId": "11-32",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -6126,7 +6126,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-33",
+    "vocabId": "10-19",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -6138,7 +6138,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-34",
+    "vocabId": "11-31",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -6150,7 +6150,7 @@
     "cost": 5,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-35",
+    "vocabId": "11-03",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -6162,7 +6162,7 @@
     "cost": 1,
     "rarity": "epic",
     "theme": "nature",
-    "vocabId": "09-36",
+    "vocabId": "10-14",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -6174,7 +6174,7 @@
     "cost": 2,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "09-37",
+    "vocabId": "11-01",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -6186,7 +6186,7 @@
     "cost": 3,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "09-38",
+    "vocabId": "11-29",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -6198,7 +6198,7 @@
     "cost": 3,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "09-39",
+    "vocabId": "10-17",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -6210,7 +6210,7 @@
     "cost": 3,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "09-40",
+    "vocabId": "11-12",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -6222,7 +6222,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-41",
+    "vocabId": "10-15",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -6234,7 +6234,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-42",
+    "vocabId": "11-18",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -6246,7 +6246,7 @@
     "cost": 5,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-43",
+    "vocabId": "11-07",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -6258,7 +6258,7 @@
     "cost": 1,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-44",
+    "vocabId": "11-06",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -6270,7 +6270,7 @@
     "cost": 2,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-45",
+    "vocabId": "11-06",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -6282,7 +6282,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-46",
+    "vocabId": "10-04",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -6294,7 +6294,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-47",
+    "vocabId": "10-04",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -6306,7 +6306,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-48",
+    "vocabId": "11-25",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -6318,7 +6318,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-49",
+    "vocabId": "11-26",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -6330,7 +6330,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "09-50",
+    "vocabId": "10-08",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -6342,7 +6342,7 @@
     "cost": 5,
     "rarity": "epic",
     "theme": "nature",
-    "vocabId": "09-51",
+    "vocabId": "11-31",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -6354,7 +6354,7 @@
     "cost": 1,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "09-52",
+    "vocabId": "11-17",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -6366,7 +6366,7 @@
     "cost": 2,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "09-53",
+    "vocabId": "11-13",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -6380,7 +6380,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "09-54",
+    "vocabId": "07-37",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6400,7 +6400,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "09-55",
+    "vocabId": "07-45",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6420,7 +6420,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "09-56",
+    "vocabId": "07-47",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6437,7 +6437,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "09-57",
+    "vocabId": "07-11",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6454,7 +6454,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "09-58",
+    "vocabId": "07-05",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6474,7 +6474,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "09-59",
+    "vocabId": "07-47",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6494,7 +6494,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "09-60",
+    "vocabId": "07-35",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6514,7 +6514,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "09-61",
+    "vocabId": "07-44",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6534,7 +6534,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "09-62",
+    "vocabId": "07-08",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6551,7 +6551,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "09-63",
+    "vocabId": "07-08",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6568,7 +6568,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "09-64",
+    "vocabId": "07-08",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6588,7 +6588,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "09-65",
+    "vocabId": "07-29",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6608,7 +6608,7 @@
     "health": 2,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "09-66",
+    "vocabId": "07-50",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6628,7 +6628,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "09-67",
+    "vocabId": "07-10",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6648,7 +6648,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "09-68",
+    "vocabId": "07-12",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6665,7 +6665,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "09-69",
+    "vocabId": "07-47",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6682,7 +6682,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "09-70",
+    "vocabId": "07-35",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6702,7 +6702,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "09-71",
+    "vocabId": "07-18",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6722,7 +6722,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-01",
+    "vocabId": "07-41",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6742,7 +6742,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-02",
+    "vocabId": "07-15",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6762,7 +6762,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-03",
+    "vocabId": "07-61",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6779,7 +6779,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-04",
+    "vocabId": "07-60",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6796,7 +6796,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-05",
+    "vocabId": "07-07",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6816,7 +6816,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-06",
+    "vocabId": "07-21",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6836,7 +6836,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-07",
+    "vocabId": "07-38",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6856,7 +6856,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-08",
+    "vocabId": "07-38",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6876,7 +6876,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-09",
+    "vocabId": "07-38",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6893,7 +6893,7 @@
     "health": 2,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "10-10",
+    "vocabId": "07-38",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6910,7 +6910,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "10-11",
+    "vocabId": "07-38",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6930,7 +6930,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "10-12",
+    "vocabId": "07-06",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6950,7 +6950,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "10-13",
+    "vocabId": "07-17",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6970,7 +6970,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "10-14",
+    "vocabId": "07-64",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -6990,7 +6990,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-15",
+    "vocabId": "07-56",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7007,7 +7007,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-16",
+    "vocabId": "07-38",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7024,7 +7024,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-17",
+    "vocabId": "07-20",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7044,7 +7044,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-18",
+    "vocabId": "07-03",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7064,7 +7064,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-19",
+    "vocabId": "07-56",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7084,7 +7084,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-20",
+    "vocabId": "07-65",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7104,7 +7104,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-21",
+    "vocabId": "07-27",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7121,7 +7121,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "10-22",
+    "vocabId": "07-58",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7138,7 +7138,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-01",
+    "vocabId": "07-13",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7158,7 +7158,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-02",
+    "vocabId": "07-23",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7178,7 +7178,7 @@
     "health": 2,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "11-03",
+    "vocabId": "07-50",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7198,7 +7198,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "11-04",
+    "vocabId": "07-47",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7218,7 +7218,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "11-05",
+    "vocabId": "07-07",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7235,7 +7235,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "11-06",
+    "vocabId": "07-29",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7252,7 +7252,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "11-07",
+    "vocabId": "07-48",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7272,7 +7272,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-08",
+    "vocabId": "07-01",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7292,7 +7292,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-09",
+    "vocabId": "07-61",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7312,7 +7312,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-10",
+    "vocabId": "07-62",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7332,7 +7332,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-11",
+    "vocabId": "07-08",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7349,7 +7349,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-12",
+    "vocabId": "07-42",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7366,7 +7366,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-13",
+    "vocabId": "07-64",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7386,7 +7386,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-14",
+    "vocabId": "07-15",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7406,7 +7406,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-15",
+    "vocabId": "07-02",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7426,7 +7426,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-16",
+    "vocabId": "07-54",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7446,7 +7446,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-17",
+    "vocabId": "07-36",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7463,7 +7463,7 @@
     "health": 2,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "11-18",
+    "vocabId": "07-50",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7480,7 +7480,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "11-19",
+    "vocabId": "07-55",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7500,7 +7500,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "11-20",
+    "vocabId": "07-04",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7520,7 +7520,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "11-21",
+    "vocabId": "07-40",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7540,7 +7540,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "11-22",
+    "vocabId": "07-54",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7560,7 +7560,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-23",
+    "vocabId": "07-39",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7577,7 +7577,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-24",
+    "vocabId": "07-52",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7594,7 +7594,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-25",
+    "vocabId": "07-36",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7614,7 +7614,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-26",
+    "vocabId": "07-14",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7634,7 +7634,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-27",
+    "vocabId": "07-19",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7654,7 +7654,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-28",
+    "vocabId": "07-54",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7674,7 +7674,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-29",
+    "vocabId": "07-48",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7691,7 +7691,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-30",
+    "vocabId": "07-37",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7708,7 +7708,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-31",
+    "vocabId": "07-07",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7728,7 +7728,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "11-32",
+    "vocabId": "07-44",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7748,7 +7748,7 @@
     "health": 2,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "11-33",
+    "vocabId": "07-07",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7768,7 +7768,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "12-01",
+    "vocabId": "07-07",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7788,7 +7788,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "12-02",
+    "vocabId": "07-65",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7805,7 +7805,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "12-03",
+    "vocabId": "07-12",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7822,7 +7822,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "12-04",
+    "vocabId": "07-52",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7842,7 +7842,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "12-05",
+    "vocabId": "07-25",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7862,7 +7862,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "12-06",
+    "vocabId": "07-09",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7882,7 +7882,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "12-07",
+    "vocabId": "07-42",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7902,7 +7902,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "12-08",
+    "vocabId": "07-52",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7919,7 +7919,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "12-09",
+    "vocabId": "07-16",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7936,7 +7936,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "12-10",
+    "vocabId": "07-36",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7956,7 +7956,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "12-11",
+    "vocabId": "07-05",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7976,7 +7976,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "12-12",
+    "vocabId": "07-25",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -7996,7 +7996,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "12-13",
+    "vocabId": "07-13",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8016,7 +8016,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "12-14",
+    "vocabId": "07-14",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8033,7 +8033,7 @@
     "health": 2,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "12-15",
+    "vocabId": "07-43",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8050,7 +8050,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "12-16",
+    "vocabId": "07-40",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8070,7 +8070,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "12-17",
+    "vocabId": "07-63",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8090,7 +8090,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "12-18",
+    "vocabId": "07-35",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8110,7 +8110,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "12-19",
+    "vocabId": "07-09",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8130,7 +8130,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-01",
+    "vocabId": "07-06",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8147,7 +8147,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-02",
+    "vocabId": "07-08",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8164,7 +8164,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-03",
+    "vocabId": "07-22",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8184,7 +8184,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-04",
+    "vocabId": "07-07",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8204,7 +8204,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-05",
+    "vocabId": "07-47",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8224,7 +8224,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-06",
+    "vocabId": "07-23",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8244,7 +8244,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-07",
+    "vocabId": "07-53",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8261,7 +8261,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-08",
+    "vocabId": "07-53",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8278,7 +8278,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-09",
+    "vocabId": "07-53",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8298,7 +8298,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-10",
+    "vocabId": "07-53",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8318,7 +8318,7 @@
     "health": 2,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "13-11",
+    "vocabId": "07-53",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8338,7 +8338,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "13-12",
+    "vocabId": "07-17",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8358,7 +8358,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "13-13",
+    "vocabId": "07-10",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8375,7 +8375,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "13-14",
+    "vocabId": "07-46",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8392,7 +8392,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "13-15",
+    "vocabId": "07-16",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8412,7 +8412,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-16",
+    "vocabId": "07-17",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8432,7 +8432,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-17",
+    "vocabId": "07-53",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8452,7 +8452,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-18",
+    "vocabId": "07-13",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8472,7 +8472,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-19",
+    "vocabId": "07-26",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8489,7 +8489,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-20",
+    "vocabId": "07-26",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8506,7 +8506,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-21",
+    "vocabId": "07-26",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8526,7 +8526,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-22",
+    "vocabId": "07-56",
     "effectText": "突襲",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8546,7 +8546,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-23",
+    "vocabId": "07-54",
     "effectText": "潛行",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8566,7 +8566,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-24",
+    "vocabId": "07-47",
     "effectText": "疾風",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8586,7 +8586,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "animal",
-    "vocabId": "13-25",
+    "vocabId": "07-48",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8603,7 +8603,7 @@
     "health": 2,
     "rarity": "epic",
     "theme": "animal",
-    "vocabId": "13-26",
+    "vocabId": "07-23",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8620,7 +8620,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "animal",
-    "vocabId": "13-27",
+    "vocabId": "07-31",
     "effectText": "衝鋒",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8640,7 +8640,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "13-28",
+    "vocabId": "08-14",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8660,7 +8660,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "13-29",
+    "vocabId": "08-27",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -8680,7 +8680,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "13-30",
+    "vocabId": "08-04",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8697,7 +8697,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "13-31",
+    "vocabId": "08-03",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8714,7 +8714,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "14-01",
+    "vocabId": "08-10",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8731,7 +8731,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "14-02",
+    "vocabId": "08-45",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -8751,7 +8751,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "14-03",
+    "vocabId": "08-44",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8771,7 +8771,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "14-04",
+    "vocabId": "08-20",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -8791,7 +8791,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "14-05",
+    "vocabId": "08-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8808,7 +8808,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "14-06",
+    "vocabId": "08-44",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8825,7 +8825,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "14-07",
+    "vocabId": "08-04",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8842,7 +8842,7 @@
     "health": 8,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "14-08",
+    "vocabId": "08-49",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -8862,7 +8862,7 @@
     "health": 4,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "14-09",
+    "vocabId": "08-28",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8882,7 +8882,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "14-10",
+    "vocabId": "08-11",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -8902,7 +8902,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "14-11",
+    "vocabId": "08-06",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8919,7 +8919,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "14-12",
+    "vocabId": "08-34",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8936,7 +8936,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "14-13",
+    "vocabId": "08-36",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8953,7 +8953,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "14-14",
+    "vocabId": "08-04",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -8973,7 +8973,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "14-15",
+    "vocabId": "08-44",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -8993,7 +8993,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "14-16",
+    "vocabId": "08-20",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9011,7 +9011,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "15-01",
+    "vocabId": "10-03",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -9023,7 +9023,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "15-02",
+    "vocabId": "11-07",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -9035,7 +9035,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "15-03",
+    "vocabId": "11-04",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -9047,7 +9047,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "15-04",
+    "vocabId": "11-19",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -9059,7 +9059,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "15-05",
+    "vocabId": "10-08",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -9071,7 +9071,7 @@
     "cost": 5,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "15-06",
+    "vocabId": "11-12",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -9083,7 +9083,7 @@
     "cost": 1,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "15-07",
+    "vocabId": "11-06",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -9095,7 +9095,7 @@
     "cost": 2,
     "rarity": "epic",
     "theme": "nature",
-    "vocabId": "15-08",
+    "vocabId": "11-19",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -9107,7 +9107,7 @@
     "cost": 3,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "15-09",
+    "vocabId": "11-07",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -9119,7 +9119,7 @@
     "cost": 3,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "15-10",
+    "vocabId": "11-07",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -9133,7 +9133,7 @@
     "health": 5,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "15-11",
+    "vocabId": "08-12",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9150,7 +9150,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "15-12",
+    "vocabId": "08-56",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9167,7 +9167,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "15-13",
+    "vocabId": "08-40",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9184,7 +9184,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "15-14",
+    "vocabId": "08-20",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9204,7 +9204,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "16-01",
+    "vocabId": "08-28",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9224,7 +9224,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "16-02",
+    "vocabId": "08-04",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9244,7 +9244,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "16-03",
+    "vocabId": "08-17",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9261,7 +9261,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "16-04",
+    "vocabId": "08-38",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9278,7 +9278,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "16-05",
+    "vocabId": "08-51",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9295,7 +9295,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "16-06",
+    "vocabId": "08-23",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9315,7 +9315,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "16-08",
+    "vocabId": "08-26",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9335,7 +9335,7 @@
     "health": 3,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "16-09",
+    "vocabId": "08-34",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9355,7 +9355,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "16-10",
+    "vocabId": "08-16",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9372,7 +9372,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "16-11",
+    "vocabId": "08-42",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9389,7 +9389,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "16-12",
+    "vocabId": "08-03",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9406,7 +9406,7 @@
     "health": 6,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "17-01",
+    "vocabId": "08-39",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9426,7 +9426,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "17-02",
+    "vocabId": "08-16",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9446,7 +9446,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "17-03",
+    "vocabId": "08-48",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9466,7 +9466,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "17-04",
+    "vocabId": "08-10",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9483,7 +9483,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "17-05",
+    "vocabId": "08-26",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9500,7 +9500,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "17-06",
+    "vocabId": "08-50",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9517,7 +9517,7 @@
     "health": 8,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "17-07",
+    "vocabId": "08-05",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9537,7 +9537,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "17-08",
+    "vocabId": "08-57",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9557,7 +9557,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-01",
+    "vocabId": "08-24",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9577,7 +9577,7 @@
     "health": 1,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-02",
+    "vocabId": "08-16",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9594,7 +9594,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-03",
+    "vocabId": "08-10",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9611,7 +9611,7 @@
     "health": 2,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "18-05",
+    "vocabId": "08-37",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9628,7 +9628,7 @@
     "health": 5,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "18-06",
+    "vocabId": "08-46",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9648,7 +9648,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "18-07",
+    "vocabId": "08-18",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9668,7 +9668,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "18-08",
+    "vocabId": "08-17",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9688,7 +9688,7 @@
     "health": 5,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "18-09",
+    "vocabId": "08-03",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9705,7 +9705,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-10",
+    "vocabId": "08-04",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9722,7 +9722,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-11",
+    "vocabId": "08-29",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9739,7 +9739,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-12",
+    "vocabId": "08-52",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9759,7 +9759,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-13",
+    "vocabId": "08-25",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9779,7 +9779,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-14",
+    "vocabId": "08-30",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9799,7 +9799,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-15",
+    "vocabId": "08-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9816,7 +9816,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-16",
+    "vocabId": "08-39",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9833,7 +9833,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-17",
+    "vocabId": "08-41",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9850,7 +9850,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-18",
+    "vocabId": "08-02",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9870,7 +9870,7 @@
     "health": 4,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "18-19",
+    "vocabId": "08-20",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9890,7 +9890,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "18-20",
+    "vocabId": "08-01",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9910,7 +9910,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "18-21",
+    "vocabId": "08-32",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9927,7 +9927,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "18-22",
+    "vocabId": "08-46",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9944,7 +9944,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "18-23",
+    "vocabId": "08-51",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -9961,7 +9961,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-24",
+    "vocabId": "08-36",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -9981,7 +9981,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-25",
+    "vocabId": "08-02",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10001,7 +10001,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-26",
+    "vocabId": "08-20",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10021,7 +10021,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-27",
+    "vocabId": "08-22",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10038,7 +10038,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-28",
+    "vocabId": "08-28",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10055,7 +10055,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-29",
+    "vocabId": "08-48",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10072,7 +10072,7 @@
     "health": 8,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-30",
+    "vocabId": "08-14",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10092,7 +10092,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-31",
+    "vocabId": "08-51",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10112,7 +10112,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "18-32",
+    "vocabId": "08-32",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10132,7 +10132,7 @@
     "health": 1,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "19-01",
+    "vocabId": "08-32",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10149,7 +10149,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "19-02",
+    "vocabId": "08-03",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10166,7 +10166,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "20-01",
+    "vocabId": "08-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10183,7 +10183,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "20-02",
+    "vocabId": "08-20",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10203,7 +10203,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "20-03",
+    "vocabId": "08-43",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10223,7 +10223,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "20-04",
+    "vocabId": "08-20",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10243,7 +10243,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "20-05",
+    "vocabId": "08-40",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10260,7 +10260,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "20-06",
+    "vocabId": "08-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10277,7 +10277,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "20-07",
+    "vocabId": "08-33",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10294,7 +10294,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "21-01",
+    "vocabId": "08-11",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10314,7 +10314,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "21-02",
+    "vocabId": "08-20",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10334,7 +10334,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "21-03",
+    "vocabId": "08-26",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10354,7 +10354,7 @@
     "health": 7,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "21-04",
+    "vocabId": "08-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10371,7 +10371,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "21-05",
+    "vocabId": "08-16",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10388,7 +10388,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "21-06",
+    "vocabId": "08-04",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10405,7 +10405,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "21-07",
+    "vocabId": "08-50",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10425,7 +10425,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "21-08",
+    "vocabId": "08-32",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10445,7 +10445,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "21-09",
+    "vocabId": "08-44",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10465,7 +10465,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "21-10",
+    "vocabId": "08-33",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10482,7 +10482,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "21-11",
+    "vocabId": "08-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10499,7 +10499,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "21-12",
+    "vocabId": "08-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10516,7 +10516,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "21-13",
+    "vocabId": "08-20",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10536,7 +10536,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "21-14",
+    "vocabId": "08-36",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10556,7 +10556,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "21-15",
+    "vocabId": "08-23",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10576,7 +10576,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "21-16",
+    "vocabId": "08-53",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10593,7 +10593,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "21-17",
+    "vocabId": "08-41",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10610,7 +10610,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "21-18",
+    "vocabId": "08-05",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10627,7 +10627,7 @@
     "health": 8,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "21-19",
+    "vocabId": "08-07",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10647,7 +10647,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "21-20",
+    "vocabId": "08-38",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10667,7 +10667,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "21-21",
+    "vocabId": "08-28",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10687,7 +10687,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "21-22",
+    "vocabId": "08-40",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10704,7 +10704,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "21-23",
+    "vocabId": "08-10",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10721,7 +10721,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "21-24",
+    "vocabId": "08-36",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10738,7 +10738,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "21-25",
+    "vocabId": "08-45",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10758,7 +10758,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "22-01",
+    "vocabId": "08-13",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10778,7 +10778,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "22-02",
+    "vocabId": "08-18",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10798,7 +10798,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "22-03",
+    "vocabId": "08-14",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10815,7 +10815,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "22-04",
+    "vocabId": "08-16",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10832,7 +10832,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "22-05",
+    "vocabId": "08-28",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10849,7 +10849,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "22-06",
+    "vocabId": "08-13",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10869,7 +10869,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "22-07",
+    "vocabId": "08-53",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10889,7 +10889,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "22-08",
+    "vocabId": "08-56",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10909,7 +10909,7 @@
     "health": 7,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "22-09",
+    "vocabId": "08-19",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10926,7 +10926,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "23-01",
+    "vocabId": "08-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10943,7 +10943,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "23-02",
+    "vocabId": "08-48",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -10960,7 +10960,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "24-01",
+    "vocabId": "08-52",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -10980,7 +10980,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "24-02",
+    "vocabId": "08-30",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11000,7 +11000,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "24-03",
+    "vocabId": "08-14",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -11020,7 +11020,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "24-04",
+    "vocabId": "08-51",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11037,7 +11037,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "24-05",
+    "vocabId": "08-25",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11054,7 +11054,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "24-06",
+    "vocabId": "08-16",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11071,7 +11071,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "24-07",
+    "vocabId": "08-33",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -11091,7 +11091,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "24-08",
+    "vocabId": "08-52",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11111,7 +11111,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "24-09",
+    "vocabId": "08-48",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -11131,7 +11131,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "24-10",
+    "vocabId": "08-30",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11148,7 +11148,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "24-11",
+    "vocabId": "08-45",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11165,7 +11165,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "24-12",
+    "vocabId": "08-22",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11182,7 +11182,7 @@
     "health": 8,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "24-13",
+    "vocabId": "08-36",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -11202,7 +11202,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "24-14",
+    "vocabId": "08-19",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11222,7 +11222,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "24-15",
+    "vocabId": "08-29",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -11242,7 +11242,7 @@
     "health": 1,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "24-16",
+    "vocabId": "08-57",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11259,7 +11259,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "24-17",
+    "vocabId": "08-36",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11276,7 +11276,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-01",
+    "vocabId": "08-21",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11293,7 +11293,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-02",
+    "vocabId": "08-06",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -11313,7 +11313,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-03",
+    "vocabId": "08-26",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11333,7 +11333,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-04",
+    "vocabId": "08-55",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -11353,7 +11353,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-05",
+    "vocabId": "08-03",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11370,7 +11370,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-06",
+    "vocabId": "08-35",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11387,7 +11387,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-07",
+    "vocabId": "08-44",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11404,7 +11404,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-08",
+    "vocabId": "08-19",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -11424,7 +11424,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-09",
+    "vocabId": "08-31",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11444,7 +11444,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-10",
+    "vocabId": "08-51",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -11464,7 +11464,7 @@
     "health": 7,
     "rarity": "epic",
     "theme": "plant",
-    "vocabId": "25-11",
+    "vocabId": "08-03",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11481,7 +11481,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "25-12",
+    "vocabId": "08-03",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11498,7 +11498,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "25-13",
+    "vocabId": "08-54",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11515,7 +11515,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "25-14",
+    "vocabId": "08-34",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -11535,7 +11535,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "plant",
-    "vocabId": "25-15",
+    "vocabId": "08-17",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11555,7 +11555,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-16",
+    "vocabId": "08-49",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -11575,7 +11575,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-17",
+    "vocabId": "08-14",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11592,7 +11592,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-18",
+    "vocabId": "08-14",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11609,7 +11609,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-19",
+    "vocabId": "08-20",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11626,7 +11626,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-20",
+    "vocabId": "08-51",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -11646,7 +11646,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-21",
+    "vocabId": "08-39",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11666,7 +11666,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-22",
+    "vocabId": "08-30",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -11686,7 +11686,7 @@
     "health": 6,
     "rarity": "common",
     "theme": "plant",
-    "vocabId": "25-23",
+    "vocabId": "08-45",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -11701,7 +11701,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-24",
+    "vocabId": "10-05",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -11713,7 +11713,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-25",
+    "vocabId": "11-21",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -11725,7 +11725,7 @@
     "cost": 4,
     "rarity": "epic",
     "theme": "nature",
-    "vocabId": "25-26",
+    "vocabId": "10-09",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -11737,7 +11737,7 @@
     "cost": 5,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "25-27",
+    "vocabId": "11-23",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -11749,7 +11749,7 @@
     "cost": 1,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "25-28",
+    "vocabId": "11-02",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -11761,7 +11761,7 @@
     "cost": 2,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "25-29",
+    "vocabId": "10-22",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -11773,7 +11773,7 @@
     "cost": 3,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "25-30",
+    "vocabId": "11-06",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -11785,7 +11785,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-31",
+    "vocabId": "10-16",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -11797,7 +11797,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-32",
+    "vocabId": "10-12",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -11809,7 +11809,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-33",
+    "vocabId": "11-17",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -11821,7 +11821,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-34",
+    "vocabId": "11-03",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -11833,7 +11833,7 @@
     "cost": 5,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-35",
+    "vocabId": "10-20",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -11845,7 +11845,7 @@
     "cost": 1,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-36",
+    "vocabId": "11-21",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -11857,7 +11857,7 @@
     "cost": 2,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-37",
+    "vocabId": "10-08",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -11869,7 +11869,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-38",
+    "vocabId": "10-02",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -11881,7 +11881,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-39",
+    "vocabId": "11-07",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -11893,7 +11893,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-40",
+    "vocabId": "11-27",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -11905,7 +11905,7 @@
     "cost": 4,
     "rarity": "epic",
     "theme": "nature",
-    "vocabId": "25-41",
+    "vocabId": "10-03",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -11917,7 +11917,7 @@
     "cost": 4,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "25-42",
+    "vocabId": "11-01",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -11929,7 +11929,7 @@
     "cost": 5,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "25-43",
+    "vocabId": "10-06",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -11941,7 +11941,7 @@
     "cost": 1,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "25-44",
+    "vocabId": "11-14",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -11953,7 +11953,7 @@
     "cost": 2,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "25-45",
+    "vocabId": "11-32",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -11965,7 +11965,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-46",
+    "vocabId": "11-33",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -11977,7 +11977,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-47",
+    "vocabId": "11-32",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -11989,7 +11989,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-48",
+    "vocabId": "10-14",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -12001,7 +12001,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-49",
+    "vocabId": "11-27",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -12013,7 +12013,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-50",
+    "vocabId": "10-13",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -12025,7 +12025,7 @@
     "cost": 5,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-51",
+    "vocabId": "10-17",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -12037,7 +12037,7 @@
     "cost": 1,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "25-52",
+    "vocabId": "11-14",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -12049,7 +12049,7 @@
     "cost": 2,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-01",
+    "vocabId": "10-05",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -12061,7 +12061,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-02",
+    "vocabId": "10-04",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -12073,7 +12073,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-03",
+    "vocabId": "10-04",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -12085,7 +12085,7 @@
     "cost": 3,
     "rarity": "epic",
     "theme": "nature",
-    "vocabId": "26-04",
+    "vocabId": "11-04",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -12097,7 +12097,7 @@
     "cost": 4,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "26-05",
+    "vocabId": "11-32",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -12109,7 +12109,7 @@
     "cost": 4,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "26-06",
+    "vocabId": "11-18",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -12121,7 +12121,7 @@
     "cost": 5,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "26-07",
+    "vocabId": "11-01",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -12133,7 +12133,7 @@
     "cost": 1,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "26-08",
+    "vocabId": "11-12",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -12145,7 +12145,7 @@
     "cost": 2,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-09",
+    "vocabId": "11-12",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -12157,7 +12157,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-10",
+    "vocabId": "11-12",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -12169,7 +12169,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-11",
+    "vocabId": "11-12",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -12181,7 +12181,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-12",
+    "vocabId": "11-12",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -12193,7 +12193,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-13",
+    "vocabId": "11-12",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -12205,7 +12205,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-14",
+    "vocabId": "11-12",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -12217,7 +12217,7 @@
     "cost": 5,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-15",
+    "vocabId": "11-09",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -12229,7 +12229,7 @@
     "cost": 1,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-16",
+    "vocabId": "10-02",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -12241,7 +12241,7 @@
     "cost": 2,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-17",
+    "vocabId": "11-02",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -12253,7 +12253,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-18",
+    "vocabId": "11-33",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -12265,7 +12265,7 @@
     "cost": 3,
     "rarity": "epic",
     "theme": "nature",
-    "vocabId": "26-19",
+    "vocabId": "10-13",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -12277,7 +12277,7 @@
     "cost": 3,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "26-20",
+    "vocabId": "11-15",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -12289,7 +12289,7 @@
     "cost": 4,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "26-21",
+    "vocabId": "11-11",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -12301,7 +12301,7 @@
     "cost": 4,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "26-22",
+    "vocabId": "11-18",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -12313,7 +12313,7 @@
     "cost": 5,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "26-23",
+    "vocabId": "11-05",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -12325,7 +12325,7 @@
     "cost": 1,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-24",
+    "vocabId": "11-15",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -12337,7 +12337,7 @@
     "cost": 2,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-25",
+    "vocabId": "11-20",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -12349,7 +12349,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-26",
+    "vocabId": "11-27",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -12361,7 +12361,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-27",
+    "vocabId": "11-06",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -12373,7 +12373,7 @@
     "cost": 3,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-28",
+    "vocabId": "11-06",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -12385,7 +12385,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-29",
+    "vocabId": "11-06",
     "effect": "dmgAny5",
     "effectText": "造成 5 點傷害（任一目標）",
     "bonusText": "改為 6 點"
@@ -12397,7 +12397,7 @@
     "cost": 4,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-30",
+    "vocabId": "10-04",
     "effect": "healHero5",
     "effectText": "回復我方英雄 5 點",
     "bonusText": "額外抽 1 張"
@@ -12409,7 +12409,7 @@
     "cost": 5,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-31",
+    "vocabId": "11-16",
     "effect": "aoeEnemy3",
     "effectText": "對所有敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -12421,7 +12421,7 @@
     "cost": 1,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-32",
+    "vocabId": "11-22",
     "effect": "buffFriend11",
     "effectText": "給一個友方隨從 +1/+1",
     "bonusText": "改為 +2/+2"
@@ -12433,7 +12433,7 @@
     "cost": 2,
     "rarity": "common",
     "theme": "nature",
-    "vocabId": "26-33",
+    "vocabId": "11-18",
     "effect": "dmgEnemyMinion3",
     "effectText": "對一個敵方隨從造成 3 點傷害",
     "bonusText": "改為 4 點"
@@ -12445,7 +12445,7 @@
     "cost": 3,
     "rarity": "epic",
     "theme": "nature",
-    "vocabId": "26-34",
+    "vocabId": "11-18",
     "effect": "aoeEnemy2",
     "effectText": "對所有敵方隨從造成 2 點傷害",
     "bonusText": "改為 3 點"
@@ -12457,7 +12457,7 @@
     "cost": 3,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "26-35",
+    "vocabId": "11-07",
     "effect": "draw2",
     "effectText": "抽 2 張牌",
     "bonusText": "再抽 1 張"
@@ -12469,7 +12469,7 @@
     "cost": 3,
     "rarity": "rare",
     "theme": "nature",
-    "vocabId": "26-36",
+    "vocabId": "11-07",
     "effect": "dmgMinion4",
     "effectText": "對一個隨從造成 4 點傷害",
     "bonusText": "改為 5 點"
@@ -12483,7 +12483,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-37",
+    "vocabId": "21-07",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12500,7 +12500,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-38",
+    "vocabId": "21-15",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12517,7 +12517,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-39",
+    "vocabId": "16-09",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12537,7 +12537,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-40",
+    "vocabId": "21-05",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -12557,7 +12557,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-41",
+    "vocabId": "21-02",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12577,7 +12577,7 @@
     "health": 1,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-42",
+    "vocabId": "21-04",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12594,7 +12594,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-43",
+    "vocabId": "09-35",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12611,7 +12611,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-44",
+    "vocabId": "09-65",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12628,7 +12628,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-45",
+    "vocabId": "21-09",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12648,7 +12648,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-46",
+    "vocabId": "16-10",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -12668,7 +12668,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-47",
+    "vocabId": "16-09",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12688,7 +12688,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-48",
+    "vocabId": "12-06",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12705,7 +12705,7 @@
     "health": 4,
     "rarity": "epic",
     "theme": "tool",
-    "vocabId": "26-49",
+    "vocabId": "09-65",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12722,7 +12722,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-50",
+    "vocabId": "12-16",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12739,7 +12739,7 @@
     "health": 6,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-51",
+    "vocabId": "18-10",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12759,7 +12759,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-52",
+    "vocabId": "21-22",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -12779,7 +12779,7 @@
     "health": 5,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-53",
+    "vocabId": "09-47",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12799,7 +12799,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-54",
+    "vocabId": "16-12",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12816,7 +12816,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-55",
+    "vocabId": "21-02",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12833,7 +12833,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-56",
+    "vocabId": "12-03",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12850,7 +12850,7 @@
     "health": 1,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-57",
+    "vocabId": "18-11",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12870,7 +12870,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-58",
+    "vocabId": "09-63",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -12890,7 +12890,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-59",
+    "vocabId": "09-55",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12910,7 +12910,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-60",
+    "vocabId": "12-10",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12927,7 +12927,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-61",
+    "vocabId": "16-01",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12944,7 +12944,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-62",
+    "vocabId": "09-56",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12961,7 +12961,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-63",
+    "vocabId": "16-01",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -12981,7 +12981,7 @@
     "health": 5,
     "rarity": "epic",
     "theme": "tool",
-    "vocabId": "26-64",
+    "vocabId": "16-01",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -13001,7 +13001,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-65",
+    "vocabId": "16-01",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13021,7 +13021,7 @@
     "health": 6,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-66",
+    "vocabId": "16-02",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13038,7 +13038,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-67",
+    "vocabId": "18-13",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13055,7 +13055,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-68",
+    "vocabId": "15-01",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13072,7 +13072,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-69",
+    "vocabId": "09-44",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13092,7 +13092,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-70",
+    "vocabId": "18-01",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -13112,7 +13112,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-71",
+    "vocabId": "09-24",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13132,7 +13132,7 @@
     "health": 1,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-72",
+    "vocabId": "18-12",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13149,7 +13149,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-73",
+    "vocabId": "21-01",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13166,7 +13166,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-74",
+    "vocabId": "18-03",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13183,7 +13183,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-75",
+    "vocabId": "09-16",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13203,7 +13203,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-76",
+    "vocabId": "18-31",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -13223,7 +13223,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-77",
+    "vocabId": "09-02",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13243,7 +13243,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-78",
+    "vocabId": "15-02",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13260,7 +13260,7 @@
     "health": 4,
     "rarity": "epic",
     "theme": "tool",
-    "vocabId": "26-79",
+    "vocabId": "18-26",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13277,7 +13277,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-80",
+    "vocabId": "09-23",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13294,7 +13294,7 @@
     "health": 6,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-81",
+    "vocabId": "21-08",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13314,7 +13314,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-82",
+    "vocabId": "21-18",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -13334,7 +13334,7 @@
     "health": 5,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-83",
+    "vocabId": "16-12",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13354,7 +13354,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-84",
+    "vocabId": "09-25",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13371,7 +13371,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-85",
+    "vocabId": "18-13",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13388,7 +13388,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-86",
+    "vocabId": "08-41",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13405,7 +13405,7 @@
     "health": 1,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-87",
+    "vocabId": "12-11",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13425,7 +13425,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-88",
+    "vocabId": "08-04",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -13445,7 +13445,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-89",
+    "vocabId": "08-56",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13465,7 +13465,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-90",
+    "vocabId": "21-18",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13482,7 +13482,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-91",
+    "vocabId": "21-18",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13499,7 +13499,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-92",
+    "vocabId": "09-26",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13516,7 +13516,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-93",
+    "vocabId": "18-25",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13536,7 +13536,7 @@
     "health": 5,
     "rarity": "epic",
     "theme": "tool",
-    "vocabId": "26-94",
+    "vocabId": "15-07",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -13556,7 +13556,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-95",
+    "vocabId": "15-12",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13576,7 +13576,7 @@
     "health": 6,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-96",
+    "vocabId": "09-71",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13593,7 +13593,7 @@
     "health": 2,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-97",
+    "vocabId": "21-15",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13610,7 +13610,7 @@
     "health": 4,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "26-98",
+    "vocabId": "12-11",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13627,7 +13627,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-99",
+    "vocabId": "21-08",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13647,7 +13647,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-100",
+    "vocabId": "21-07",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -13667,7 +13667,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-101",
+    "vocabId": "09-10",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13687,7 +13687,7 @@
     "health": 1,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-102",
+    "vocabId": "09-47",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13704,7 +13704,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-103",
+    "vocabId": "21-14",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13721,7 +13721,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-104",
+    "vocabId": "09-59",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13738,7 +13738,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "26-105",
+    "vocabId": "21-06",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13758,7 +13758,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "27-01",
+    "vocabId": "09-67",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -13778,7 +13778,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "27-02",
+    "vocabId": "09-31",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13798,7 +13798,7 @@
     "health": 5,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "27-03",
+    "vocabId": "21-07",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13815,7 +13815,7 @@
     "health": 4,
     "rarity": "epic",
     "theme": "tool",
-    "vocabId": "27-04",
+    "vocabId": "09-19",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13832,7 +13832,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "27-05",
+    "vocabId": "12-17",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13849,7 +13849,7 @@
     "health": 6,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "27-06",
+    "vocabId": "12-02",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13869,7 +13869,7 @@
     "health": 3,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "27-07",
+    "vocabId": "12-04",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -13889,7 +13889,7 @@
     "health": 5,
     "rarity": "rare",
     "theme": "tool",
-    "vocabId": "27-08",
+    "vocabId": "09-62",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13909,7 +13909,7 @@
     "health": 7,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "27-09",
+    "vocabId": "21-09",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13926,7 +13926,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "27-10",
+    "vocabId": "18-29",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13943,7 +13943,7 @@
     "health": 2,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "27-11",
+    "vocabId": "09-57",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13960,7 +13960,7 @@
     "health": 1,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "27-12",
+    "vocabId": "09-22",
     "effectText": "汲取",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -13980,7 +13980,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "27-13",
+    "vocabId": "09-65",
     "effectText": "嘲諷",
     "bonusText": "+0/+2",
     "bonusStats": {
@@ -14000,7 +14000,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "27-14",
+    "vocabId": "21-22",
     "effectText": "石鎧",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -14020,7 +14020,7 @@
     "health": 4,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "27-15",
+    "vocabId": "09-42",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
@@ -14037,7 +14037,7 @@
     "health": 3,
     "rarity": "common",
     "theme": "tool",
-    "vocabId": "27-16",
+    "vocabId": "21-22",
     "effectText": "—",
     "bonusText": "+1/+1",
     "bonusStats": {
